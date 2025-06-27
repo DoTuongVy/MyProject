@@ -346,21 +346,22 @@ async function displayTrackingResults(stageResults) {
         orderInfo.style.display = 'block';
     }
 
-    // Khởi tạo Bootstrap tooltips
+    // Khởi tạo Bootstrap popover
     setTimeout(() => {
-        // Dispose các tooltip cũ trước
-        const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        existingTooltips.forEach(el => {
-            const tooltip = bootstrap.Tooltip.getInstance(el);
-            if (tooltip) tooltip.dispose();
+        // Dispose các popover cũ trước
+        const existingPopovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+        existingPopovers.forEach(el => {
+            const popover = bootstrap.Popover.getInstance(el);
+            if (popover) popover.dispose();
         });
-        
-        // Tạo tooltip mới
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        tooltipTriggerList.forEach(tooltipTriggerEl => {
-            new bootstrap.Tooltip(tooltipTriggerEl, {
+
+        // Tạo popover mới
+        const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+        popoverTriggerList.forEach(popoverTriggerEl => {
+            new bootstrap.Popover(popoverTriggerEl, {
                 html: true,
-                sanitize: false // Cho phép HTML
+                sanitize: false,
+                container: 'body'
             });
         });
     }, 200);
@@ -591,16 +592,17 @@ function createStageCard(stage, stageInfo, showConnector) {
     
     // Tạo HTML cho phần số lượng
 let quantityHtml = '';
-if (stage.id === 'in') {
-    // Xử lý đặc biệt cho In - hiển thị SL pass cuối + tooltip
-    const tooltipHtml = createTooltipHtml(stageInfo.tooltipData);
-    quantityHtml = `
+    if (stage.id === 'in') {
+        // Xử lý đặc biệt cho In - hiển thị SL pass cuối + popover
+        const popoverHtml = createTooltipHtml(stageInfo.tooltipData);
+        quantityHtml = `
         <div class="quantity-section">
             <div class="quantity-label" style="display: flex; align-items: center; justify-content: space-between;">
                 <span>SL (${stage.quantityUnit}):</span>
                 <button type="button" class="btn btn-sm p-1" style="border: none; background: none; color: #6c757d;"
-                        data-bs-toggle="tooltip" data-bs-placement="bottom" 
-                        data-bs-html="true" data-bs-title="${tooltipHtml}">
+                        data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="hover"
+                        data-bs-html="true" data-bs-content="${popoverHtml.replace(/"/g, '&quot;')}"
+                        >
                     <i class="fas fa-eye" style="font-size: 14px;"></i>
                 </button>
             </div>
@@ -609,7 +611,7 @@ if (stage.id === 'in') {
             </div>
         </div>
     `;
-} else if (stage.isMultipleQuantity) {
+    } else if (stage.isMultipleQuantity) {
     // Hiển thị nhiều số lượng (như SCL: NK1, NK2, NK3)
     quantityHtml = `
         <div class="quantity-section">
@@ -701,55 +703,43 @@ if (stage.id === 'in') {
 }
 
 
-
-//TODO Tạo HTML cho tooltip hiển thị chi tiết máy và pass
+//TODO Tạo HTML cho popover hiển thị chi tiết máy và pass
 function createTooltipHtml(tooltipData) {
     if (!tooltipData || !tooltipData.machines || tooltipData.machines.length === 0) {
         return 'Không có dữ liệu';
     }
-    
-    let html = '<div style="min-width: 200px;">';
-    
-    // Tạo bảng với style đẹp
-    html += '<table style="width: 100%; border-collapse: collapse; font-size: 12px; margin: 0;">';
-    
-    // Header
-    html += '<thead><tr style="background: rgba(255,255,255,0.1);">';
-    html += '<th style="padding: 6px 8px; border: 1px solid rgba(255,255,255,0.3); text-align: center; font-weight: bold;"></th>';
-    
-    if (tooltipData.hasPass1) {
-        html += '<th style="padding: 6px 8px; border: 1px solid rgba(255,255,255,0.3); text-align: center; font-weight: bold;">IN 1 PASS</th>';
-    }
-    if (tooltipData.hasPass2) {
-        html += '<th style="padding: 6px 8px; border: 1px solid rgba(255,255,255,0.3); text-align: center; font-weight: bold;">IN 2 PASS</th>';
-    }
-    
-    html += '</tr></thead>';
-    
-    // Body
-    html += '<tbody>';
+
+    let html = '<div class=\\\"popover-table\\\">';
+    html += '<table style=\\\"width: 100%; border-collapse: collapse;\\\">';
+
+    // Header row - cột đầu trống, các cột tiếp theo là pass
+    html += '<tr>';
+    html += '<td style=\\\"padding: 8px 12px; font-weight: bold;\\\"></td>'; // Cột trống
+    if (tooltipData.hasPass1) html += '<td style=\\\"padding: 8px 12px; font-weight: bold; text-align: center;\\\">IN 1 PASS</td>';
+    if (tooltipData.hasPass2) html += '<td style=\\\"padding: 8px 12px; font-weight: bold; text-align: center;\\\">IN 2 PASS</td>';
+    html += '</tr>';
+
+    // Data rows - mỗi hàng là một máy
     tooltipData.machines.forEach(machineData => {
         html += '<tr>';
-        html += `<td style="padding: 6px 8px; border: 1px solid rgba(255,255,255,0.3); font-weight: bold; background: rgba(255,255,255,0.05);">${machineData.machine}</td>`;
-        
+        html += `<td style=\\\"padding: 8px 12px; font-weight: bold;\\\">${machineData.machine}</td>`;
+
         if (tooltipData.hasPass1) {
             const pass1Data = machineData.passes.find(p => p.pass === 'IN 1 PASS');
-            const quantity1 = pass1Data ? pass1Data.quantity : 0;
-            html += `<td style="padding: 6px 8px; border: 1px solid rgba(255,255,255,0.3); text-align: center;">${quantity1}</td>`;
-        }
-        
-        if (tooltipData.hasPass2) {
+            const quantity1 = pass1Data ? pass1Data.quantity.toLocaleString() : '0';
+            html += `<td style=\\\"padding: 8px 12px; text-align: center;\\\">${quantity1}</td>`;
+        }                                                                
+                                                                         
+        if (tooltipData.hasPass2) {                                      
             const pass2Data = machineData.passes.find(p => p.pass === 'IN 2 PASS');
-            const quantity2 = pass2Data ? pass2Data.quantity : 0;
-            html += `<td style="padding: 6px 8px; border: 1px solid rgba(255,255,255,0.3); text-align: center;">${quantity2}</td>`;
+            const quantity2 = pass2Data ? pass2Data.quantity.toLocaleString() : '0';
+            html += `<td style=\\\"padding: 8px 12px; text-align: center;\\\">${quantity2}</td>`;
         }
-        
+
         html += '</tr>';
     });
-    html += '</tbody></table>';
-    
-    html += '</div>';
-    
+
+    html += '</table></div>';
     return html;
 }
 
@@ -766,6 +756,7 @@ function showStageDetail(stageId) {
         closeDetail();
         return;
     }
+    
     
     const stageInfo = stageData[stageId];
     

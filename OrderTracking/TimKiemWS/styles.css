@@ -618,33 +618,61 @@ body {
 
 
 
-/* Tooltip icon button */
+.popover {
+    max-width: 400px;
+    min-width: 280px;
+}
+
+.popover-header {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 16px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.popover-body {
+    padding: 12px 16px;
+}
+
+    .popover-body .popover-table {
+        font-size: 13px;
+    }
+
+    .popover-body table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .popover-body table td {
+            padding: 6px 12px;
+            vertical-align: middle;
+            text-align: center;
+            border: none;
+            line-height: 1.4;
+        }
+
+        .popover-body table tr:first-child td {
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 8px;
+            margin-bottom: 4px;
+        }
+
+        .popover-body table tr:not(:first-child) td:first-child {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .popover-body table tr:not(:first-child) td:not(:first-child) {
+            color: #28a745;
+            font-weight: 500;
+        }
+
+/* Hover effect cho icon */
 .quantity-label .btn:hover {
     color: #007bff !important;
     transform: scale(1.1);
     transition: all 0.2s ease;
-}
-
-/* Tooltip styles - cập nhật */
-.tooltip {
-    z-index: 9999;
-}
-
-.tooltip .tooltip-inner {
-    max-width: 400px;
-    padding: 10px;
-    text-align: left;
-    background-color: rgba(0, 0, 0, 0.95);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-.tooltip .tooltip-inner table {
-    color: white;
-    margin: 0;
-}
-
-.tooltip .tooltip-inner th,
-.tooltip .tooltip-inner td {
-    color: white !important;
 }
