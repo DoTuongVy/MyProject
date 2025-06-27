@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phiếu Sang Cuộn - Quản lý Vật tư</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="../auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Phiếu Sang Cuộn</h1>
+            <a href="/user" class="btn-secondary"><i class="fas fa-home"></i> Trang chủ</a>
+        </header>
+
+        <div class="sub-tabs">
+            <button class="sub-tab-btn active" onclick="switchSubTab('sc-dan')">Dán phiếu</button>
+            <button class="sub-tab-btn" onclick="switchSubTab('sc-danhsach')">Danh sách phiếu</button>
+            <button class="sub-tab-btn" onclick="switchSubTab('sc-formula')">Phiếu Formula</button>
+        </div>
+
+        <main>
+            <!-- Dán phiếu Sang Cuộn -->
+            <div id="sc-dan" class="sub-content active">
+                <h2>Dán Phiếu Sang Cuộn</h2>
+                <div id="excel-progress-container" style="display: none; margin-top: 10px;">
+                    <label>Đang xử lý file Excel...</label>
+                    <progress id="excel-progress-bar" value="0" max="100" style="width: 100%;"></progress>
+                  </div>
+                  
+                <div class="dan-phieu-container">
+                    <div class="dan-actions">
+                        <p>Dán dữ liệu Excel vào bảng dưới đây (nhấn vào ô đầu tiên để dán):</p>
+                        <button id="sc-btn-xoa" class="btn-secondary">Xóa dữ liệu</button>
+                    </div>
+                    
+                    <div class="dan-preview">
+                        <div class="table-container">
+                            <table id="sc-dan-table" class="paste-table">
+                                <thead>
+                                    <tr>
+                                        <th>Số phiếu</th>
+                                        <th>Ngày CT</th>
+                                        <th>Số LSX</th>
+                                        <th>Diễn giải</th>
+                                        <th>Khách hàng</th>
+                                        <th>Sản phẩm</th>
+                                        <th>Mã phụ</th>
+                                        <th>STT Xuất</th>
+                                        <th>MHKX</th>
+                                        <th>ĐL xuất</th>
+                                        <th>SL xuất</th>
+                                        <th>TL xuất</th>
+                                        <th>STT nhập</th>
+                                        <th>MHN</th>
+                                        <th>SL nhập</th>
+                                        <th>TL nhập</th>
+                                        <th>Tồn SL</th>
+                                        <th>Tồn TL</th>
+                                        <th>Tồn TT</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr id="sc-paste-row">
+                                        <td  id="sc-paste-cell" class="paste-cell" contenteditable="true" tabindex="1" style="border: 1px solid green;"></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    <!-- Thêm dòng chỉ dẫn -->
+                                    <tr class="instruction-row">
+                                        <td colspan="19">
+                                            <em>Nhấn vào ô đầu tiên (Số phiếu) và dán dữ liệu từ Excel</em>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danh sách phiếu Sang Cuộn -->
+            <div id="sc-danhsach" class="sub-content">
+                <h2>Danh Sách Phiếu Sang Cuộn</h2>
+                <div class="danhsach-controls">
+                    <input type="text" id="sc-search" placeholder="Tìm kiếm phiếu...">
+                    <div class="danhsach-actions">
+                        <button id="sc-btn-delete-selected" class="btn-danger" disabled>Xóa đã chọn</button>
+                        <button id="sc-btn-export" class="btn-secondary">Xuất Excel</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="sc-danhsach-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="sc-select-all" title="Chọn tất cả"></th>
+                                <th>Số phiếu</th>
+                                <th>Ngày CT</th>
+                                <th>Số LSX</th>
+                                <th>Diễn giải</th>
+                                <th>Khách hàng</th>
+                                <th>Sản phẩm</th>
+                                <th>Mã phụ</th>
+                                <th>STT Xuất</th>
+                                <th>MHKX</th>
+                                <th>ĐL xuất</th>
+                                <th>SL xuất</th>
+                                <th>TL xuất</th>
+                                <th>STT nhập</th>
+                                <th>MHN</th>
+                                <th>SL nhập</th>
+                                <th>TL nhập</th>
+                                <th>Tồn SL</th>
+                                <th>Tồn TL</th>
+                                <th>Tồn TT</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Phiếu Formula Sang Cuộn -->
+            <div id="sc-formula" class="sub-content">
+                <h2>Phiếu Formula Sang Cuộn</h2>
+                <div class="formula-controls">
+                    <input type="text" id="sc-formula-search" placeholder="Tìm kiếm phiếu...">
+                    <button id="sc-formula-export" class="btn-secondary">Xuất Excel</button>
+                </div>
+                <div class="table-container">
+                    <table id="sc-formula-table">
+                        <thead>
+                            <tr>
+                                <th>Ws</th>
+                                <th>Số phiếu</th>
+                                <th>Phiếu phụ</th>
+                                <th>Phiếu</th>
+                                <th>Ws</th>
+                                <th>Ngày CT</th>
+                                <th>Mã KH</th>
+                                <th>Khách hàng</th>
+                                <th>Mã SP</th>
+                                <th>MHKX</th>
+                                <th>SL đơn</th>
+                                <th>ĐL xuất</th>
+                                <th>Tổng SL giấy</th>
+                                <th>Số con</th>
+                                <th>Khổ</th>
+                                <th>Khổ cần sang</th>
+                                <th>Trọng lượng</th>
+                                <th>SL xuất</th>
+                                <th>Mã cần sang</th>
+                                <th>SL nhập</th>
+                                <th>Tổng khổ nhập</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <!-- <p>&copy; 2025 Hệ thống Quản lý Vật tư</p> -->
+        </footer>
+    </div>
+
+    <!-- Modal chỉnh sửa -->
+    <div id="modal-edit" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title">Chỉnh sửa Phiếu</h2>
+            <div id="edit-form-container">
+                <!-- Form chỉnh sửa sẽ được thêm bằng JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="./api.js"></script>
+    <script src="./main.js"></script>
+    <script src="../auth.js"></script>
+    <script>
+        // Khởi tạo trang phiếu sang cuộn
+        document.addEventListener('DOMContentLoaded', function() {
+            // Chỉ tải phiếu sang cuộn
+            loadSangCuonData();
+        });
+
+        // Chuyển đổi giữa các tab con
+        function switchSubTab(tabId) {
+            document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.sub-tab-btn[onclick*="${tabId}"]`).classList.add('active');
+            
+            document.querySelectorAll('.sub-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Hàm tải dữ liệu phiếu sang cuộn
+        function loadSangCuonData() {
+            // Tải danh sách phiếu
+            if (typeof loadSangCuonList === 'function') {
+                loadSangCuonList();
+            }
+            
+            // Tải formula
+            if (typeof loadSangCuonFormula === 'function') {
+                loadSangCuonFormula();
+            }
+        }
+    </script>
+</body>
+</html>

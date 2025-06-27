@@ -1,0 +1,909 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>VISINGPACK</title>
+        <link rel="stylesheet" href="../admin/admin.css">
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        <link rel="stylesheet" href="../auth.css">
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+        <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f6f9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background-color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+
+        .btn-primary {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #3367d6;
+        }
+
+        .systems-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 40px;
+            margin-top: 20px;
+            grid-auto-flow: row;
+        }
+
+        .system-card {
+            background-color: white;
+            border: 1px solid rgb(193, 193, 193);
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .system-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .system-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #4285f4;
+        }
+
+        .system-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .system-description {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+
+        
+        .modules-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modules-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    flex-direction: row;
+}
+
+        .module-card {
+            background-color: white;
+            border: 1px solid rgb(193, 193, 193);
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            flex: 0 0 200px;
+    min-width: 200px;
+    max-width: 250px;
+            align-items: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .module-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .module-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+            color: #4285f4;
+        }
+
+        .module-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #777;
+            font-size: 14px;
+        }
+
+        .back-button {
+            background-color: #f1f1f1;
+            color: #333;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 16px;
+        }
+
+        .back-button:hover {
+            background-color: #ffea31;
+        }
+
+        .no-access {
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-access i {
+            font-size: 48px;
+            color: #e74c3c;
+            margin-bottom: 20px;
+        }
+
+        .no-access h2 {
+            color: #e74c3c;
+            margin-bottom: 10px;
+        }
+
+
+        /* Machine Card Styles for User */
+.user-machine-card {
+    margin-top: 20px;
+    margin-bottom: 5px;
+    margin-left: 10px;
+    margin-right: 10px;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 5px 5px 10px rgb(112 112 112 / 66%);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.user-machine-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: #3498db;
+}
+
+.user-machine-card.selected {
+    border-color: #27ae60;
+    background: linear-gradient(135deg, #f8fffa, #e8f5e8);
+}
+
+.user-machine-card .machine-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.user-machine-card .machine-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.user-machine-card .machine-code {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin: 5px 0;
+}
+
+.user-machine-card .machine-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    
+}
+
+.user-machine-card .machine-status.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.user-machine-card .machine-status.inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.user-machine-card .machine-description {
+    color: #7f8c8d;
+    font-size: 14px;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+/* Loading state */
+.user-machines-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #7f8c8d;
+}
+
+.user-machines-loading .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e0e6ed;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+    .user-machines-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    
+    .user-machine-card {
+        padding: 15px !important;
+    }
+}
+
+
+/* CSS cho chế độ user và admin */
+body.user-mode .sidebar {
+    display: none !important;
+}
+
+body.user-mode .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+}
+
+body.admin-mode .user-header {
+    display: none !important;
+}
+
+body.admin-mode .main-content {
+    margin-left: 250px;
+}
+
+/* User header styles */
+.user-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    body.admin-mode .main-content {
+        margin-left: 0;
+    }
+    
+    body.admin-mode .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    body.admin-mode .sidebar.show {
+        transform: translateX(0);
+    }
+}
+
+
+
+ /* Đảm bảo không có khoảng trắng khi ẩn */
+#systems-view {
+    display: block !important;
+}
+
+#modules-view {
+    display: none;
+}
+
+/* Khi ẩn thì không chiếm không gian */
+#systems-view[style*="display: none"] {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#modules-view[style*="display: block"] {
+    display: block !important;
+}
+
+
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 0;
+    border: none;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #dee2e6;
+}
+
+.btn-close {
+    /* background: none; */
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Toast notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    padding: 15px;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(244, 246, 249, 0.8);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e0e6ed;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+
+    </style>
+    </head>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <body>
+
+        <!-- <div class="user-header" id="user-header" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;">
+                <h1>Hệ thống Quản lý</h1>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-user-circle" style="font-size: 24px; color: #4285f4;"></i>
+                        <div>
+                            <div id="user-display-name" style="font-weight: 600; color: #2c3e50;"></div>
+                            <div id="user-display-role" style="font-size: 12px; color: #666;"></div>
+                        </div>
+                    </div>
+                    <button id="user-logout-btn" class="btn-primary" style="padding: 8px 16px;">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </button>
+                </div>
+            </div>
+        </div> -->
+
+
+
+        <div class="main-container" id="main-container">
+            <!-- Sidebar (sẽ được ẩn/hiện theo role) -->
+            <div class="sidebar" style="display: none;">
+                <!-- Nội dung sidebar admin -->
+            </div>
+        
+            <!-- Main content -->
+            <div class="main-content">
+                <!-- Dashboard Tab (chính là nội dung systems/modules) -->
+                <div class="content-tab active" id="dashboard-tab">
+                    <main>
+                        <!-- Danh sách hệ thống -->
+                        <div id="systems-view">
+                            <!-- <h2>Chọn hệ thống để truy cập</h2> -->
+
+                            
+                            <div class="systems-container justify-content-center mx-5" id="systems-list">
+                                <!-- Danh sách hệ thống sẽ được thêm vào đây -->
+                            </div>
+                        </div>
+                        
+                        <!-- Danh sách module của hệ thống -->
+                        <div id="modules-view" class="modules-container">
+                            <!-- <img src="../logo.gif" alt="" width="30%" class="d-block m-auto"> -->
+                            <div class="modules-header mx-5">
+                                <h2 style="font-weight: bold; ">Hệ thống: <span id="current-system-name"></span></h2>
+                                <button id="back-to-systems" class="back-button">
+                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                </button>
+                            </div>
+                            <div class="modules-list justify-content-center" id="modules-list">
+                                <!-- Danh sách module sẽ được thêm vào đây -->
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+        
+
+
+        <!-- Modal chọn máy cho User -->
+<div id="user-machine-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 800px;">        
+        <div class="modal-body">
+            <div class="text-end mb-2">
+                <button type="button" class="btn-close" aria-label="Close" id="user-close-machine-modal"></button>
+              </div>
+            <!-- Header với thông tin module -->
+            <div class="machine-modal-info" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 15px; justify-content: center;">
+                    <div class="module-icon-large" style="font-size: 48px;">
+                        <i id="user-selected-module-icon" class=""></i>
+                    </div>
+                    <div>
+                        <h3 id="user-selected-module-name" style="margin: 0; font-size: 20px; color: white;">Module Name</h3>
+                        <p id="user-selected-module-description" style="margin: 5px 0 0 0; opacity: 0.9;">Module Description</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Box -->
+            <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+                <div class="search-box" style="position: relative; max-width: 400px;">
+                    <input type="text" id="user-machine-search" placeholder="Tìm kiếm máy..." 
+                           style="width: 100%; padding: 12px 45px 12px 15px; border: 2px solid #e1e8ed; border-radius: 25px; font-size: 14px;">
+                    <!-- <i class="fas fa-search" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #95a5a6;"></i> -->
+                </div>
+                <div id="user-machine-management" style="display: none;  text-align: right;">
+                    <button class="btn-primary" id="user-manage-machines-btn">
+                        <i class="fas fa-cogs"></i> Quản lý máy
+                    </button>
+                </div>
+            </div>
+
+
+            <!-- Machines Grid -->
+            <div class="user-machines-grid mt-3" id="user-machines-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; max-height: 400px; overflow-y: auto;">
+                <!-- Machines will be loaded here -->
+            </div>
+
+            <!-- Empty State -->
+            <div class="user-empty-machines" id="user-empty-machines" style="display: none; text-align: center; padding: 40px 20px;">
+                <i class="fas fa-industry" style="font-size: 48px; color: #bdc3c7; margin-bottom: 15px;"></i>
+                <h3 style="color: #2c3e50; margin-bottom: 10px;">Không có máy nào</h3>
+                <p style="color: #7f8c8d;">Vui lòng liên hệ quản trị viên để được hỗ trợ</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Modal quản lý máy cho Admin trong giao diện user -->
+<div id="admin-manage-machines-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 1000px;">
+        <div class="modal-header">
+            <h2>Quản lý máy móc</h2>
+            <button type="button" class="btn-close close" aria-label="Close" id="admin-close-manage-machines-modal"></button>
+        </div>
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <!-- Controls -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="search-box" style="position: relative; flex: 1; max-width: 300px;">
+                    <input type="text" id="admin-manage-machine-search" placeholder="Tìm kiếm máy..." 
+                           style="width: 100%; padding: 10px 40px 10px 15px; border: 2px solid #e1e8ed; border-radius: 25px;">
+                </div>
+                <button class="btn-primary" id="admin-add-machine-btn" style="margin-left: 15px;">
+                    <i class="fas fa-plus"></i> Thêm máy mới
+                </button>
+            </div>
+
+            <!-- Machines Management Table -->
+            <div class="table-container">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Tên máy</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Vị trí</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Trạng thái</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Mô tả</th>
+                            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-machines-management-list">
+                        <!-- Machine management rows will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thêm/sửa máy -->
+<div id="admin-machine-form-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2 id="admin-machine-form-title">Thêm máy mới</h2>
+            <button type="button" class="btn-close close" aria-label="Close" id="admin-close-machine-form-modal"></button>
+        </div>
+        <div class="modal-body">
+            <form id="admin-machine-form">
+                <input type="hidden" id="admin-machine-id">
+                <input type="hidden" id="admin-machine-system-id">
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="admin-machine-name" style="display: block; margin-bottom: 8px; font-weight: 600;">
+                        Tên máy <span style="color: red;">*</span>
+                    </label>
+                    <input type="text" id="admin-machine-name" name="machineName" required 
+                           style="width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 8px;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="admin-machine-location" style="display: block; margin-bottom: 8px; font-weight: 600;">
+                        Vị trí
+                    </label>
+                    <input type="text" id="admin-machine-location" name="machineLocation" 
+                           style="width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 8px;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="admin-machine-status" style="display: block; margin-bottom: 8px; font-weight: 600;">
+                        Trạng thái
+                    </label>
+                    <select id="admin-machine-status" name="machineStatus" 
+                            style="width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 8px;">
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Không hoạt động</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">
+                        Hệ thống
+                    </label>
+                    <div id="admin-machine-system-display" style="padding: 12px; background-color: #f8f9fa; border-radius: 4px; color: #495057;">
+                        Chưa xác định
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="admin-machine-description" style="display: block; margin-bottom: 8px; font-weight: 600;">
+                        Mô tả
+                    </label>
+                    <textarea id="admin-machine-description" name="machineDescription" rows="3"
+                              style="width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 8px; resize: vertical;"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 20px; border-top: 1px solid #dee2e6;">
+            <button type="button" class="btn-secondary" id="admin-cancel-machine-btn">Hủy</button>
+            <button type="button" class="btn-primary" id="admin-save-machine-btn">Lưu</button>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal quản lý người dùng sản xuất -->
+<div id="production-user-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 1200px;">
+        <div class="modal-header">
+            <h2>Quản lý người dùng sản xuất</h2>
+            <button type="button" class="btn-close close" aria-label="Close" id="close-production-user-modal"></button>
+        </div>
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <!-- Thông tin module -->
+            <div class="production-modal-info" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 32px;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 20px;">Quản lý người dùng - Module In NM1</h3>
+                        <p style="margin: 5px 0 0 0; opacity: 0.9;">Phân công chức vụ cho báo cáo sản xuất</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3 Card chức vụ -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
+                
+                <!-- Card Quản đốc -->
+                <div class="position-card" style="background: white; border: 2px solid #007bff; border-radius: 8px; padding: 15px;">
+                    <div class="position-header" style="background: #007bff; color: white; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 6px 6px 0 0;">
+                        <h4 style="margin: 0; text-align: center;">
+                            <i class="fas fa-user-tie"></i> Quản đốc
+                        </h4>
+                    </div>
+                    
+                    <!-- Tìm kiếm -->
+                    <div class="search-section" style="margin-bottom: 15px;">
+                        <div style="position: relative;">
+                            <input type="text" class="position-search" data-position="quan-doc" 
+                                   placeholder="Tìm theo tên hoặc mã NV..." 
+                                   style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                            <div class="search-results quan-doc-results" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Danh sách người dùng -->
+                    <div class="position-users quan-doc-users">
+                        <!-- Users will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Card Phụ máy 1 -->
+                <div class="position-card" style="background: white; border: 2px solid #28a745; border-radius: 8px; padding: 15px;">
+                    <div class="position-header" style="background: #28a745; color: white; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 6px 6px 0 0;">
+                        <h4 style="margin: 0; text-align: center;">
+                            <i class="fas fa-user-cog"></i> Phụ máy 1
+                        </h4>
+                    </div>
+                    
+                    <!-- Tìm kiếm -->
+                    <div class="search-section" style="margin-bottom: 15px;">
+                        <div style="position: relative;">
+                            <input type="text" class="position-search" data-position="phu-may-1" 
+                                   placeholder="Tìm theo tên hoặc mã NV..." 
+                                   style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                            <div class="search-results phu-may-1-results" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Danh sách người dùng -->
+                    <div class="position-users phu-may-1-users">
+                        <!-- Users will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Card Phụ máy 2 -->
+                <div class="position-card" style="background: white; border: 2px solid #ffc107; border-radius: 8px; padding: 15px;">
+                    <div class="position-header" style="background: #ffc107; color: #212529; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 6px 6px 0 0;">
+                        <h4 style="margin: 0; text-align: center;">
+                            <i class="fas fa-user-cog"></i> Phụ máy 2
+                        </h4>
+                    </div>
+                    
+                    <!-- Tìm kiếm -->
+                    <div class="search-section" style="margin-bottom: 15px;">
+                        <div style="position: relative;">
+                            <input type="text" class="position-search" data-position="phu-may-2" 
+                                   placeholder="Tìm theo tên hoặc mã NV..." 
+                                   style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                            <div class="search-results phu-may-2-results" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Danh sách người dùng -->
+                    <div class="position-users phu-may-2-users">
+                        <!-- Users will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 20px; border-top: 1px solid #dee2e6;">
+            <button type="button" class="btn-secondary" id="close-production-user-btn">Đóng</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal xác nhận -->
+<div class="modal" id="confirm-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="confirm-title">Xác nhận</h3>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="confirm-message">Bạn có chắc chắn muốn thực hiện hành động này?</p>
+            <div class="modal-actions">
+                <button class="btn-danger" id="confirm-yes">Có</button>
+                <button class="btn-secondary" id="confirm-no">Không</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Toast -->
+<div class="toast" id="notification-toast" style="display: none;">
+    <div class="toast-icon">
+        <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="toast-content">
+        <p id="toast-message">Thao tác thành công!</p>
+    </div>
+    <div class="toast-close">
+        <i class="fas fa-times"></i>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loading-text">Đang tải dữ liệu...</div>
+    <div class="loading-subtext" id="loading-subtext">Vui lòng đợi trong giây lát</div>
+</div>
+
+
+
+
+
+<!-- Các elements ẩn cần thiết cho admin.js -->
+<div style="display: none;">
+    <div id="users-list"></div>
+    <div class="departments-list"></div>
+    <div id="customers-list"></div>
+    <select id="system-filter"></select>
+    <div id="systems-list-admin"></div>
+</div>
+
+
+<script src="../utils.js"></script>
+<script src="../auth.js"></script>
+<script src="../admin/admin.js"></script>
+<script src="./script.js"></script>
+        
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+            <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+    </body>
+</html>

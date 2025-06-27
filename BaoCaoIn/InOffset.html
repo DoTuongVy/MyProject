@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Báo cáo In Offset</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        <link rel="stylesheet" href="./in.css">
+        <link rel="stylesheet" href="../auth.css">
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+
+
+    </head>
+
+    <body class="bg-light p-4">
+
+        <!-- Tab Nav -->
+        <nav>
+            <div class="nav nav-tabs justify-content-center" id="nav-tab"
+                role="tablist" style="font-size: 20px;">
+                <button class="nav-link active" id="nav-baocaoinoffset-tab"
+                    data-bs-toggle="tab" data-bs-target="#nav-baocaoinoffset"
+                    type="button" role="tab" aria-controls="nav-baocaoinoffset"
+                    aria-selected="true">Báo Cáo In</button>
+                <button class="nav-link" id="nav-danhsachinoffset-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#nav-danhsachinoffset"
+                    type="button" role="tab"
+                    aria-controls="nav-danhsachinoffset"
+                    aria-selected="false">Báo cáo sản xuất</button>
+                <button class="nav-link" id="nav-dungmayinoffset-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#nav-dungmayinoffset"
+                    type="button" role="tab" aria-controls="nav-dungmayinoffset"
+                    aria-selected="false">Báo cáo dừng máy</button>
+
+            </div>
+
+            <!-- Content tab -->
+        </nav>
+
+        <!-- Phần báo cáo -->
+        <div class="tab-content" id="nav-tabContent">
+            <div class="tab-pane fade show active" id="nav-baocaoinoffset"
+                role="tabpanel"
+                aria-labelledby="nav-baocaoinoffset-tab"
+                tabindex="0">
+
+                .row
+
+                <!-- Bắt đầu báo cáo -->
+                <div
+                    class="container bg-white p-4 rounded shadow position-relative border border-success rounded-top p-3 mt-5 "
+                    style="border-width: 2px;">
+
+                    <div class="d-flex justify-content-end mb-3">
+                        <button type="button" id="btnResetForm"
+                            class="btn btn-warning">
+                            <i class="fas fa-sync-alt me-1"></i> Chạy lại phiếu
+                        </button>
+                    </div>
+
+                    <div
+                        class="position-absolute start-50 translate-middle-x px-3 py-1 bg-white border border-primary rounded-pill"
+                        style="top: -30px;">
+                        <strong style="font-size: 30px;">MÁY : <span
+                                id="displayMachineName"></span></strong>
+                    </div>
+
+                    <div class="row g-2">
+
+                        <div class="col-md-3">
+                            <!-- quản đốc -->
+                            <div class="d-flex gap-2 mb-3">
+                                <div class="form-floating"
+                                    style="flex: 1 0 0%;">
+                                    <select class="form-select" id="quandoc"
+                                        required
+                                        style="border: 1px solid blue; font-weight: bold;">
+                                        <option value selected>-- Chọn quản đốc
+                                            --</option>
+                                        <!-- Option tên quản đốc dựa vào quản lí admin -->
+                                    </select>
+                                    <label for="quandoc">Quản đốc</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <!-- Ca + Người -->
+                            <div class="d-flex gap-2 mb-3">
+                                <div class="form-floating"
+                                    style="flex: 1 0 0%;">
+                                    <input type="text" class="form-control" id="ca" disabled style="border: 1px solid blue; font-weight: bold;">
+                                    <label for="ca">Ca</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <!-- GIờ làm việc -->
+                            <div class="d-flex gap-2 mb-3">
+                                <div class="form-floating"
+                                    style="flex: 1 0 0%;">
+                                    <select class="form-select" id="gioLamViec"
+                                        required
+                                        style="border: 1px solid blue; font-weight: bold;">
+                                        <option value selected>-- Giờ làm việc
+                                            --</option>
+                                        <option value="0">6H - 14H</option>
+                                        <option value="1">14H - 22H</option>
+                                        <option value="2">22H - 6H</option>
+                                        <option value="3">10H - 22H</option>
+                                        <option value="4">6H - 18H</option>
+                                        <option value="5">18H - 6H</option>
+                                        <option value="6">7H - 16H</option>
+                                        <option value="7">7H -15H</option>
+                                        <option value="8">7H - 17H</option>
+                                        <option value="9">8H - 17H</option>
+                                    </select>
+                                    <label for="gioLamViec">Giờ làm việc</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-floating flex-grow-1 disabled ">
+                                <input type="text" class="form-control "
+                                    id="maCa"
+                                    disabled
+                                    style="border: 1px solid blue; font-weight: bold;">
+                                <label for="maCa">Mã Ca</label>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="row g-2">
+
+                        <div class="col-md-4">
+                            <div class="form-floating flex-grow-1 disabled ">
+                                <input type="text" class="form-control "
+                                    id="truongmay"
+                                    disabled style=" font-weight: bold;">
+                                <label for="truongmay">Trưởng máy</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <!-- Phụ maý 1 -->
+                            <div class="d-flex gap-2 mb-3">
+                                <div class="form-floating"
+                                    style="flex: 1 0 0%;">
+                                    <select class="form-select" id="phumay1"
+                                        required
+                                        style=" font-weight: bold;">
+                                        <option value selected>-- Chọn tên
+                                            --</option>
+                                        <!-- Option tên phụ máy 1 dựa vào quản lí admin -->
+
+                                    </select>
+                                    <label for="phumay1">Phụ máy 1</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <!-- Phụ máy 2 -->
+                            <div class="d-flex gap-2 mb-3">
+                                <div class="form-floating"
+                                    style="flex: 1 0 0%;">
+                                    <select class="form-select" id="phumay2"
+                                        required
+                                        style=" font-weight: bold;">
+                                        <option value selected>-- Chọn tên
+                                            --</option>
+                                        <!-- Option tên phụ máy 1 dựa vào quản lí admin -->
+
+                                    </select>
+                                    <label for="phumay2">Phụ máy 2</label>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="row g-4">
+
+                        <!-- Cột Trái -->
+                        <div class="col-md-6">
+                            <!-- Số WS-->
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control"
+                                    id="ws"
+                                    placeholder="Số WS">
+                                <label for="ws">Số WS</label>
+                            </div>
+
+                            <!-- tùy chọn -->
+                            <div class="d-flex gap-2 mb-3">
+                                <div class="form-floating"
+                                    style="flex: 1 0 0%;">
+                                    <select class="form-select" id="tuychon"
+                                        required
+                                        style="font-weight: bold;">
+                                        <option value selected>-- Tùy chọn In
+                                            --</option>
+                                        <option value="1">1. In</option>
+                                        <option value="2">2. In + Cán
+                                            bóng</option>
+                                        <option value="3">3. Cán bóng</option>
+                                        <option value="4">4. In dặm</option>
+                                        <option value="5">5. In dặm + Cán
+                                            bóng</option>
+                                        <option value="6">6. Cán bóng
+                                            lại</option>
+                                    </select>
+                                    <label for="tuychon">Tùy chọn</label>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <!-- Số kẽm-->
+                                    <div class="form-floating">
+                                        <input type="number"
+                                            class="form-control"
+                                            id="sokem"
+                                            placeholder="Số kẽm">
+                                        <label for="sokem">Số kẽm</label>
+                                    </div>
+                                </div>
+                                <div
+                                    class="col d-flex align-items-center justify-content-around">
+                                    <!-- Mẫu 3 tone, mặt sau-->
+                                    <div class="d-block">
+                                        <div class="d-flex">
+                                            <input type="checkbox" name
+                                                id="mau3tone">
+                                            <label
+                                                class="form-label fw-bold ms-2"
+                                                style="color: blue;">Mẫu 3
+                                                tone</label>
+                                        </div>
+                                    </div>
+                                    <div class="d-block">
+                                        <div class="d-flex">
+                                            <input type="checkbox" name
+                                                id="matsau">
+                                            <label
+                                                class="form-label fw-bold ms-2"
+                                                style="color: blue;">Mặt
+                                                sau</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col">
+                                    <!-- Phủ keo -->
+                                    <div class="d-flex gap-2 mb-3">
+                                        <div class="form-floating"
+                                            style="flex: 1 0 0%;">
+                                            <select class="form-select"
+                                                id="phukeo"
+                                                required
+                                                style=" font-weight: bold;">
+                                                <option value selected>-- Chọn
+                                                    keo phủ
+                                                    --</option>
+                                                <option
+                                                    value="G9/370">G9/370</option>
+                                                <option
+                                                    value="G9/640AS">G9/640AS</option>
+                                                <option
+                                                    value="G9/169">G9/169</option>
+                                                <option
+                                                    value="G9/55C">G9/55C</option>
+                                                <option
+                                                    value="55C+370">55C+370</option>
+                                                <option value="Lót dầu bóng">Lót
+                                                    dầu bóng</option>
+                                                <option value="SRO 1251">SRO
+                                                    1251</option>
+                                                <option value="SRO 1280VS">SRO
+                                                    1280VS</option>
+                                                <option value="SRO 3004FC">SRO
+                                                    3004FC</option>
+                                                <option value="UV SRU 104-1">UV
+                                                    SRU 104-1</option>
+                                                <option value="UV MỜ SRU 137">UV
+                                                    MỜ SRU 137</option>
+                                                <option
+                                                    value="G9/706">G9/706</option>
+                                                <option value="SRU 112-5">SRU
+                                                    112-5</option>
+                                                <option value="Keo khác">Keo
+                                                    khác</option>
+                                            </select>
+                                            <label for="phukeo">Phủ keo</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <!-- Phun bột (%)-->
+                                    <div class="form-floating">
+                                        <input type="number"
+                                            class="form-control"
+                                            id="phunbot"
+                                            placeholder="Phun bột (%)">
+                                        <label for="phunbot">Phun bột
+                                            (%)</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pass -->
+                            <label class="form-label fw-bold"
+                                style="color: blue;">Số Pass In</label>
+                            <div class="mb-2">
+                                <select class="form-select" id="pass"
+                                    style="border-color: rgb(255, 117, 67); background-color: #ffea72; font-weight: bold; color: blue;">
+                                    <option value selected>-- Chọn số pass in
+                                        --</option>
+                                    <option value="1">IN 1 PASS</option>
+                                    <option value="2">IN 2 PASS</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <!-- Cột Phải -->
+                        <div class="col-md-6">
+
+                            <div class="row">
+                                <div class="col">
+                                    <!-- Khách hàng -->
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control"
+                                            id="khachhang"
+                                            placeholder="Khách hàng" disabled
+                                            style="color: blue;">
+                                        <label for="khachhang">Khách
+                                            hàng</label>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <!-- Mã giấy -->
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control"
+                                            id="magiay"
+                                            placeholder="Mã giấy" disabled
+                                            style="color: blue;">
+                                        <label for="magiay">Mã giấy</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-8">
+                                    <!-- Mã sản phẩm -->
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control"
+                                            id="masp"
+                                            placeholder="Mã sản phẩm" disabled
+                                            style="color: blue;">
+                                        <label for="masp">Mã sản phẩm</label>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <!-- SL đơn hàng -->
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control"
+                                            id="sldonhang"
+                                            placeholder="SL đơn hàng" disabled
+                                            style="color: blue;">
+                                        <label for="sldonhang">SL đơn
+                                            hàng</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <!-- Số màu -->
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control"
+                                            id="somau"
+                                            placeholder="Số màu" disabled
+                                            style="color: blue;">
+                                        <label for="somau">Số màu</label>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <!-- Số con -->
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control"
+                                            id="socon"
+                                            placeholder="Số con" disabled
+                                            style="color: blue;">
+                                        <label for="socon">Số con</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <!-- Khổ -->
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control"
+                                            id="kho"
+                                            placeholder="Khổ" disabled
+                                            style="color: blue;">
+                                        <label for="kho">Khổ</label>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <!-- Chặt -->
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control"
+                                            id="chat"
+                                            placeholder="Chặt" disabled
+                                            style="color: blue;">
+                                        <label for="chat">Chặt</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Số lượng đã in -->
+                            <label for="soluongdain" class="fw-bold"
+                                style="color: green;">Số lượng đã in</label>
+                            <div class="form-floating mb-3">
+                                <input type="number" class="form-control"
+                                    id="soluongdain"
+                                    placeholder="Số lượng đã in" disabled
+                                    style="color: red; background-color: rgba(0, 175, 0, 0.323); border: 3px solid green; border-left: 7px solid green;">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <strong>Thời gian bắt đầu :</strong> <span
+                            class="text-success fw-bold" id="startTime"></span>
+                    </div>
+
+                    <!-- Nút và Tiến độ -->
+                    <div class="text-center mt-2">
+                        <div class="text-success fw-bold mb-2"></div>
+                        <div
+                            class="d-flex justify-content-between align-items-center">
+                            <div style="width: 100%;">
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-success"
+                                        role="progressbar"
+                                        style="width: 0%;" aria-valuenow="0"
+                                        aria-valuemin="0"
+                                        aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            <span class="ms-2"></span>
+                        </div>
+                        <button class="btn btn-success px-5 mt-3">Bắt
+                            Đầu</button>
+                    </div>
+
+                </div>
+
+                <!-- Phần kết thúc báo cáo -->
+
+                <div
+                    class="container bg-white p-4 rounded shadow position-relative border border-danger rounded-top p-3 mt-5"
+                    style="border-width: 2px;">
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="fw-bold">Canh máy (phút)</label>
+                                <input type="number"
+                                    class="form-control bg-white"
+                                    id="canhmay" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="fw-bold"
+                                    style="color: green; font-weight: bold;">Thành
+                                    phẩm in (Tấm)</label>
+                                <input type="number"
+                                    class="form-control bg-white"
+                                    id="thanhphamin"
+                                    style="border: 2px solid green;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="fw-bold"
+                                    style="color: red; font-weight: bold;">Phế
+                                    liệu (Tấm)</label>
+                                <input type="number"
+                                    class="form-control bg-white"
+                                    id="phelieu" style="border: 2px solid red;">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="fw-bold"
+                                    style="font-weight: bold;">Mã giấy 1</label>
+                                    <input type="text" class="form-control" id="magiay1" disabled style="color: blue;">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="fw-bold" style="font-weight: bold;">SL giấy nhận 1</label>
+                                <input type="number" class="form-control bg-white"
+                                    id="slgiaynhan1" >
+                            </div>
+
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="fw-bold">Phế liệu trắng
+                                    (Tấm)</label>
+                                <input type="number"
+                                    class="form-control bg-white"
+                                    id="phelieutrang">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="fw-bold"
+                                    style="font-weight: bold;">Mã giấy 2</label>
+                                <input type="number"
+                                    class="form-control bg-white"
+                                    id="magiay2">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="fw-bold" style="font-weight: bold;">SL giấy nhận 2</label>
+                                <input type="number" class="form-control bg-white"
+                                    id="slgiaynhan2" >
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="fw-bold">SL giấy Ream
+                                    (Tấm)</label>
+                                <input type="number"
+                                    class="form-control bg-white"
+                                    id="slgiayream">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="fw-bold" style="font-weight: bold;">Mã giấy 3</label>
+                                <input type="number" class="form-control bg-white"
+                                    id="magiay3" >
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="fw-bold" style="font-weight: bold;">SL giấy nhận 3</label>
+                                <input type="number" class="form-control bg-white"
+                                    id="slgiaynhan3" >
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold">Ghi chú</label>
+                        <textarea class="form-control bg-white" rows="3"
+                            id="ghiChu"></textarea>
+                    </div>
+
+                    <!-- Dừng máy -->
+                    <div
+                        class="mt-4 mb-5 p-3 rounded d-flex align-items-center justify-content-between position-relative overflow-hidden"
+                        style="margin-top: 15px; background: linear-gradient(270deg, #D00000, #FF7272, #FFE0E0, #FF7272, #D00000); background-size: 500% 500%; animation: triColorGradient 4s ease infinite; box-shadow: 0 5px 15px rgba(208, 0, 0, 0.5); border: 2px solid #D00000; width: 80%; margin: 0 auto;">
+                        <div class="pulse-effect"></div>
+                        <div
+                            class="d-flex align-items-center justify-content-center position-relative"
+                            style="z-index: 2;">
+                            <span class="text-warning me-2"
+                                style="font-size: 1.5rem; animation: warningPulse 1s infinite;">⚠</span>
+                            <span class="text-white fw-bold"
+                                style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-size: 2.2rem; letter-spacing: 1px;">DỪNG
+                                MÁY</span>
+                        </div>
+                        <div class="d-flex position-relative"
+                            style="z-index: 2;">
+                            <button id="btnNo"
+                                class="btn border me-2 px-4 fw-bold"
+                                style="font-weight: bold;">KHÔNG</button>
+                            <button id="btnYes"
+                                class="btn btn-light border px-4 fw-bold"
+                                style="font-weight: bold;">CÓ</button>
+                        </div>
+                    </div>
+
+                    <!-- Phần Báo Cáo Dừng Máy -->
+                    <div
+                        class="mt-4 mb-4 p-3 border border-danger rounded machine-report"
+                        id="machineReport"
+                        style="width: 70%; margin: 0 auto; background-color: #FFC9CD;">
+                        <h5 class="text-center fw-bold mb-3">BÁO CÁO DỪNG
+                            MÁY</h5>
+
+                        <div class="row mb-3">
+                            <div class="col-4">
+                                <label class="fw-bold mb-1">Lý do dừng
+                                    máy</label>
+                                <select class="form-select" id="stopReason">
+                                    <option value>-- Lý do --</option>
+                                    <option value="Máy hư">F1 : Máy hư</option>
+                                    <option value="Chờ giấy">F2 : Chờ
+                                        giấy</option>
+                                    <option value="Chờ tiếp thị">F3 : Chờ tiếp thị</option>
+                                    <option value="Chờ kế hoạch">F4 : Chờ kế hoạch</option>
+                                    <option value="Vệ sinh">F5 : Vệ
+                                        sinh</option>
+                                    <option value="Khác">F6 :
+                                        Khác</option>
+                                    <option value="Bảo dưỡng">F7 : Bảo
+                                        dưỡng</option>
+                                    <option value="Cúp điện , mất hơi">F8 : Sửa kẽm</option>
+                                    <option value="Thay su">F9 : Thay su</option>
+                                    <option value="CHỜ KHÁCH TỚI KÝ BÀI">F10 : CHỜ KHÁCH TỚI KÝ BÀI</option>
+                                    <option value="Cắt bảng DB">F11 : Cắt bảng DB</option>
+                                    <option value="Giải lao">F12 : Giải lao</option>
+                                    <option value="Cúp điện">F13 : Cúp điện</option>
+                                </select>
+                            </div>
+
+                            <div class="col-4 time-inputs"
+                                style="display: none;">
+                                <label class="fw-bold mb-1">Thời gian dừng
+                                    máy</label>
+                                <div class="position-relative">
+                                    <input type="datetime-local"
+                                        class="form-control"
+                                        id="stopTimeInput">
+                                    <button
+                                        class="btn btn-primary position-absolute top-0 end-0 h-100"
+                                        id="stopTimeButton"
+                                        style="z-index: 20; opacity: 1; pointer-events: auto; cursor: pointer !important;">
+                                        Dừng máy
+                                    </button>
+                                </div>
+                                <div class="form-text"
+                                    id="stopTimeDisplay"></div>
+                            </div>
+
+                            <div class="col-4 time-inputs"
+                                style="display: none;">
+                                <label class="fw-bold mb-1">Thời gian chạy
+                                    lại</label>
+                                <div class="position-relative">
+                                    <input type="datetime-local"
+                                        class="form-control"
+                                        id="resumeTimeInput">
+                                    <button
+                                        class="btn btn-success position-absolute top-0 end-0 h-100"
+                                        id="resumeTimeButton"
+                                        style="z-index: 10;">
+                                        Chạy lại
+                                    </button>
+                                </div>
+                                <div class="form-text"
+                                    id="resumeTimeDisplay"></div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3 additional-fields"
+                            style="display: none;">
+                            <div class="col-8">
+                                <label class="fw-bold mb-1">Lý do khác</label>
+                                <input type="text" class="form-control"
+                                    placeholder="Nhập lý do..."
+                                    id="otherReason">
+                            </div>
+                            <div class="col-4">
+                                <label class="fw-bold mb-1 text-primary">Thời
+                                    gian dừng
+                                    máy</label>
+                                <input type="text" class="form-control bg-light"
+                                    id="stopDuration" readonly>
+                            </div>
+                        </div>
+
+                        <!-- Container cho các lý do bổ sung sẽ được thêm tại đây -->
+                        <div id="additionalReasonsContainer"></div>
+
+                        <button class="btn btn-danger me-3"
+                            id="submitStopOnlyButton"
+                            onclick="submitStopReportOnly()"
+                            style="display: none;">
+                            Dừng máy không có WS
+                        </button>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button type="button" class="btn btn-primary px-5"
+                            id="confirmButton" style="display: none;">
+                            <i class="fas fa-check-circle me-2"></i>Xác nhận
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Phần danh sách báo cáo -->
+            <div class="tab-pane fade" id="nav-danhsachinoffset" role="tabpanel"
+                aria-labelledby="nav-danhsachinoffset-tab" tabindex="0">
+
+                <div class="mx-5 bg-white p-4 rounded shadow mt-4 ">
+                    <h2 class="mb-4 text-success text-center">Danh sách báo cáo
+                        In Offset</h2>
+
+                    <!-- Phần tìm kiếm và lọc -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control"
+                                    id="searchInput"
+                                    placeholder="Tìm kiếm...">
+                                <button class="btn btn-outline-secondary"
+                                    type="button"
+                                    id="btnSearch">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <div class>
+                                <select class="form-select mb-2" id="mayFilter">
+                                    <option value>-- Tất cả máy --</option>
+                                    <option value="6M1">6M1</option>
+                                    <option value="6M5">6M5</option>
+                                    <option value="5M2">5M2</option>
+                                    <option value="6K">6K</option>
+                                    <option value="2M">2M</option>
+                                    <option value="KTS">KTS</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div
+                                class="date-filter-container border rounded p-2 mb-2">
+                                <div class="row g-2">
+                                    <div class="col-5">
+                                        <label for="startDateFilter"
+                                            class="form-label small mb-1">Từ
+                                            ngày:</label>
+                                        <input type="datetime-local"
+                                            class="form-control form-control-sm"
+                                            id="startDateFilter">
+                                    </div>
+                                    <div class="col-5">
+                                        <label for="endDateFilter"
+                                            class="form-label small mb-1">Đến
+                                            ngày:</label>
+                                        <input type="datetime-local"
+                                            class="form-control form-control-sm"
+                                            id="endDateFilter">
+                                    </div>
+                                    <div class="col-2">
+                                        <!-- <label class="form-label small mb-1">&nbsp;</label> -->
+                                        <div class="d-grid gap-1 ">
+                                            <button
+                                                class="btn btn-primary btn-sm"
+                                                id="btnDateFilter">
+                                                <i class="fas fa-filter"></i>
+                                            </button>
+                                            <button
+                                                class="btn btn-outline-secondary btn-sm"
+                                                id="btnClearDateFilter">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chọn số mục hiển thị -->
+                    <div
+                        class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <span>Hiển thị </span>
+                            <select id="itemsPerPage"
+                                class="form-select form-select-sm d-inline-block w-auto mx-1">
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span> mục</span>
+                            <button class="btn btn-success btn-sm ms-3"
+                                id="btnFixColumns">
+                                <i class="fas fa-thumbtack me-1"></i> Cố định
+                                cột
+                            </button>
+                        </div>
+                        <div
+                            class="d-flex justify-content-between align-items-center ">
+                            <div id="totalItems">Tổng số: 0 bản ghi</div>
+                        </div>
+
+                    </div>
+
+                    <!-- Bảng danh sách BÁO CÁO IN -->
+                    <div class="table-responsive">
+                        <table
+                            class="table table-striped table-hover table-bordered text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-nowrap"
+                                        style="min-width: 120px;">Thao
+                                        tác</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 60px;">STT</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 100px;">Ngày</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 80px;">Máy</th>
+                                        <th class="text-nowrap"
+                                            style="min-width: 250px;">Quản đốc</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 80px;">Ca</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 250px;">Trưởng máy</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 200px;">Số WS</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 80px;">Số lần chạy</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 100px;">Ngày phụ</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 120px;">Khách hàng</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 350px;">Mã sản phẩm</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 150px;">Số lượng đơn hàng</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 90px;">Số con</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 90px;">Số màu</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 250px;">Mã giấy 1</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 100px;">Mã giấy 2</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 100px;">Mã giấy 3</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 120px;">Khổ</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 120px;">Dài giấy</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 200px;">Tùy chọn</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 80px;">Mẫu 3 tone</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 180px;">SL giấy TT 1</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 100px;">SL giấy TT 2</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 100px;">SL giấy TT 3</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 80px;">Số kẽm</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 80px;">Mặt sau</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 160px;">Phủ keo</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 130px;">Phun bột</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 150px;">TG canh máy</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 200px;">TG bắt đầu</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 200px;">TG kết thúc</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 160px;">Thành phẩm in</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 160px;">PL</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 160px;">PL trắng</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 300px;">Ghi chú</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 200px;">Tổng số lượng</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 200px;">Tổng phế liệu</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 200px;">Tổng PL trắng</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 200px;">SL giấy ream</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 80px;">Tuần</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 150px;">Giờ làm việc</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 100px;">Mã ca</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 150px;">SL giấy theo WS</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 150px;">SL cắt</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 150px;">Chênh lệch TT-WS</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 150px;">Chênh lệch TT-SCC</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 220px;">Phụ máy 1</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 220px;">Phụ máy 2</th>
+                                        <th class="text-nowrap" style="min-width: 150px;">Số pass in</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportTableBody">
+                                <!-- Dữ liệu sẽ được hiển thị ở đây -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Phân trang -->
+                    <div
+                        class="d-flex justify-content-between align-items-center mt-4">
+                        <div>
+                            <span id="pageInfo">Hiển thị 0-0 của 0</span>
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination" id="pagination">
+                                <li class="page-item">
+                                    <a class="page-link" href="#"
+                                        id="firstPage">Trang đầu</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#"
+                                        id="prevPage">Trang trước</a>
+                                </li>
+                                <!-- Các nút trang số sẽ được thêm ở đây -->
+                                <li class="page-item">
+                                    <a class="page-link" href="#"
+                                        id="nextPage">Trang sau</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#"
+                                        id="lastPage">Trang cuối</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+
+                    <button class="btn btn-primary btn-sm ms-2"
+                        id="btnExportExcel">
+                        <i class="fas fa-file-excel me-1"></i> Xuất Excel
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Phần dừng máy của báo cáo -->
+            <div class="tab-pane fade" id="nav-dungmayinoffset" role="tabpanel"
+                aria-labelledby="nav-dungmayinoffset-tab" tabindex="0">
+
+                <div class="mx-5 bg-white p-4 rounded shadow mt-4">
+                    <h2 class="mb-4 text-danger text-center">Danh sách báo cáo
+                        dừng
+                        máy</h2>
+
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control"
+                                    id="stopSearchInput"
+                                    placeholder="Tìm kiếm...">
+                                <button class="btn btn-outline-secondary"
+                                    type="button"
+                                    id="btnStopSearch">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <div class>
+                                <select class="form-select mb-2" id="mayFilter">
+                                    <option value>-- Tất cả máy --</option>
+                                    <option value="6M1">6M1</option>
+                                    <option value="6M5">6M5</option>
+                                    <option value="5M2">5M2</option>
+                                    <option value="6K">6K</option>
+                                    <option value="2M">2M</option>
+                                    <option value="KTS">KTS</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div
+                                class="date-filter-container border rounded p-2 mb-2">
+                                <div class="row g-2">
+                                    <div class="col-5">
+                                        <label for="startStopDateFilter"
+                                            class="form-label small mb-1">Từ
+                                            ngày:</label>
+                                        <input type="datetime-local"
+                                            class="form-control form-control-sm"
+                                            id="startStopDateFilter">
+                                    </div>
+                                    <div class="col-5">
+                                        <label for="endStopDateFilter"
+                                            class="form-label small mb-1">Đến
+                                            ngày:</label>
+                                        <input type="datetime-local"
+                                            class="form-control form-control-sm"
+                                            id="endStopDateFilter">
+                                    </div>
+                                    <div class="col-2 ">
+                                        <div class="d-grid gap-1 ">
+                                            <button
+                                                class="btn btn-primary btn-sm"
+                                                id="btnStopDateFilter">
+                                                <i class="fas fa-filter"></i>
+                                            </button>
+                                            <button
+                                                class="btn btn-outline-secondary btn-sm"
+                                                id="btnClearStopDateFilter">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chọn số mục hiển thị -->
+                    <div
+                        class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <span>Hiển thị </span>
+                            <select id="itemsPerStopPage"
+                                class="form-select form-select-sm d-inline-block w-auto mx-1">
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span> mục</span>
+                        </div>
+                        <div id="totalStopItems">Tổng số: 0 bản ghi</div>
+                    </div>
+
+                    <!-- Bảng danh sách -->
+                    <div class="table-responsive">
+                        <table
+                            class="table table-striped table-hover table-bordered text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-nowrap"
+                                        style="min-width: 60px;">STT</th>
+                                        <th class="text-nowrap"
+                                        style="min-width: 80px;">Ca</th>
+                                        <th class="text-nowrap"
+                                        style="min-width: 100px;">Giờ làm
+                                        việc</th>
+                                        <th class="text-nowrap"
+                                        style="min-width: 90px;">Mã ca</th>
+                                        <th class="text-nowrap"
+                                        style="min-width: 100px;">Trưởng máy</th>
+                                        <th class="text-nowrap"
+                                        style="min-width: 120px;">Số
+                                        WS</th>
+                                        <th class="text-nowrap"
+                                            style="min-width: 80px;">Máy</th>
+                                            <th class="text-nowrap"
+                                                style="min-width: 180px;">Thời gian
+                                                dừng</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 180px;">Thời gian
+                                        dừng máy</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 180px;">Thời gian
+                                        chạy lại</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 200px;">Lý do dừng
+                                        máy</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 200px;">Ghi chú</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 200px;">Ngày/Tháng/Năm</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 120px;">Tuần</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 150px;">Ngày</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 120px;">Thao
+                                        tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stopReportTableBody">
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Phân trang -->
+                    <div
+                        class="d-flex justify-content-between align-items-center mt-4">
+                        <div>
+                            <span id="stopPageInfo">Hiển thị 0-0 của 0</span>
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination" id="stopPagination">
+                                <li class="page-item">
+                                    <a class="page-link" href="#"
+                                        id="firstStopPage">Trang đầu</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#"
+                                        id="prevStopPage">Trang
+                                        trước</a>
+                                </li>
+                                <!-- Các nút trang số sẽ được thêm ở đây -->
+                                <li class="page-item">
+                                    <a class="page-link" href="#"
+                                        id="nextStopPage">Trang sau</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#"
+                                        id="lastStopPage">Trang cuối</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <script src="./in.js"></script>
+        <script src="../auth.js"></script>
+        <script src="../utils.js"></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script>
+        // PHẦN ID 8 SỐ
+        //  hàm kiểm tra format ID
+    function validateSoID(idValue) {
+      // Kiểm tra format: 2 ký tự chữ + 8 số
+      const idRegex = /^[A-Za-z]{2}\d{8}$/;
+      return idRegex.test(idValue);
+    }
+    
+    // Sửa text mô tả
+    const idDescription = document.querySelector('#nhapSoID').closest('.mb-3').querySelector('small');
+    if (idDescription) {
+      idDescription.textContent = 'Ví dụ: AB12345678 (2 ký tự chữ + 8 số)';
+    }
+    
+    // ===== MỚI: XỬ LÝ SỰ KIỆN INPUT CHO SỐ ID =====
+    document.getElementById('inputSoID').addEventListener('input', function() {
+      let value = this.value.toUpperCase(); // Chuyển thành chữ hoa
+      let cursorPosition = this.selectionStart;
+      
+      // Xử lý theo vị trí: 2 ký tự chữ đầu + 8 số sau
+      let finalValue = '';
+      
+      for (let i = 0; i < value.length && finalValue.length < 10; i++) {
+        if (finalValue.length < 2) {
+          // 2 vị trí đầu: chỉ nhận chữ
+          if (/[A-Z]/.test(value[i])) {
+            finalValue += value[i];
+          }
+        } else {
+          // 8 vị trí sau: chỉ nhận số
+          if (/[0-9]/.test(value[i])) {
+            finalValue += value[i];
+          }
+        }
+      }
+      
+      // Cập nhật giá trị nếu thay đổi
+      if (this.value !== finalValue) {
+        this.value = finalValue;
+        
+        // Điều chỉnh vị trí con trỏ
+        const newCursorPosition = Math.min(cursorPosition, finalValue.length);
+        this.setSelectionRange(newCursorPosition, newCursorPosition);
+      }
+      
+      // Kiểm tra validation
+      if (this.value && !validateSoID(this.value)) {
+        this.classList.add('is-invalid');
+        // Tạo thông báo lỗi nếu chưa có
+        if (!this.nextElementSibling || !this.nextElementSibling.classList.contains('invalid-feedback')) {
+          const feedback = document.createElement('div');
+          feedback.classList.add('invalid-feedback');
+          feedback.textContent = 'ID phải có 2 ký tự chữ + 8 số (VD: AB12345678)';
+          this.after(feedback);
+        }
+      } else {
+        this.classList.remove('is-invalid');
+        // Xóa thông báo lỗi nếu có
+        const feedback = this.nextElementSibling;
+        if (feedback && feedback.classList.contains('invalid-feedback')) {
+          feedback.remove();
+        }
+      }
+    });
+    
+    // ===== MỚI: XỬ LÝ SỰ KIỆN KEYDOWN CHO SỐ ID =====
+    document.getElementById('inputSoID').addEventListener('keydown', function(e) {
+      const cursorPos = this.selectionStart;
+      const cursorEnd = this.selectionEnd;
+      const currentValue = this.value;
+      
+      // Các phím điều khiển được phép
+      const allowedKeys = [
+        'Backspace', 'Delete', 'Tab', 'Enter', 'Escape',
+        'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+        'Home', 'End', 'PageUp', 'PageDown'
+      ];
+    
+      // Cho phép Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+      if (e.ctrlKey && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase())) {
+        return;
+      }
+    
+      // Cho phép các phím điều khiển
+      if (allowedKeys.includes(e.key)) {
+        return;
+      }
+    
+      // Nếu đang ở vị trí 0-1 (phần chữ)
+      if (cursorPos < 2 && cursorPos === cursorEnd) {
+        // Chỉ cho phép nhập chữ
+        if (!/^[A-Za-z]$/.test(e.key)) {
+          e.preventDefault();
+          return;
+        }
+        
+        // Kiểm tra giới hạn 2 ký tự chữ
+        if (cursorPos >= 2) {
+          e.preventDefault();
+          return;
+        }
+      }
+      
+      // Nếu đang ở vị trí 2+ (phần số)
+      if (cursorPos >= 2 && cursorPos === cursorEnd) {
+        // Chỉ cho phép nhập số
+        if (!/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+          return;
+        }
+        
+        // Kiểm tra giới hạn 8 số (tổng cộng 10 ký tự)
+        if (currentValue.length >= 10) {
+          e.preventDefault();
+          return;
+        }
+      }
+    });
+    
+    // ===== MỚI: XỬ LÝ SỰ KIỆN PASTE CHO SỐ ID =====
+    document.getElementById('inputSoID').addEventListener('paste', function(e) {
+      e.preventDefault();
+      
+      // Lấy văn bản được dán
+      const pastedText = (e.clipboardData || window.clipboardData).getData('text').toUpperCase();
+      
+      // Xử lý theo vị trí: 2 chữ + 8 số
+      let finalValue = '';
+      
+      for (let i = 0; i < pastedText.length && finalValue.length < 10; i++) {
+        if (finalValue.length < 2) {
+          // 2 vị trí đầu: chỉ nhận chữ
+          if (/[A-Z]/.test(pastedText[i])) {
+            finalValue += pastedText[i];
+          }
+        } else {
+          // 8 vị trí sau: chỉ nhận số
+          if (/[0-9]/.test(pastedText[i])) {
+            finalValue += pastedText[i];
+          }
+        }
+      }
+      
+      // Cập nhật giá trị
+      this.value = finalValue;
+      
+      // Đặt con trỏ ở cuối
+      this.setSelectionRange(finalValue.length, finalValue.length);
+      
+      // Kích hoạt sự kiện input để kiểm tra validation
+      this.dispatchEvent(new Event('input'));
+    });
+      </script>
+    </body>
+
+</html>

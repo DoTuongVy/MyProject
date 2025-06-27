@@ -1,0 +1,53 @@
+
+/* Khi có class show thì hiển thị */
+.btn.btn-primary.show {
+    display: inline-block !important;
+}
+
+
+    .progress,
+    .progress-stacked {
+      display: flex;
+      height: var(--bs-progress-height);
+      overflow: hidden;
+      font-size: var(--bs-progress-font-size);
+      background-color: #bfbfbf;
+      border-radius: var(--bs-progress-border-radius);
+    }
+
+    /* Đảm bảo không wrap chữ trong các ô */
+    .text-nowrap {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dropdown-menu {
+      z-index: 2000 !important;
+    }
+
+    .stop-reason-box {
+    border: 2px solid #dc3545 !important;
+    background-color: #fff5f5 !important;
+}
+
+.stop-reason-box h5 {
+    color: #dc3545 !important;
+    font-weight: bold;
+}
+
+
+#btnYes, #btnNo {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    user-select: none;
+    min-width: 80px;
+    font-weight: bold;
+    border: 2px solid transparent !important;
+    transition: all 0.2s ease;
+}
+
+#btnYes:hover, #btnNo:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
+}

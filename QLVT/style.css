@@ -1,0 +1,393 @@
+/* ====================================================================== */
+/* CÁC STYLE CHUNG */
+/* ====================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f6f9;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    margin-bottom: 20px;
+}
+
+h1, h2, h3 {
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+
+button {
+    cursor: pointer;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background-color: #4285f4;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #3367d6;
+}
+
+.btn-secondary {
+    background-color: #f1f1f1;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background-color: #e1e1e1;
+}
+
+.btn-danger {
+    background-color: #ea4335;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #d33426;
+}
+
+.btn-add {
+    background-color: #34a853;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.btn-add:hover {
+    background-color: #278043;
+}
+
+input, textarea, select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Tab styles */
+.tabs, .sub-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.tab-btn, .sub-tab-btn {
+    background-color: #f1f1f1;
+    color: #333;
+    font-weight: bold;
+}
+
+.tab-btn.active, .sub-tab-btn.active {
+    background-color: #4285f4;
+    color: white;
+}
+
+.content, .sub-content {
+    display: none;
+}
+
+.content.active, .sub-content.active {
+    display: block;
+}
+
+/* Form styles */
+.form-them-phieu {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    flex: 1;
+    min-width: 250px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Table styles */
+.table-container {
+    overflow-x: auto;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+th, td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    white-space: nowrap;
+}
+
+th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Dán phiếu styles */
+.dan-phieu-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dan-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.dan-actions p {
+    margin-right: auto;
+    font-weight: bold;
+}
+
+.paste-table {
+    font-size: 12px;
+}
+
+.paste-table th,
+.paste-table td {
+    padding: 6px 8px;
+    white-space: nowrap;
+}
+
+.paste-table .paste-cell {
+    background-color: #f0f8ff;
+    cursor: text;
+    position: relative;
+}
+
+.paste-table .paste-cell:focus {
+    outline: 2px solid #4285f4;
+    background-color: #e6f3ff;
+}
+
+.instruction-row {
+    background-color: #f9f9f9;
+    color: #666;
+    font-style: italic;
+}
+
+.instruction-row td {
+    text-align: center;
+    padding: 10px;
+}
+
+/* Controls styles */
+.danhsach-controls, .formula-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.danhsach-controls input, .formula-controls input {
+    width: 300px;
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    width: 80%;
+    max-width: 800px;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #ea4335;
+}
+
+footer {
+    margin-top: 40px;
+    text-align: center;
+    color: #777;
+    font-size: 14px;
+}
+
+/* Thêm style cho controls và checkbox */
+.danhsach-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.danhsach-controls input {
+    width: 300px;
+}
+
+.danhsach-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Style cho checkbox */
+input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+th input[type="checkbox"] {
+    margin: 0;
+}
+
+.checkbox-cell {
+    text-align: center;
+    width: 30px;
+}
+
+/* Style cho nút xóa đã chọn */
+#sc-btn-delete-selected,
+#cat-btn-delete-selected {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transition: opacity 0.3s;
+}
+
+#sc-btn-delete-selected:not([disabled]),
+#cat-btn-delete-selected:not([disabled]) {
+    opacity: 1;
+    cursor: pointer;
+}
+
+/* Highlight hàng được chọn */
+tr.selected {
+    background-color: #e6f3ff;
+}
+
+tr.selected:hover {
+    background-color: #d6e9ff;
+}
+
+/* ====================================================================== */
+/* PHẦN PHIẾU SANG CUỘN */
+/* ====================================================================== */
+#sc-nhap-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border: 1px dashed #ddd;
+}
+
+.sc-nhap-group {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.sc-nhap-group:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+/* ====================================================================== */
+/* PHẦN PHIẾU CẮT */
+/* ====================================================================== */
+#cat-them .form-them-phieu {
+    background-color: #fff;
+}
+
+/* Responsive styles */
+@media screen and (max-width: 768px) {
+    .form-group {
+        min-width: 100%;
+    }
+
+    .tabs, .sub-tabs {
+        flex-wrap: wrap;
+    }
+
+    .tab-btn, .sub-tab-btn {
+        flex: 1;
+        text-align: center;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+}

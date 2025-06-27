@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Phiếu Sang Cuộn và Phiếu Cắt</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="../auth.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Hệ thống Quản lý Phiếu</h1>
+            
+        </header>
+<div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('sang-cuon')">Phiếu Sang Cuộn</button>
+                <button class="tab-btn" onclick="switchTab('cat')">Phiếu Cắt</button>
+            </div>
+        <main>
+            <!--! ================================================================= -->
+            <!--! PHẦN PHIẾU SANG CUỘN -->
+            <!--! ================================================================= -->
+            <div id="sang-cuon" class="content active">
+                <div class="sub-tabs">
+                    <button class="sub-tab-btn " onclick="switchSubTab('sc-them')" disabled hidden>Thêm phiếu</button>
+                    <button class="sub-tab-btn active" onclick="switchSubTab('sc-dan')">Dán phiếu</button>
+                    <button class="sub-tab-btn" onclick="switchSubTab('sc-danhsach')">Danh sách phiếu</button>
+                    <button class="sub-tab-btn" onclick="switchSubTab('sc-formula')">Phiếu Formula</button>
+                </div>
+
+                <!-- Thêm phiếu Sang Cuộn -->
+                <div id="sc-them" class="sub-content">
+                    <h2>Thêm Phiếu Sang Cuộn</h2>
+                    <form id="form-sc-them" class="form-them-phieu">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sc-so-phieu">Số phiếu</label>
+                                <input type="text" id="sc-so-phieu" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="sc-ngay-ct">Ngày chứng từ</label>
+                                <input type="date" id="sc-ngay-ct">
+                            </div>
+                            <div class="form-group">
+                                <label for="sc-so-lsx">Số LSX</label>
+                                <input type="text" id="sc-so-lsx">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sc-dien-giai">Diễn giải</label>
+                                <input type="text" id="sc-dien-giai">
+                            </div>
+                            <div class="form-group">
+                                <label for="sc-khach-hang">Khách hàng</label>
+                                <input type="text" id="sc-khach-hang">
+                            </div>
+                            <div class="form-group">
+                                <label for="sc-san-pham">Sản phẩm</label>
+                                <input type="text" id="sc-san-pham">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sc-ma-phu">Mã phụ</label>
+                                <input type="text" id="sc-ma-phu">
+                            </div>
+                        </div>
+
+                        <h3>Thông tin xuất</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sc-stt-xuat">STT Xuất</label>
+                                <input type="text" id="sc-stt-xuat">
+                            </div>
+                            <div class="form-group">
+                                <label for="sc-mhkx">Mã hàng khổ xuất</label>
+                                <input type="text" id="sc-mhkx">
+                            </div>
+                            <div class="form-group">
+                                <label for="sc-dlx">Định lượng xuất</label>
+                                <input type="text" id="sc-dlx">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sc-sl-xuat">SL xuất</label>
+                                <input type="text" id="sc-sl-xuat">
+                            </div>
+                            <div class="form-group">
+                                <label for="sc-tl-xuat">Trọng lượng xuất</label>
+                                <input type="text" id="sc-tl-xuat">
+                            </div>
+                        </div>
+
+                        <h3>Thông tin nhập</h3>
+                        <div id="sc-nhap-container">
+                            <div class="sc-nhap-group">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="sc-stt-nhap-1">STT Nhập</label>
+                                        <input type="text" id="sc-stt-nhap-1" class="sc-stt-nhap">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sc-mhn-1">Mã hàng nhập</label>
+                                        <input type="text" id="sc-mhn-1" class="sc-mhn">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sc-sl-nhap-1">SL nhập</label>
+                                        <input type="text" id="sc-sl-nhap-1" class="sc-sl-nhap">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sc-tl-nhap-1">Trọng lượng nhập</label>
+                                        <input type="text" id="sc-tl-nhap-1" class="sc-tl-nhap">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="sc-them-mhn" class="btn-add">+ Thêm mã hàng nhập</button>
+
+                        <h3>Thông tin tồn kho</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sc-ton-sl">Tồn kho số lượng</label>
+                                <input type="text" id="sc-ton-sl">
+                            </div>
+                            <div class="form-group">
+                                <label for="sc-ton-tl">Tồn kho trọng lượng</label>
+                                <input type="text" id="sc-ton-tl">
+                            </div>
+                            <div class="form-group">
+                                <label for="sc-ton-tamtinh">Tồn kho tạm tính</label>
+                                <input type="text" id="sc-ton-tamtinh">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Lưu Phiếu</button>
+                            <button type="reset" class="btn-secondary">Làm mới</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Dán phiếu Sang Cuộn -->
+                <div id="sc-dan" class="sub-content active">
+                    <h2>Dán Phiếu Sang Cuộn</h2>
+                    <div id="excel-progress-container" style="display: none; margin-top: 10px;">
+                        <label>Đang xử lý file Excel...</label>
+                        <progress id="excel-progress-bar" value="0" max="100" style="width: 100%;"></progress>
+                      </div>
+                      
+                    <div class="dan-phieu-container">
+                        <div class="dan-actions">
+                            <p>Dán dữ liệu Excel vào bảng dưới đây (nhấn vào ô đầu tiên để dán):</p>
+                            <button id="sc-btn-xoa" class="btn-secondary">Xóa dữ liệu</button>
+                        </div>
+                        
+                        <div class="dan-preview">
+                            <div class="table-container">
+                                <table id="sc-dan-table" class="paste-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Số phiếu</th>
+                                            <th>Ngày CT</th>
+                                            <th>Số LSX</th>
+                                            <th>Diễn giải</th>
+                                            <th>Khách hàng</th>
+                                            <th>Sản phẩm</th>
+                                            <th>Mã phụ</th>
+                                            <th>STT Xuất</th>
+                                            <th>MHKX</th>
+                                            <th>ĐL xuất</th>
+                                            <th>SL xuất</th>
+                                            <th>TL xuất</th>
+                                            <th>STT nhập</th>
+                                            <th>MHN</th>
+                                            <th>SL nhập</th>
+                                            <th>TL nhập</th>
+                                            <th>Tồn SL</th>
+                                            <th>Tồn TL</th>
+                                            <th>Tồn TT</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr id="sc-paste-row">
+                                            <td  id="sc-paste-cell" class="paste-cell" contenteditable="true" tabindex="1" style="border: 1px solid green;"></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <!-- Thêm dòng chỉ dẫn -->
+                                        <tr class="instruction-row">
+                                            <td colspan="19">
+                                                <em>Nhấn vào ô đầu tiên (Số phiếu) và dán dữ liệu từ Excel</em>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danh sách phiếu Sang Cuộn -->
+                <div id="sc-danhsach" class="sub-content">
+                    <h2>Danh Sách Phiếu Sang Cuộn</h2>
+                    <div class="danhsach-controls">
+                        <input type="text" id="sc-search" placeholder="Tìm kiếm phiếu...">
+                        <div class="danhsach-actions">
+                            <button id="sc-btn-delete-selected" class="btn-danger" disabled>Xóa đã chọn</button>
+                            <button id="sc-btn-export" class="btn-secondary">Xuất Excel</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="sc-danhsach-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="sc-select-all" title="Chọn tất cả"></th>
+                                    <th>Số phiếu</th>
+                                    <th>Ngày CT</th>
+                                    <th>Số LSX</th>
+                                    <th>Diễn giải</th>
+                                    <th>Khách hàng</th>
+                                    <th>Sản phẩm</th>
+                                    <th>Mã phụ</th>
+                                    <th>STT Xuất</th>
+                                    <th>MHKX</th>
+                                    <th>ĐL xuất</th>
+                                    <th>SL xuất</th>
+                                    <th>TL xuất</th>
+                                    <th>STT nhập</th>
+                                    <th>MHN</th>
+                                    <th>SL nhập</th>
+                                    <th>TL nhập</th>
+                                    <th>Tồn SL</th>
+                                    <th>Tồn TL</th>
+                                    <th>Tồn TT</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Phiếu Formula Sang Cuộn -->
+                <div id="sc-formula" class="sub-content">
+                    <h2>Phiếu Formula Sang Cuộn</h2>
+                    <div class="formula-controls">
+                        <input type="text" id="sc-formula-search" placeholder="Tìm kiếm phiếu...">
+                        <button id="sc-formula-export" class="btn-secondary">Xuất Excel</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="sc-formula-table">
+                            <thead>
+                                <tr>
+                                    <th>Ws</th>
+                                    <th>Số phiếu</th>
+                                    <th>Phiếu phụ</th>
+                                    <th>Phiếu</th>
+                                    <th>Ws</th>
+                                    <th>Ngày CT</th>
+                                    <th>Mã KH</th>
+                                    <th>Khách hàng</th>
+                                    <th>Mã SP</th>
+                                    <th>MHKX</th>
+                                    <th>SL đơn</th>
+                                    <th>ĐL xuất</th>
+                                    <th>Tổng SL giấy</th>
+                                    <th>Số con</th>
+                                    <th>Khổ</th>
+                                    <th>Khổ cần sang</th>
+                                    <th>Trọng lượng</th>
+                                    <th>SL xuất</th>
+                                    <th>Mã cần sang</th>
+                                    <th>SL nhập</th>
+                                    <th>Tổng khổ nhập</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!--! ================================================================= -->
+            <!--! PHẦN PHIẾU CẮT -->
+            <!--! ================================================================= -->
+            <div id="cat" class="content">
+                <div class="sub-tabs">
+                    <button class="sub-tab-btn " onclick="switchSubTab('cat-them')" disabled hidden>Thêm phiếu</button>
+                    <button class="sub-tab-btn active" onclick="switchSubTab('cat-dan')">Dán phiếu</button>
+                    <button class="sub-tab-btn" onclick="switchSubTab('cat-danhsach')">Danh sách phiếu</button>
+                    <button class="sub-tab-btn" onclick="switchSubTab('cat-formula')">Phiếu Formula</button>
+                </div>
+
+                <!-- Thêm phiếu Cắt -->
+                <div id="cat-them" class="sub-content">
+                    <h2>Thêm Phiếu Cắt</h2>
+                    <form id="form-cat-them" class="form-them-phieu">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cat-r">R</label>
+                                <input type="text" id="cat-r">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-so-phieu">Số phiếu</label>
+                                <input type="text" id="cat-so-phieu" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-ngay-ct">Ngày chứng từ</label>
+                                <input type="date" id="cat-ngay-ct">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cat-so-lsx">Số LSX</label>
+                                <input type="text" id="cat-so-lsx">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-dien-giai">Diễn giải</label>
+                                <input type="text" id="cat-dien-giai">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-khach-hang">Khách hàng</label>
+                                <input type="text" id="cat-khach-hang">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cat-san-pham">Sản phẩm</label>
+                                <input type="text" id="cat-san-pham">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-ma-phu">Mã phụ</label>
+                                <input type="text" id="cat-ma-phu">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-lo">Lô</label>
+                                <input type="text" id="cat-lo">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cat-vi-tri">Vị trí</label>
+                                <input type="text" id="cat-vi-tri">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-stt">STT</label>
+                                <input type="text" id="cat-stt">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-ma-nl">Mã nguyên liệu</label>
+                                <input type="text" id="cat-ma-nl">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cat-sl-dat">SL đặt</label>
+                                <input type="text" id="cat-sl-dat">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-dinh-luong">Định lượng</label>
+                                <input type="text" id="cat-dinh-luong">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-so-tam">Số tấm</label>
+                                <input type="text" id="cat-so-tam">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cat-so-con">Số con</label>
+                                <input type="text" id="cat-so-con">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-kho-cat">Khổ (cắt)</label>
+                                <input type="text" id="cat-kho-cat">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-dai-cat">Dài (cắt)</label>
+                                <input type="text" id="cat-dai-cat">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cat-kho-xen">Khổ (xén)</label>
+                                <input type="text" id="cat-kho-xen">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-dai-xen">Dài (xén)</label>
+                                <input type="text" id="cat-dai-xen">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-so-lan-xen">Số lần (xén)</label>
+                                <input type="text" id="cat-so-lan-xen">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cat-tl-du-kien">TL dự kiến</label>
+                                <input type="text" id="cat-tl-du-kien">
+                            </div>
+                        </div>
+
+                        <h3>Thông tin tồn kho</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cat-ton-sl">Tồn kho số lượng</label>
+                                <input type="text" id="cat-ton-sl">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-ton-tl">Tồn kho trọng lượng</label>
+                                <input type="text" id="cat-ton-tl">
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-ton-tamtinh">Tồn kho tạm tính</label>
+                                <input type="text" id="cat-ton-tamtinh">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cat-ghi-chu">Ghi chú</label>
+                                <input type="text" id="cat-ghi-chu">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Lưu Phiếu</button>
+                            <button type="reset" class="btn-secondary">Làm mới</button>
+                        </div>
+                    </form>
+                </div>
+
+               <!-- Dán phiếu Cắt -->
+               <div id="cat-dan" class="sub-content active">
+                <h2>Dán Phiếu Cắt</h2>
+                <div class="dan-phieu-container">
+                    <div class="dan-actions">
+                        <p>Dán dữ liệu Excel vào bảng dưới đây (nhấn vào ô đầu tiên để dán):</p>
+                        <button id="cat-btn-xoa" class="btn-secondary">Xóa dữ liệu</button>
+                    </div>
+                    
+                    <div class="dan-preview">
+                        <div class="table-container">
+                            <table id="cat-dan-table" class="paste-table">
+                                <thead>
+                                    <tr>
+                                        <th>R</th>
+                                        <th>Số phiếu</th>
+                                        <th>Ngày CT</th>
+                                        <th>Số LSX</th>
+                                        <th>Diễn giải</th>
+                                        <th>Khách hàng</th>
+                                        <th>Sản phẩm</th>
+                                        <th>Mã phụ</th>
+                                        <th>Lô</th>
+                                        <th>Vị trí</th>
+                                        <th>STT</th>
+                                        <th>Mã NL</th>
+                                        <th>SL đặt</th>
+                                        <th>Định lượng</th>
+                                        <th>Số tấm</th>
+                                        <th>Số con</th>
+                                        <th>Khổ (cắt)</th>
+                                        <th>Dài (cắt)</th>
+                                        <th>Khổ (xén)</th>
+                                        <th>Dài (xén)</th>
+                                        <th>Số lần (xén)</th>
+                                        <th>TL dự kiến</th>
+                                        <th>Tồn SL</th>
+                                        <th>Tồn TL</th>
+                                        <th>Tồn TT</th>
+                                        <th>Ghi chú</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr id="cat-paste-row">
+                                        <td id="cat-paste-cell" class="paste-cell" contenteditable="true" tabindex="1" style="border: 1px solid green;"></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    <!-- Thêm dòng chỉ dẫn -->
+                                    <tr class="instruction-row">
+                                        <td colspan="26">
+                                            <em>Nhấn vào ô đầu tiên (R) và dán dữ liệu từ Excel</em>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Danh sách phiếu Cắt -->
+                <div id="cat-danhsach" class="sub-content">
+                    <h2>Danh Sách Phiếu Cắt</h2>
+                    <div class="danhsach-controls">
+                        <input type="text" id="cat-search" placeholder="Tìm kiếm phiếu...">
+                        <div class="danhsach-actions">
+                            <button id="cat-btn-delete-selected" class="btn-danger" disabled>Xóa đã chọn</button>
+                            <button id="cat-btn-export" class="btn-secondary">Xuất Excel</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="cat-danhsach-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="cat-select-all" title="Chọn tất cả"></th>
+                                    <th>R</th>
+                                    <th>Số phiếu</th>
+                                    <th>Ngày CT</th>
+                                    <th>Số LSX</th>
+                                    <th>Diễn giải</th>
+                                    <th>Khách hàng</th>
+                                    <th>Sản phẩm</th>
+                                    <th>Mã phụ</th>
+                                    <th>Lô</th>
+                                    <th>Vị trí</th>
+                                    <th>STT</th>
+                                    <th>Mã NL</th>
+                                    <th>SL đặt</th>
+                                    <th>Định lượng</th>
+                                    <th>Số tấm</th>
+                                    <th>Số con</th>
+                                    <th>Khổ (cắt)</th>
+                                    <th>Dài (cắt)</th>
+                                    <th>Khổ (xén)</th>
+                                    <th>Dài (xén)</th>
+                                    <th>Số lần (xén)</th>
+                                    <th>TL dự kiến</th>
+                                    <th>Tồn SL</th>
+                                    <th>Tồn TL</th>
+                                    <th>Tồn TT</th>
+                                    <th>Ghi chú</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Phiếu Formula Cắt -->
+                <div id="cat-formula" class="sub-content">
+                    <h2>Phiếu Formula Cắt</h2>
+                    <div class="formula-controls">
+                        <input type="text" id="cat-formula-search" placeholder="Tìm kiếm phiếu...">
+                        <button id="cat-formula-export" class="btn-secondary">Xuất Excel</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="cat-formula-table">
+                            <thead>
+                                <tr>
+                                    <th>Ws</th>
+                                    <th>Số phiếu</th>
+                                    <th>Mã phiếu phụ</th>
+                                    <th>Phiếu</th>
+                                    <th>Ws</th>
+                                    <th>Ngày CT</th>
+                                    <th>Mã KH</th>
+                                    <th>Khách hàng</th>
+                                    <th>Mã SP</th>
+                                    <th>Mã nguyên liệu</th>
+                                    <th>SL đặt</th>
+                                    <th>Định lượng</th>
+                                    <th>Số tấm</th>
+                                    <th>Số con</th>
+                                    <th>Khổ (cắt)</th>
+                                    <th>Dài cắt</th>
+                                    <th>Xả</th>
+                                    <th>Khổ xả</th>
+                                    <th>TL dự tính</th>
+                                    <th>Khổ xén</th>
+                                    <th>Dài xén</th>
+                                    <th>Khổ dài/khổ xén</th>
+                                    <th>Giấy ram</th>
+                                    <th>Diễn giải</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <!-- <p>&copy; 2025 Hệ thống Quản lý Phiếu</p> -->
+        </footer>
+    </div>
+
+    <!-- Modal chỉnh sửa -->
+    <div id="modal-edit" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title">Chỉnh sửa Phiếu</h2>
+            <div id="edit-form-container">
+                <!-- Form chỉnh sửa sẽ được thêm bằng JavaScript -->
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="./api.js"></script>
+    <script src="./main.js"></script>
+    <script src="../auth.js"></script>
+<script> 
+        // Thêm nút Import Excel vào tab Dán phiếu Sang Cuộn 
+const scDanActions = document.querySelector('#sc-dan .dan-actions');
+if (scDanActions) {
+    const importButton = document.createElement('button');
+    importButton.id = 'sc-btn-import';
+    importButton.className = 'btn-primary';
+    importButton.textContent = 'Import Excel';
+    scDanActions.insertBefore(importButton, document.getElementById('sc-btn-xoa'));
+    
+    // Thêm input file (ẩn)
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.id = 'sc-file-import';
+    fileInput.accept = '.xlsx, .xls';
+    fileInput.style.display = 'none';
+    scDanActions.appendChild(fileInput);
+    
+    // Gắn sự kiện cho nút import
+    importButton.addEventListener('click', function() {
+        document.getElementById('sc-file-import').click();
+    });
+    
+    // Gắn sự kiện cho input file
+    fileInput.addEventListener('change', handleFileSelect);
+}
+
+// Thêm nút Import Excel vào tab Dán phiếu Cắt
+const catDanActions = document.querySelector('#cat-dan .dan-actions');
+if (catDanActions) {
+    const importButton = document.createElement('button');
+    importButton.id = 'cat-btn-import';
+    importButton.className = 'btn-primary';
+    importButton.textContent = 'Import Excel';
+    catDanActions.insertBefore(importButton, document.getElementById('cat-btn-xoa'));
+    
+    // Thêm input file (ẩn)
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.id = 'cat-file-import';
+    fileInput.accept = '.xlsx, .xls';
+    fileInput.style.display = 'none';
+    catDanActions.appendChild(fileInput);
+    
+    // Gắn sự kiện cho nút import
+    importButton.addEventListener('click', function() {
+        document.getElementById('cat-file-import').click();
+    });
+    
+    // Gắn sự kiện cho input file
+    fileInput.addEventListener('change', handleFileSelect);
+}
+    </script> 
+</body>
+</html>

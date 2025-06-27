@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phiếu Cắt - Quản lý Vật tư</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="../auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Phiếu Cắt</h1>
+            <a href="/user" class="btn-secondary"><i class="fas fa-home"></i> Trang chủ</a>
+        </header>
+
+        <div class="sub-tabs">
+            <button class="sub-tab-btn active" onclick="switchSubTab('cat-dan')">Dán phiếu</button>
+            <button class="sub-tab-btn" onclick="switchSubTab('cat-danhsach')">Danh sách phiếu</button>
+            <button class="sub-tab-btn" onclick="switchSubTab('cat-formula')">Phiếu Formula</button>
+        </div>
+
+        <main>
+            <!-- Dán phiếu Cắt -->
+            <div id="cat-dan" class="sub-content active">
+                <h2>Dán Phiếu Cắt</h2>
+                <div class="dan-phieu-container">
+                    <div class="dan-actions">
+                        <p>Dán dữ liệu Excel vào bảng dưới đây (nhấn vào ô đầu tiên để dán):</p>
+                        <button id="cat-btn-xoa" class="btn-secondary">Xóa dữ liệu</button>
+                    </div>
+                    
+                    <div class="dan-preview">
+                        <div class="table-container">
+                            <table id="cat-dan-table" class="paste-table">
+                                <thead>
+                                    <tr>
+                                        <th>R</th>
+                                        <th>Số phiếu</th>
+                                        <th>Ngày CT</th>
+                                        <th>Số LSX</th>
+                                        <th>Diễn giải</th>
+                                        <th>Khách hàng</th>
+                                        <th>Sản phẩm</th>
+                                        <th>Mã phụ</th>
+                                        <th>Lô</th>
+                                        <th>Vị trí</th>
+                                        <th>STT</th>
+                                        <th>Mã NL</th>
+                                        <th>SL đặt</th>
+                                        <th>Định lượng</th>
+                                        <th>Số tấm</th>
+                                        <th>Số con</th>
+                                        <th>Khổ (cắt)</th>
+                                        <th>Dài (cắt)</th>
+                                        <th>Khổ (xén)</th>
+                                        <th>Dài (xén)</th>
+                                        <th>Số lần (xén)</th>
+                                        <th>TL dự kiến</th>
+                                        <th>Tồn SL</th>
+                                        <th>Tồn TL</th>
+                                        <th>Tồn TT</th>
+                                        <th>Ghi chú</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr id="cat-paste-row">
+                                        <td id="cat-paste-cell" class="paste-cell" contenteditable="true" tabindex="1" style="border: 1px solid green;"></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    <!-- Thêm dòng chỉ dẫn -->
+                                    <tr class="instruction-row">
+                                        <td colspan="26">
+                                            <em>Nhấn vào ô đầu tiên (R) và dán dữ liệu từ Excel</em>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Danh sách phiếu Cắt -->
+                <div id="cat-danhsach" class="sub-content">
+                    <h2>Danh Sách Phiếu Cắt</h2>
+                    <div class="danhsach-controls">
+                        <input type="text" id="cat-search" placeholder="Tìm kiếm phiếu...">
+                        <div class="danhsach-actions">
+                            <button id="cat-btn-delete-selected" class="btn-danger" disabled>Xóa đã chọn</button>
+                            <button id="cat-btn-export" class="btn-secondary">Xuất Excel</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="cat-danhsach-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="cat-select-all" title="Chọn tất cả"></th>
+                                    <th>R</th>
+                                    <th>Số phiếu</th>
+                                    <th>Ngày CT</th>
+                                    <th>Số LSX</th>
+                                    <th>Diễn giải</th>
+                                    <th>Khách hàng</th>
+                                    <th>Sản phẩm</th>
+                                    <th>Mã phụ</th>
+                                    <th>Lô</th>
+                                    <th>Vị trí</th>
+                                    <th>STT</th>
+                                    <th>Mã NL</th>
+                                    <th>SL đặt</th>
+                                    <th>Định lượng</th>
+                                    <th>Số tấm</th>
+                                    <th>Số con</th>
+                                    <th>Khổ (cắt)</th>
+                                    <th>Dài (cắt)</th>
+                                    <th>Khổ (xén)</th>
+                                    <th>Dài (xén)</th>
+                                    <th>Số lần (xén)</th>
+                                    <th>TL dự kiến</th>
+                                    <th>Tồn SL</th>
+                                    <th>Tồn TL</th>
+                                    <th>Tồn TT</th>
+                                    <th>Ghi chú</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Phiếu Formula Cắt -->
+                <div id="cat-formula" class="sub-content">
+                    <h2>Phiếu Formula Cắt</h2>
+                    <div class="formula-controls">
+                        <input type="text" id="cat-formula-search" placeholder="Tìm kiếm phiếu...">
+                        <button id="cat-formula-export" class="btn-secondary">Xuất Excel</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="cat-formula-table">
+                            <thead>
+                                <tr>
+                                    <th>Ws</th>
+                                    <th>Số phiếu</th>
+                                    <th>Mã phiếu phụ</th>
+                                    <th>Phiếu</th>
+                                    <th>Ws</th>
+                                    <th>Ngày CT</th>
+                                    <th>Mã KH</th>
+                                    <th>Khách hàng</th>
+                                    <th>Mã SP</th>
+                                    <th>Mã nguyên liệu</th>
+                                    <th>SL đặt</th>
+                                    <th>Định lượng</th>
+                                    <th>Số tấm</th>
+                                    <th>Số con</th>
+                                    <th>Khổ (cắt)</th>
+                                    <th>Dài cắt</th>
+                                    <th>Xả</th>
+                                    <th>Khổ xả</th>
+                                    <th>TL dự tính</th>
+                                    <th>Khổ xén</th>
+                                    <th>Dài xén</th>
+                                    <th>Khổ dài/khổ xén</th>
+                                    <th>Giấy ram</th>
+                                    <th>Diễn giải</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+        </main>
+
+        <footer>
+            <!-- <p>&copy; 2025 Hệ thống Quản lý Vật tư</p> -->
+        </footer>
+    </div>
+
+    <!-- Modal chỉnh sửa -->
+    <div id="modal-edit" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title">Chỉnh sửa Phiếu</h2>
+            <div id="edit-form-container">
+                <!-- Form chỉnh sửa sẽ được thêm bằng JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="./api.js"></script>
+    <script src="./main.js"></script>
+    <script src="../auth.js"></script>
+    <script>
+        // Khởi tạo trang phiếu cắt
+        document.addEventListener('DOMContentLoaded', function() {
+            // Chỉ tải phiếu cắt
+            loadCatData();
+        });
+
+        // Chuyển đổi giữa các tab con
+        function switchSubTab(tabId) {
+            document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.sub-tab-btn[onclick*="${tabId}"]`).classList.add('active');
+            
+            document.querySelectorAll('.sub-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Hàm tải dữ liệu phiếu cắt
+        function loadCatData() {
+            // Tải danh sách phiếu
+            if (typeof loadCatList === 'function') {
+                loadCatList();
+            }
+            
+            // Tải formula
+            if (typeof loadCatFormula === 'function') {
+                loadCatFormula();
+            }
+        }
+    </script>
+</body>
+</html>

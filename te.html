@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Tracking</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .search-container {
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        
+        .search-input {
+            border: none;
+            outline: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            width: 100%;
+            border-radius: 25px;
+        }
+        
+        .search-icon {
+            color: #6c757d;
+            font-size: 18px;
+            margin-left: 15px;
+        }
+        
+        .order-number {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 20px 0;
+        }
+        
+        .stage-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stage-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-width: 280px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stage-header {
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .scl-header {
+            background: #28a745;
+        }
+        
+        .gmc-header {
+            background: #28a745;
+        }
+        
+        .stage-connector {
+            position: absolute;
+            top: 50%;
+            right: -30px;
+            width: 60px;
+            height: 4px;
+            background: #28a745;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+        
+        .stage-connector::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 12px solid #28a745;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+        
+        .stage-card:last-child .stage-connector {
+            display: none;
+        }
+        
+        .quantity-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .quantity-item {
+            text-align: center;
+        }
+        
+        .quantity-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .quantity-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .time-info {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .detail-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .detail-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+        
+        .detail-table-container {
+            background: rgba(173, 216, 230, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: none;
+        }
+        
+        .detail-table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .detail-table-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+        
+        .detail-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .detail-table th {
+            background: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 12px 8px;
+            text-align: center;
+            border: none;
+        }
+        
+        .detail-table td {
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 13px;
+            border: none;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .detail-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .filter-dropdown {
+            margin-bottom: 15px;
+        }
+        
+        .filter-select {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        
+        @media (max-width: 768px) {
+            .stage-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .stage-connector {
+                display: none;
+            }
+            
+            .stage-card {
+                min-width: 100%;
+                max-width: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Search Section -->
+        <div class="search-container d-flex align-items-center">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" placeholder="Tìm kiếm WS" value="">
+        </div>
+        
+        <!-- Order Number -->
+        <div class="order-number">
+            SỐ WS: 2139221-O
+        </div>
+        
+        <!-- Stages -->
+        <div class="stage-container">
+            <!-- SCL Stage -->
+            <div class="stage-card">
+                <div class="stage-connector "></div>
+                <div class="stage-header scl-header">SCL</div>
+                
+                <div class="mb-3">
+                    <div class="fw-bold mb-2" style="font-size: 13px;">SL (Kg):</div>
+                    <div class="quantity-row">
+                        <div class="quantity-item">
+                            <div class="quantity-label">NK1</div>
+                            <div class="quantity-value">200</div>
+                        </div>
+                        <div class="quantity-item">
+                            <div class="quantity-label">NK2</div>
+                            <div class="quantity-value">120</div>
+                        </div>
+                        <div class="quantity-item">
+                            <div class="quantity-label">NK3</div>
+                            <div class="quantity-value">321</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="time-info">
+                    Thời gian bắt đầu: 04:49:21
+                </div>
+                <div class="time-info">
+                    Thời gian kết thúc: 22:33:11
+                </div>
+                
+                <div class="text-center mt-auto">
+                    <button class="btn detail-btn" onclick="showDetail('scl')">Xem chi tiết</button>
+                </div>
+            </div>
+            
+            <!-- GMC Stage -->
+            <div class="stage-card">
+                <div class="stage-header gmc-header">GMC</div>
+                
+                <div class="mb-3">
+                    <div class="fw-bold mb-2" style="font-size: 13px;">SL (Kg):</div>
+                    <div class="text-center">
+                        <div class="quantity-value">641</div>
+                    </div>
+                </div>
+                
+                <div class="time-info">
+                    Thời gian bắt đầu: 05:49:01
+                </div>
+                <div class="time-info">
+                    Thời gian kết thúc:
+                </div>
+                
+                <div class="text-center mt-auto">
+                    <button class="btn detail-btn" onclick="showDetail('gmc')">Xem chi tiết</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detail Table Container -->
+        <div id="detailContainer" class="detail-table-container">
+            <div class="detail-table-header">
+                <h5 id="detailTitle" class="detail-table-title">CHI TIẾT CÔNG ĐOẠN SCL</h5>
+                <button class="close-btn" onclick="closeDetail()">ĐÓNG</button>
+            </div>
+            
+            <div class="filter-dropdown">
+                <select class="filter-select">
+                    <option>LỌC THEO MÁY</option>
+                    <option>SCL1</option>
+                    <option>SCL2</option>
+                </select>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table detail-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>MÁY</th>
+                            <th>SỐ PHIẾU</th>
+                            <th>TLN</th>
+                            <th>KHỔ 1</th>
+                            <th>KHỔ 2</th>
+                            <th>KHỔ 3</th>
+                            <th>NHẬP KHO 1</th>
+                            <th>NHẬP KHO 2</th>
+                            <th>NHẬP KHO 3</th>
+                            <th>TG BẮT ĐẦU</th>
+                            <th>TG KẾT THÚC</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailTableBody">
+                        <tr>
+                            <td>SCL1</td>
+                            <td>PSC0001</td>
+                            <td>200</td>
+                            <td>564</td>
+                            <td>123</td>
+                            <td>231</td>
+                            <td>324</td>
+                            <td>324</td>
+                            <td>352</td>
+                            <td>11:02:34</td>
+                            <td>21:04:41</td>
+                        </tr>
+                        <tr>
+                            <td>SCL1</td>
+                            <td>PSC0001</td>
+                            <td>200</td>
+                            <td>564</td>
+                            <td>123</td>
+                            <td>231</td>
+                            <td>324</td>
+                            <td>324</td>
+                            <td>352</td>
+                            <td>11:02:34</td>
+                            <td>21:04:41</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Nút mở modal -->
+<button id="openModal" class="btn btn-primary">Mở Modal</button>
+
+<!-- Modal -->
+<div class="modal fade" id="customModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Tiêu đề Modal</h5>
+        <!-- Nút đóng mặc định (nếu muốn ẩn thì xóa đi) -->
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <p>Nội dung modal ở đây...</p>
+      </div>
+
+      <div class="modal-footer">
+        <button id="customClose" class="btn btn-danger">Đóng modal (custom JS)</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script>
+    document.getElementById('openModal').addEventListener('click', function () {
+      const modal = new bootstrap.Modal(document.getElementById('customModal'));
+      modal.show();
+  
+      // Gán modal instance để dùng lại khi bấm đóng
+      window.currentModalInstance = modal;
+    });
+  
+    document.getElementById('customClose').addEventListener('click', function () {
+      if (window.currentModalInstance) {
+        window.currentModalInstance.hide();
+      }
+    });
+  </script>
+  
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sample data for different stages
+        const stageData = {
+            scl: {
+                title: 'CHI TIẾT CÔNG ĐOẠN SCL',
+                data: [
+                    {
+                        may: 'SCL1',
+                        soPhieu: 'PSC0001',
+                        tln: '200',
+                        kho1: '564',
+                        kho2: '123',
+                        kho3: '231',
+                        nhapKho1: '324',
+                        nhapKho2: '324',
+                        nhapKho3: '352',
+                        tgBatDau: '11:02:34',
+                        tgKetThuc: '21:04:41'
+                    },
+                    {
+                        may: 'SCL1',
+                        soPhieu: 'PSC0001',
+                        tln: '200',
+                        kho1: '564',
+                        kho2: '123',
+                        kho3: '231',
+                        nhapKho1: '324',
+                        nhapKho2: '324',
+                        nhapKho3: '352',
+                        tgBatDau: '11:02:34',
+                        tgKetThuc: '21:04:41'
+                    }
+                ]
+            },
+            gmc: {
+                title: 'CHI TIẾT CÔNG ĐOẠN GMC',
+                data: [
+                    {
+                        may: 'GMC1',
+                        soPhieu: 'GMC0001',
+                        tln: '180',
+                        kho1: '432',
+                        kho2: '156',
+                        kho3: '278',
+                        nhapKho1: '289',
+                        nhapKho2: '298',
+                        nhapKho3: '310',
+                        tgBatDau: '05:49:01',
+                        tgKetThuc: '18:22:15'
+                    },
+                    {
+                        may: 'GMC2',
+                        soPhieu: 'GMC0002',
+                        tln: '165',
+                        kho1: '398',
+                        kho2: '142',
+                        kho3: '255',
+                        nhapKho1: '276',
+                        nhapKho2: '285',
+                        nhapKho3: '293',
+                        tgBatDau: '06:15:30',
+                        tgKetThuc: '19:45:22'
+                    }
+                ]
+            }
+        };
+
+        function showDetail(stage) {
+            const detailContainer = document.getElementById('detailContainer');
+            const detailTitle = document.getElementById('detailTitle');
+            const detailTableBody = document.getElementById('detailTableBody');
+            
+            // Update title
+            detailTitle.textContent = stageData[stage].title;
+            
+            // Clear and populate table
+            detailTableBody.innerHTML = '';
+            stageData[stage].data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.may}</td>
+                    <td>${row.soPhieu}</td>
+                    <td>${row.tln}</td>
+                    <td>${row.kho1}</td>
+                    <td>${row.kho2}</td>
+                    <td>${row.kho3}</td>
+                    <td>${row.nhapKho1}</td>
+                    <td>${row.nhapKho2}</td>
+                    <td>${row.nhapKho3}</td>
+                    <td>${row.tgBatDau}</td>
+                    <td>${row.tgKetThuc}</td>
+                `;
+                detailTableBody.appendChild(tr);
+            });
+            
+            // Show detail container with animation
+            detailContainer.style.display = 'block';
+            setTimeout(() => {
+                detailContainer.style.opacity = '1';
+                detailContainer.style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        function closeDetail() {
+            const detailContainer = document.getElementById('detailContainer');
+            detailContainer.style.opacity = '0';
+            detailContainer.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                detailContainer.style.display = 'none';
+            }, 300);
+        }
+
+        // Initialize detail container styles
+        document.addEventListener('DOMContentLoaded', function() {
+            const detailContainer = document.getElementById('detailContainer');
+            detailContainer.style.opacity = '0';
+            detailContainer.style.transform = 'translateY(20px)';
+            detailContainer.style.transition = 'all 0.3s ease';
+        });
+
+        // Search functionality
+        document.querySelector('.search-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                // Add search functionality here
+                console.log('Searching for:', this.value);
+            }
+        });
+    </script>
+</body>
+</html>

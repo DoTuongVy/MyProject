@@ -1,0 +1,2090 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Quản trị hệ thống - Quản lý Vật tư</title>
+        <link rel="stylesheet" href="./admin.css">
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+        <style>
+                /* Loading Overlay Styles */
+                .loading-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(244, 246, 249, 0.356);
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 9999;
+                    opacity: 0;
+                    visibility: hidden;
+                    transition: all 0.3s ease;
+                    backdrop-filter: blur(2px);
+                }
+                
+                .loading-overlay.show {
+                    opacity: 1;
+                    visibility: visible;
+                }
+                
+                .loading-spinner {
+                    width: 50px;
+                    height: 50px;
+                    border: 4px solid #e0e6ed;
+                    border-top: 4px solid #3498db;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin-bottom: 20px;
+                }
+                
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                
+                .loading-text {
+                    font-size: 16px;
+                    color: #2c3e50;
+                    font-weight: 500;
+                    margin-bottom: 10px;
+                }
+                
+                .loading-subtext {
+                    font-size: 14px;
+                    color: #666;
+                    opacity: 0.7;
+                }
+                
+                /* Tab transition effects */
+                .content-tab {
+                    opacity: 1;
+                    transform: translateY(0);
+                    transition: all 0.3s ease;
+                }
+                
+                .content-tab.fade-out {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                
+                .content-tab.fade-in {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+                
+                /* Sidebar loading indicator */
+                .sidebar-nav li.loading {
+                    position: relative;
+                    pointer-events: none;
+                }
+                
+                .sidebar-nav li.loading::after {
+                    content: '';
+                    position: absolute;
+                    right: 15px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 12px;
+                    height: 12px;
+                    border: 2px solid rgba(255,255,255,0.3);
+                    border-top: 2px solid white;
+                    border-radius: 50%;
+                    animation: spin 0.8s linear infinite;
+                }
+
+                /* Styles cho giao diện người dùng tích hợp */
+                .user-interface-container {
+                    padding: 20px;
+                    background-color: #f4f6f9;
+                    min-height: 100vh;
+                }
+
+                .user-interface-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                    background-color: white;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                }
+
+                .systems-container {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                    gap: 20px;
+                    margin-top: 20px;
+                }
+
+                .system-card {
+                    background-color: white;
+                    border-radius: 8px;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                    padding: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    transition: transform 0.3s, box-shadow 0.3s;
+                    cursor: pointer;
+                }
+
+                .system-card:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                }
+
+                .system-icon {
+                    font-size: 48px;
+                    margin-bottom: 15px;
+                    color: #4285f4;
+                }
+
+                .system-name {
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    text-align: center;
+                }
+
+                .system-description {
+                    font-size: 14px;
+                    color: #666;
+                    text-align: center;
+                }
+
+                .modules-container {
+                    display: none;
+                    margin-top: 20px;
+                }
+
+                .modules-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                }
+
+                /* .modules-list {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                    gap: 15px;
+                } */
+
+                .module-card {
+                    background-color: white;
+                    border-radius: 8px;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                    padding: 15px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    transition: transform 0.3s, box-shadow 0.3s;
+                    cursor: pointer;
+                }
+
+                .module-card:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+                }
+
+                .module-icon {
+                    font-size: 36px;
+                    margin-bottom: 10px;
+                    color: #4285f4;
+                }
+
+                .module-name {
+                    font-size: 16px;
+                    font-weight: bold;
+                    margin-bottom: 5px;
+                    text-align: center;
+                }
+
+                .back-button {
+                    background-color: #f1f1f1;
+                    color: #333;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    font-size: 14px;
+                }
+
+                .back-button:hover {
+                    background-color: #e0e0e0;
+                }
+
+                /* Ẩn top-bar cho tab user-interface */
+                #user-interface-tab .top-bar {
+                    display: none !important;
+                }
+
+                .main-content {
+    flex: 1;
+    padding: 0px 20px;
+    background-color: #f4f6f9;
+    overflow-y: auto;
+    /* THÊM DÒNG SAU */
+    margin-left: 250px;
+}
+
+
+.production-user-item:hover {
+    background: #e9ecef !important;
+}
+
+.search-results > div:hover {
+    background: #f8f9fa;
+}
+
+.position-card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.position-card:hover {
+    transform: translateY(-2px);
+}
+
+                </style>
+
+    </head>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <body>
+        <div class="admin-container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header"
+                    style="display: flex; justify-content: space-between; align-items: center;">
+                    <!-- <h1 class="mt-2">Quản trị viên</h1> -->
+                     <img src="../icon.gif" width="25%" alt="">
+                    <!-- <img class="imglogo" src="../logo.png" width="100%" alt=""> -->
+                    <div class="sidebar-toggle">
+                        <button id="sidebar-toggle-btn">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <h3 id="admin-name">Admin</h3>
+                        <p>Quản trị viên</p>
+                    </div>
+                </div> -->
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li class="active" data-tab="dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Tổng quan</span>
+                        </li>
+                        <li data-tab="system-management">
+                            <i class="fas fa-cogs"></i>
+                            <span>Hệ thống phần mềm</span>
+                        </li>
+                        <li data-tab="users">
+                            <i class="fas fa-users"></i>
+                            <span>Quản lý người dùng</span>
+                        </li>
+                        <li data-tab="departments">
+                            <i class="fas fa-building"></i>
+                            <span>Phòng ban</span>
+                        </li>
+                        <li data-tab="permissions">
+                            <i class="fas fa-lock"></i>
+                            <span>Phân quyền</span>
+                        </li>
+                        <li data-tab="master-data">
+                            <i class="fas fa-database"></i>
+                            <span>Master Data</span>
+                        </li>
+                        <li data-tab="planning">
+                            <i class="fas fa-cloud"></i>
+                            <span>Planning</span>
+                        </li>
+                        <!-- <li id="logout-btn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Đăng xuất</span>
+                        </li> -->
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- Main content -->
+            <div class="main-content">
+                <div class="top-bar">
+                    <div class="search-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Tìm kiếm...">
+                    </div>
+                    <div class="top-bar-actions">
+                        <div class="notification">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge">0</span>
+                        </div>
+                        <div class="profile-dropdown">
+                            <!-- <img src="https://via.placeholder.com/40" alt="Profile"> -->
+                            <span>Admin</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Tab -->
+                <div class="content-tab active" id="dashboard-tab">
+                    <div class="content-header">
+                        <h2>Tổng quan hệ thống</h2>
+                    </div>
+                    <div class="stats-cards">
+                        <div class="stats-card">
+                            <div class="stats-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h3>Người dùng</h3>
+                                <p id="user-count">0</p>
+                            </div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h3>Phòng ban</h3>
+                                <p id="department-count">4</p>
+                            </div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h3>Phiếu sang cuộn</h3>
+                                <p id="sc-count">0</p>
+                            </div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h3>Phiếu cắt</h3>
+                                <p id="cat-count">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="content-tab" id="system-management-tab">
+                    <div class="content-header">
+                        <h2>Quản lý Hệ thống Phần mềm</h2>
+                        <div>
+                            <button class="btn-primary" id="add-system-btn">
+                                <i class="fas fa-plus"></i> Thêm hệ thống
+                            </button>
+                            <button class="btn-secondary" id="add-module-btn">
+                                <i class="fas fa-plus"></i> Thêm module
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Nested Sortable Container -->
+                    <div class="nested-sortable-container"
+                        id="nested-systems-container">
+                        <!-- Các hệ thống và module sẽ được load vào đây -->
+                    </div>
+                </div>
+
+                <!-- Add/Edit System Modal -->
+                <div class="modal" id="system-modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="system-modal-title">Thêm hệ thống mới</h3>
+                            <span class="close-modal">&times;</span>
+                        </div>
+                        <div class="modal-body">
+                            <form id="system-form">
+                                <input type="hidden" id="system-id">
+                                <div class="form-group">
+                                    <label for="system-name">Tên hệ thống <span
+                                            class="required">*</span></label>
+                                    <input type="text" id="system-name"
+                                        required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="system-description">Mô
+                                        tả</label>
+                                    <textarea id="system-description"
+                                        rows="3"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="system-icon">Icon (CSS class
+                                        hoặc URL)</label>
+                                    <input type="text" id="system-icon"
+                                        placeholder="fas fa-cogs hoặc https://...">
+                                </div>
+                                <div class="modal-actions">
+                                    <button type="submit" class="btn-primary"
+                                        id="save-system-btn">Lưu</button>
+                                    <button type="button" class="btn-secondary"
+                                        id="cancel-system-btn">Hủy</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add/Edit Module Modal -->
+                <div class="modal" id="module-modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="module-modal-title">Thêm module mới</h3>
+                            <span class="close-modal">&times;</span>
+                        </div>
+                        <div class="modal-body">
+                            <form id="module-form">
+                                <input type="hidden" id="module-id">
+                                <div class="form-group">
+                                    <label for="module-system">Hệ thống <span
+                                            class="required">*</span></label>
+                                    <select id="module-system" required>
+                                        <option value>-- Chọn hệ thống
+                                            --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="module-name">Tên module <span
+                                            class="required">*</span></label>
+                                    <input type="text" id="module-name"
+                                        required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="module-description">Mô
+                                        tả</label>
+                                    <textarea id="module-description"
+                                        rows="3"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="module-path">Đường dẫn <span
+                                            class="required">*</span></label>
+                                    <input type="text" id="module-path" required
+                                        placeholder="/path/to/module">
+                                </div>
+                                <div class="form-group">
+                                    <label for="module-icon">Icon (CSS class
+                                        hoặc URL)</label>
+                                    <input type="text" id="module-icon"
+                                        placeholder="fas fa-cube hoặc https://...">
+                                </div>
+                                <div class="modal-actions">
+                                    <button type="submit" class="btn-primary"
+                                        id="save-module-btn">Lưu</button>
+                                    <button type="button" class="btn-secondary"
+                                        id="cancel-module-btn">Hủy</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div class="content-tab" id="users-tab">
+                    <div class="content-header">
+                        <h2>Quản lý người dùng</h2>
+                        <button class="btn-primary" id="add-user-btn">
+                            <i class="fas fa-plus"></i> Thêm người dùng
+                        </button>
+                    </div>
+
+                    <!-- Tabs cho từng nhà máy -->
+                    <div class="user-factory-tabs">
+                        <div class="tabs">
+                            <div class="tab active"
+                                data-factory-tab="all-users">Tất cả người
+                                dùng</div>
+                            <div class="tab" data-factory-tab="vsp-users">Nhà
+                                máy 1+2</div>
+                            <div class="tab" data-factory-tab="pvn-users">Nhà
+                                máy 3</div>
+                        </div>
+                    </div>
+
+                    <div class="user-filters">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="user-search"
+                                placeholder="Tìm kiếm người dùng...">
+                        </div>
+                        <div class="filter-options">
+                            <select id="department-filter">
+                                <option value>Tất cả phòng ban</option>
+                                <option value="Quản lý vật tư">Quản lý vật
+                                    tư</option>
+                                <option value="R&D">R&D</option>
+                                <option value="QC">QC</option>
+                                <option value="In Offset">In Offset</option>
+                            </select>
+                            <select id="role-filter">
+                                <option value>Tất cả vai trò</option>
+                                <option value="admin">Admin</option>
+                                <option value="user">User</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="users-table">
+                            <thead>
+                                <tr>
+                                    <!-- <th>ID</th> -->
+                                    <th>Mã nhân viên</th>
+                                    <th>Họ tên</th>
+                                    <th>Vai trò</th>
+                                    <th>Phòng ban</th>
+                                    <th>Chức vụ</th>
+                                    <th>Nhà máy</th>
+                                    <th>Ca</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-list">
+                                <!-- Dữ liệu người dùng sẽ được thêm ở đây bằng JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Departments Tab -->
+                <div class="content-tab" id="departments-tab">
+                    <div class="content-header">
+                        <h2>Quản lý phòng ban</h2>
+                        <button class="btn-primary" id="add-department-btn">
+                            <i class="fas fa-plus"></i> Thêm phòng ban
+                        </button>
+                    </div>
+
+                    <div class="departments-list">
+                        <!-- Department cards here -->
+                    </div>
+                </div>
+
+                <!-- Keep ONLY ONE department modal -->
+                <div class="modal" id="department-modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="department-modal-title">Thêm phòng ban
+                                mới</h3>
+                            <span class="close-modal">&times;</span>
+                        </div>
+                        <div class="modal-body">
+                            <form id="department-form">
+                                <input type="hidden" id="department-id">
+                                <div class="form-group">
+                                    <label for="department-name">Tên phòng ban
+                                        <span class="required">*</span></label>
+                                    <input type="text" id="department-name"
+                                        required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="department-description">Mô
+                                        tả</label>
+                                    <textarea id="department-description"
+                                        rows="3"></textarea>
+                                </div>
+                                <div class="modal-actions">
+                                    <button type="submit" class="btn-primary"
+                                        id="save-department-btn">Lưu</button>
+                                    <button type="button" class="btn-secondary"
+                                        id="cancel-department-btn">Hủy</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permissions Tab -->
+                <div class="content-tab" id="permissions-tab">
+                    <div class="content-header">
+                        <h2>Phân quyền hệ thống</h2>
+                    </div>
+
+                    <div class="permissions-tabs">
+                        <div class="tabs">
+                            <div class="tab active"
+                                data-permission-tab="department-permissions">Phân
+                                quyền theo phòng ban</div>
+                            <div class="tab"
+                                data-permission-tab="user-permissions">Phân
+                                quyền theo người dùng</div>
+                        </div>
+
+                        <!-- Tab phân quyền theo phòng ban -->
+                        <div class="permissions-content active"
+                            id="department-permissions-content">
+                            <h3>Phân quyền theo phòng ban</h3>
+                            <div class="table-container"
+                                style="overflow-x: auto; max-width: 100%;">
+                                <table id="department-permissions-table"
+                                    class="table table-bordered">
+                                    <thead>
+                                        <!-- Header sẽ được thêm bởi JavaScript -->
+                                    </thead>
+                                    <tbody>
+                                        <!-- Dữ liệu sẽ được thêm bởi JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="actions-container"
+                                style="margin-top: 20px;">
+                                <!-- <button class="btn-primary" id="save-department-permissions">Lưu thay đổi</button> -->
+                            </div>
+                        </div>
+
+                        <!-- Tab phân quyền theo người dùng -->
+                        <div class="permissions-content"
+                            id="user-permissions-content">
+                            <h3>Phân quyền theo người dùng</h3>
+                            <div class="user-selector">
+                                <label for="department-permission-select">Chọn
+                                    phòng ban:</label>
+                                <select id="department-permission-select">
+                                    <option value>-- Chọn phòng ban --</option>
+                                    <!-- Danh sách phòng ban sẽ được thêm bằng JavaScript -->
+                                </select>
+                            </div>
+
+                            <div class="user-permissions-container"
+                                style="display: none; margin-top: 20px; overflow-x: auto; max-width: 100%;">
+                                <!-- Bảng quyền người dùng sẽ được thêm bởi JavaScript -->
+                            </div>
+
+                            <div class="permissions-legend"
+                                style="margin-top: 20px; background-color: #f8f9fa; padding: 15px; border-radius: 5px; display: none;">
+                                <h4>Chú thích:</h4>
+                                <div
+                                    style="display: flex; flex-wrap: wrap; gap: 20px;">
+                                    <div>
+                                        <i class="fas fa-eye text-success"></i>
+                                        - Quyền xem
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-pen text-success"></i>
+                                        - Quyền sửa/thêm
+                                    </div>
+                                    <div>
+                                        <i
+                                            class="fas fa-trash text-success"></i>
+                                        - Quyền xóa
+                                    </div>
+                                </div>
+                                <div
+                                    style="margin-top: 10px; font-style: italic; color: #666;">
+                                    Click vào biểu tượng để bật/tắt quyền tương
+                                    ứng
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Master Data Tab -->
+                <div class="content-tab" id="master-data-tab">
+                    <div class="content-header">
+                        <h2>Master Data</h2>
+                    </div>
+
+                    <div class="setting-section">
+                        <!-- <h3>Danh mục Master Data</h3> -->
+                        <div class="setting-group">
+                            <div class="tabs">
+                                <div class="tab active"
+                                    data-master-tab="customer">Danh mục khách
+                                    hàng</div>
+                                <div class="tab" data-master-tab="dinh-muc">Định
+                                    mức</div>
+                            </div>
+
+                            <!-- Tab nội dung danh mục khách hàng -->
+                            <div class="master-content active"
+                                id="customer-content">
+                                <div class="import-area">
+                                    <div class="import-header">
+                                        <h4>Danh sách khách hàng</h4>
+                                        <div class="import-buttons">
+                                            <button class="btn-primary"
+                                                id="import-excel-btn">
+                                                <i
+                                                    class="fas fa-file-excel"></i>
+                                                Nhập từ Excel
+                                            </button>
+                                            <input type="file"
+                                                id="excel-file-input"
+                                                accept=".xlsx, .xls"
+                                                style="display: none;">
+                                        </div>
+                                    </div>
+                                    <div class="table-container">
+                                        <table id="customers-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Mã khách</th>
+                                                    <th>Tên khách hàng</th>
+                                                    <th>Tên khác</th>
+                                                    <th>Thao tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="customers-list">
+                                                <!-- Dữ liệu khách hàng sẽ được thêm ở đây -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab nội dung định mức -->
+                            <div class="master-content" id="dinh-muc-content">
+                                <div class="import-area">
+                                    <div class="import-header">
+                                        <h4>Danh sách định mức</h4>
+                                        <div class="import-buttons">
+                                            <button class="btn-primary"
+                                                id="import-dinh-muc-excel-btn">
+                                                <i
+                                                    class="fas fa-file-excel"></i>
+                                                Nhập từ Excel
+                                            </button>
+                                            <input type="file"
+                                                id="dinh-muc-excel-input"
+                                                accept=".xlsx, .xls"
+                                                style="display: none;">
+                                        </div>
+                                    </div>
+                                    <div class="table-container">
+                                        <table id="dinh-muc-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Mã giấy</th>
+                                                    <th>Định lượng</th>
+                                                    <th>Số tờ/pallet GMC 1</th>
+                                                    <th>Độ dày giấy GMC 1
+                                                        (mm)</th>
+                                                    <th>Chiều cao pallet GMC
+                                                        1</th>
+                                                    <th>11 kí tự GMC 1</th>
+                                                    <th>Mã giấy GMC 2</th>
+                                                    <th>Định lượng GMC 2</th>
+                                                    <th>Số tờ/pallet GMC 2</th>
+                                                    <th>Độ dày giấy GMC 2
+                                                        (mm)</th>
+                                                    <th>Chiều cao pallet GMC
+                                                        2</th>
+                                                    <th>11 kí tự GMC 2</th>
+                                                    <th>Thao tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="dinh-muc-list">
+                                                <!-- Dữ liệu định mức sẽ được thêm ở đây -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+                <!-- Planning Tab -->
+<div class="content-tab" id="planning-tab">
+    <div class="content-header">
+        <h2>PLANNING</h2>
+    </div>
+
+    <div class="planning-tabs">
+        <div class="tabs">
+            <div class="tab active" data-planning-tab="ws-tong-planning">WS Tổng</div>
+        </div>
+
+        <!-- Tab ws tổng -->
+        <div class="planning-content active" id="ws-tong-planning-content">
+            <h3>WS Tổng</h3>
+            
+            <!-- Nút import Excel -->
+            <div class="import-header">
+                <div class="import-buttons">
+                    <button class="btn-primary" id="import-ws-tong-excel-btn">
+                        <i class="fas fa-file-excel"></i>
+                        Nhập từ Excel
+                    </button>
+                    <input type="file" id="ws-tong-excel-input" accept=".xlsx, .xls" style="display: none;">
+                </div>
+            </div>
+
+            <!-- Bảng dữ liệu WS Tổng -->
+            <div class="table-container" style="overflow: auto; max-height: 70vh; width: 100%;">
+                <table id="ws-tong-table" class="table table-striped table-hover table-bordered text-center" style="min-width: 4500px; width: max-content;">
+                    <thead class="table-light" style="position: sticky; top: 0; z-index: 10;">
+                        <tr>
+                            <th class="text-nowrap" style="min-width: 100px;">SỐ WS</th>
+                            <th class="text-nowrap" style="min-width: 100px;">SỐ PO</th>
+                            <th class="text-nowrap" style="min-width: 150px;">K.HÀNG</th>
+                            <th class="text-nowrap" style="min-width: 120px;">MÃ SP</th>
+                            <th class="text-nowrap" style="min-width: 100px;">SL ĐH</th>
+                            <th class="text-nowrap" style="min-width: 100px;">S.CON</th>
+                            <th class="text-nowrap" style="min-width: 120px;">SỐ MÀU IN</th>
+                            <th class="text-nowrap" style="min-width: 150px;">MÃ KHUÔN BẾ ĐỨT</th>
+                            <th class="text-nowrap" style="min-width: 150px;">MÃ KHUÔN BẾ NỔI</th>
+                            <th class="text-nowrap" style="min-width: 120px;">BẾ NỔI - BẾ ĐỨT</th>
+                            <th class="text-nowrap" style="min-width: 120px;">LOẠI CÁN PHỦ</th>
+                            <th class="text-nowrap" style="min-width: 120px;">MÀNG ACETAT</th>
+                            <th class="text-nowrap" style="min-width: 120px;">QC DÁN LG</th>
+                            <th class="text-nowrap" style="min-width: 120px;">QC ĐÓNG GÓI</th>
+                            <th class="text-nowrap" style="min-width: 150px;">THÙNG OR GIẤY GÓI</th>
+                            <th class="text-nowrap" style="min-width: 120px;">LOẠI GIẤY</th>
+                            <th class="text-nowrap" style="min-width: 100px;">KHỔ</th>
+                            <th class="text-nowrap" style="min-width: 100px;">CHẶT</th>
+                            <th class="text-nowrap" style="min-width: 100px;">KG</th>
+                            <th class="text-nowrap" style="min-width: 120px;">LOẠI GIẤY</th>
+                            <th class="text-nowrap" style="min-width: 120px;">KHỔ GIẤY</th>
+                            <th class="text-nowrap" style="min-width: 100px;">KG</th>
+                            <th class="text-nowrap" style="min-width: 120px;">LOẠI GIẤY</th>
+                            <th class="text-nowrap" style="min-width: 120px;">KHỔ GIẤY</th>
+                            <th class="text-nowrap" style="min-width: 100px;">KG</th>
+                            <th class="text-nowrap" style="min-width: 100px;">CHẶT</th>
+                            <th class="text-nowrap" style="min-width: 100px;">KHỔ</th>
+                            <th class="text-nowrap" style="min-width: 100px;">CHẶT</th>
+                            <th class="text-nowrap" style="min-width: 100px;">KHỔ</th>
+                            <th class="text-nowrap" style="min-width: 120px;">LOẠI SÓNG</th>
+                            <th class="text-nowrap" style="min-width: 100px;">CHẶT</th>
+                            <th class="text-nowrap" style="min-width: 100px;">KHỔ</th>
+                            <th class="text-nowrap" style="min-width: 100px;">CHẶT</th>
+                            <th class="text-nowrap" style="min-width: 100px;">KHỔ</th>
+                            <th class="text-nowrap" style="min-width: 180px;">CÔNG ĐOẠN SẢN XUẤT</th>
+                            <th class="text-nowrap" style="min-width: 150px;">NGÀY NHẬN WS</th>
+                            <th class="text-nowrap" style="min-width: 150px;">SL GIẤY CẦN CẮT</th>
+                            <th class="text-nowrap" style="min-width: 180px;">CÔNG ĐOẠN SẢN XUẤT</th>
+                            <th class="text-nowrap" style="min-width: 120px;">SL BÙ HAO IN</th>
+                            <th class="text-nowrap" style="min-width: 150px;">SL BÙ HAO T.Phẩm</th>
+                            <th class="text-nowrap" style="min-width: 100px;">SL GIẤY</th>
+                            <th class="text-nowrap" style="min-width: 120px;">SL CẮT GIẤY</th>
+                            <th class="text-nowrap" style="min-width: 120px;">SL GIẤY KH</th>
+                            <th class="text-nowrap" style="min-width: 120px;">GIA CÔNG IN</th>
+                            <th class="text-nowrap" style="min-width: 150px;">GIA CÔNG ÉP KIM</th>
+                            <th class="text-nowrap" style="min-width: 150px;">GIA CÔNG CÁN PHỦ</th>
+                            <th class="text-nowrap" style="min-width: 120px;">GIA CÔNG BẾ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ws-tong-list">
+                        <!-- Dữ liệu WS Tổng sẽ được thêm ở đây -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal preview WS Tổng -->
+<div id="ws-tong-preview-modal" class="modal-preview">
+    <div class="modal-preview-content" style="max-width: 95vw;">
+        <div class="modal-preview-header">
+            <h3>Xem trước dữ liệu WS Tổng</h3>
+            <span class="close-modal-preview" id="close-ws-tong-preview">&times;</span>
+        </div>
+        <div class="modal-preview-body">
+            <div class="table-container" style="overflow: auto; max-height: 60vh;">
+                <table id="ws-tong-preview-table" style="width: 100%; min-width: 3000px; border-collapse: collapse;">
+                    <thead style="position: sticky; top: 0; background: white;">
+                        <tr>
+                            <!-- Sử dụng cùng cấu trúc header như bảng chính -->
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">SỐ WS</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">SỐ PO</th>
+                            <th style="min-width: 120px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">K.HÀNG</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">MÃ SP</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">SL ĐH</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">S.CON</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">SỐ MÀU IN</th>
+                            <th style="min-width: 120px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">MÃ KHUÔN BẾ ĐỨT</th>
+                            <th style="min-width: 120px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">MÃ KHUÔN BẾ NỔI</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">BẾ NỔI - BẾ ĐỨT</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">LOẠI CÁN PHỦ</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">MÀNG ACETAT</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">QC DÁN LG</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">QC ĐÓNG GÓI</th>
+                            <th style="min-width: 120px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">THÙNG OR GIẤY GÓI</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">LOẠI GIẤY 1</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">KHỔ 1</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">CHẶT 1</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">KG 1</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">LOẠI GIẤY 2</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">KHỔ GIẤY 2</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">KG 2</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">LOẠI GIẤY 3</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">KHỔ GIẤY 3</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">KG 3</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">CHẶT 3</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">KHỔ 3</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">CHẶT 4</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">KHỔ 4</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">LOẠI SÓNG</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">CHẶT 5</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">KHỔ 5</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">CHẶT 6</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">KHỔ 6</th>
+                            <th style="min-width: 150px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">CÔNG ĐOẠN SẢN XUẤT 1</th>
+                            <th style="min-width: 120px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">NGÀY NHẬN WS</th>
+                            <th style="min-width: 120px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">SL GIẤY CẦN CẮT</th>
+                            <th style="min-width: 150px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">CÔNG ĐOẠN SẢN XUẤT 2</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">SL BÙ HAO IN</th>
+                            <th style="min-width: 120px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">SL BÙ HAO T.Phẩm</th>
+                            <th style="min-width: 80px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">SL GIẤY</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">SL CẮT GIẤY</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">SL GIẤY KH</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">GIA CÔNG IN</th>
+                            <th style="min-width: 120px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">GIA CÔNG ÉP KIM</th>
+                            <th style="min-width: 120px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">GIA CÔNG CÁN PHỦ</th>
+                            <th style="min-width: 100px; border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">GIA CÔNG BẾ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ws-tong-preview-list">
+                        <!-- Dữ liệu xem trước sẽ được thêm ở đây -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-preview-footer">
+            <button class="btn-primary" id="save-ws-tong-btn">
+                <i class="fas fa-save"></i> Lưu vào hệ thống
+            </button>
+            <button class="btn-secondary" id="cancel-ws-tong-import-btn">Hủy</button>
+        </div>
+    </div>
+</div>
+
+
+
+
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <!-- Add/Edit User Modal -->
+        <div class="modal" id="user-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="user-modal-title">Thêm người dùng mới</h3>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="user-form">
+                        <input type="hidden" id="user-id">
+                        <div class="form-group">
+                            <label for="user-nha-may">Nhà máy <span
+                                    class="required">*</span></label>
+                            <select id="user-nha-may" required>
+                                <option value="Nhà máy 1+2">Nhà máy 1+2</option>
+                                <option value="Nhà máy 3">Nhà máy 3</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="user-employee-id">Mã nhân viên</label>
+                            <input type="text" id="user-employee-id" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label for="user-fullname">Họ tên <span
+                                    class="required">*</span></label>
+                            <input type="text" id="user-fullname" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="user-password">Mật khẩu <span
+                                    class="required">*</span></label>
+                            <div class="password-input-group">
+                                <input type="password" id="user-password"
+                                    required>
+                                <span class="password-toggle-modal"><i
+                                        class="fas fa-eye"></i></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="user-role">Vai trò <span
+                                    class="required">*</span></label>
+                            <select id="user-role" required>
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="user-department">Phòng ban</label>
+                            <select id="user-department">
+                                <option value>-- Chọn phòng ban --</option>
+                                <option value="Quản lý vật tư">Quản lý vật
+                                    tư</option>
+                                <option value="R&D">R&D</option>
+                                <option value="QC">QC</option>
+                                <option value="In Offset">In Offset</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="user-position">Chức vụ</label>
+                            <input type="text" id="user-position">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ca">Ca <span
+                                    class="required">*</span></label>
+                            <select id="ca" required>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="HC">HC</option>
+                            </select>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="submit" class="btn-primary"
+                                id="save-user-btn">Lưu</button>
+                            <button type="button" class="btn-secondary"
+                                id="cancel-user-btn">Hủy</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div class="modal" id="confirm-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="confirm-title">Xác nhận</h3>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p id="confirm-message">Bạn có chắc chắn muốn thực hiện hành
+                        động này?</p>
+                    <div class="modal-actions">
+                        <button class="btn-danger" id="confirm-yes">Có</button>
+                        <button class="btn-secondary"
+                            id="confirm-no">Không</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Department Modal -->
+        <div class="modal" id="department-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="department-modal-title">Thêm phòng ban mới</h3>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="department-form">
+                        <input type="hidden" id="department-id">
+                        <div class="form-group">
+                            <label for="department-name">Tên phòng ban <span
+                                    class="required">*</span></label>
+                            <input type="text" id="department-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="department-description">Mô tả</label>
+                            <textarea id="department-description"
+                                rows="3"></textarea>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="submit" class="btn-primary"
+                                id="save-department-btn">Lưu</button>
+                            <button type="button" class="btn-secondary"
+                                id="cancel-department-btn">Hủy</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal preview khách hàng -->
+        <div id="customer-preview-modal" class="modal-preview">
+            <div class="modal-preview-content">
+                <div class="modal-preview-header">
+                    <h3>Xem trước dữ liệu khách hàng</h3>
+                    <span class="close-modal-preview"
+                        id="close-customer-preview">&times;</span>
+                </div>
+                <div class="modal-preview-body">
+                    <div class="table-container">
+                        <table id="preview-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã khách</th>
+                                    <th>Tên khách hàng</th>
+                                    <th>Tên khác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="preview-list">
+                                <!-- Dữ liệu xem trước sẽ được thêm ở đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-preview-footer">
+                    <button class="btn-primary" id="save-customers-btn">
+                        <i class="fas fa-save"></i> Lưu vào hệ thống
+                    </button>
+                    <button class="btn-secondary"
+                        id="cancel-import-btn">Hủy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal preview định mức -->
+        <div id="dinh-muc-preview-modal" class="modal-preview">
+            <div class="modal-preview-content">
+                <div class="modal-preview-header">
+                    <h3>Xem trước dữ liệu định mức</h3>
+                    <span class="close-modal-preview"
+                        id="close-dinh-muc-preview">&times;</span>
+                </div>
+                <div class="modal-preview-body">
+                    <div class="table-container">
+                        <table id="dinh-muc-preview-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã giấy</th>
+                                    <th>Định lượng</th>
+                                    <th>Số tờ/pallet GMC 1</th>
+                                    <th>Độ dày giấy GMC 1 (mm)</th>
+                                    <th>Chiều cao pallet GMC 1</th>
+                                    <th>11 kí tự GMC 1</th>
+                                    <th>Mã giấy GMC 2</th>
+                                    <th>Định lượng GMC 2</th>
+                                    <th>Số tờ/pallet GMC 2</th>
+                                    <th>Độ dày giấy GMC 2 (mm)</th>
+                                    <th>Chiều cao pallet GMC 2</th>
+                                    <th>11 kí tự GMC 2</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dinh-muc-preview-list">
+                                <!-- Dữ liệu xem trước sẽ được thêm ở đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-preview-footer">
+                    <button class="btn-primary" id="save-dinh-muc-btn">
+                        <i class="fas fa-save"></i> Lưu vào hệ thống
+                    </button>
+                    <button class="btn-secondary"
+                        id="cancel-dinh-muc-import-btn">Hủy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Toast -->
+        <div class="toast" id="notification-toast">
+            <div class="toast-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="toast-content">
+                <p id="toast-message">Thao tác thành công!</p>
+            </div>
+            <div class="toast-close">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+
+        <!-- Loading overlay sẽ được thêm vào admin.html -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loading-text">Đang tải dữ
+                liệu...</div>
+            <div class="loading-subtext" id="loading-subtext">Vui lòng đợi trong
+                giây lát</div>
+        </div>
+
+        <!-- Modal chọn máy cho Admin -->
+        <div id="admin-machine-modal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 900px;">
+                <div class="modal-header">
+                    <h2 id="admin-machine-modal-title" class="m-auto">Chọn máy
+                        để truy cập</h2>
+                    <!-- <span class="close" id="admin-close-machine-modal">&times;</span> -->
+                    <button type="button" class="btn-close close"
+                        aria-label="Close"
+                        id="admin-close-machine-modal"></button>
+
+                </div>
+                <div class="modal-body">
+                    <!-- Header với thông tin module -->
+                    <div class="machine-modal-info"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div
+                            style="display: flex; align-items: center; gap: 15px;">
+                            <div class="module-icon-large"
+                                style="font-size: 48px;">
+                                <i id="admin-selected-module-icon"
+                                    class="fas fa-cube"></i>
+                            </div>
+                            <div>
+                                <h3 id="admin-selected-module-name"
+                                    style="margin: 0; font-size: 20px;">Module
+                                    Name</h3>
+                                <p id="admin-selected-module-description"
+                                    style="margin: 5px 0 0 0; opacity: 0.9;">Module
+                                    Description</p>
+                                <div style="margin-top: 5px;">
+                                    <span
+                                        style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 12px; font-size: 12px;">
+                                        <i class="fas fa-crown"></i> ADMIN
+                                        ACCESS
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div class="search-box"
+                            style="position: relative; flex: 1; max-width: 300px;">
+                            <input type="text" id="admin-machine-search"
+                                placeholder="Tìm kiếm máy..."
+                                style="width: 100%; padding: 10px 40px 10px 15px; border: 2px solid #e1e8ed; border-radius: 25px;">
+                            <!-- <i class="fas fa-search" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #95a5a6;"></i> -->
+                        </div>
+                        <button class="btn-primary"
+                            id="admin-manage-machines-btn"
+                            style="margin-left: 15px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-cogs"></i>
+                            Quản lý máy
+                        </button>
+                    </div>
+
+                    <!-- Machines Grid -->
+                    <div class="admin-machines-grid" id="admin-machines-grid"
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; max-height: 400px; overflow-y: auto;">
+                        <!-- Machines will be loaded here -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="admin-empty-machines" id="admin-empty-machines"
+                        style="display: none; text-align: center; padding: 40px 20px;">
+                        <i class="fas fa-industry"
+                            style="font-size: 48px; color: #bdc3c7; margin-bottom: 15px;"></i>
+                        <h3 style="color: #2c3e50; margin-bottom: 10px;">Chưa có
+                            máy nào</h3>
+                        <p style="color: #7f8c8d; margin-bottom: 20px;">Bấm
+                            "Quản lý máy" để thêm máy mới</p>
+                        <button class="btn-primary"
+                            onclick="document.getElementById('admin-manage-machines-btn').click()">
+                            <i class="fas fa-plus"></i> Thêm máy đầu tiên
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal quản lý máy cho Admin -->
+        <div id="admin-manage-machines-modal" class="modal"
+            style="display: none;">
+            <div class="modal-content" style="max-width: 1000px;">
+                <div class="modal-header">
+                    <h2>Quản lý máy móc</h2>
+                    <!-- <span class="close" id="admin-close-manage-machines-modal">&times;</span> -->
+                    <button type="button" class="btn-close close"
+                        aria-label="Close"
+                        id="admin-close-manage-machines-modal"></button>
+
+                </div>
+                <div class="modal-body"
+                    style="max-height: 70vh; overflow-y: auto;">
+                    <!-- Controls -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div class="search-box"
+                            style="position: relative; flex: 1; max-width: 300px;">
+                            <input type="text" id="admin-manage-machine-search"
+                                placeholder="Tìm kiếm máy..."
+                                style="width: 100%; padding: 10px 40px 10px 15px; border: 2px solid #e1e8ed; border-radius: 25px;">
+                            <!-- <i class="fas fa-search" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #95a5a6;"></i> -->
+                        </div>
+                        <button class="btn-primary" id="admin-add-machine-btn"
+                            style="margin-left: 15px;">
+                            <i class="fas fa-plus"></i> Thêm máy mới
+                        </button>
+                    </div>
+
+                    <!-- Machines Management Table -->
+                    <div class="table-container">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #f8f9fa;">
+                                    <th
+                                        style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Tên
+                                        máy</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Vị
+                                        trí</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Trạng
+                                        thái</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Mô
+                                        tả</th>
+                                    <th
+                                        style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Thao
+                                        tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-machines-management-list">
+                                <!-- Machine management rows will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer"
+                    style="display: flex; justify-content: flex-end; gap: 10px; padding: 20px; border-top: 1px solid #dee2e6;">
+                    <!-- <button class="btn-secondary" id="admin-close-manage-machines-btn">Đóng</button> -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal thêm/sửa máy -->
+        <div id="admin-machine-form-modal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2 id="admin-machine-form-title">Thêm máy mới</h2>
+                    <!-- <span class="close" id="admin-close-machine-form-modal">&times;</span> -->
+                    <button type="button" class="btn-close close"
+                        aria-label="Close"
+                        id="admin-close-machine-form-modal"></button>
+
+                </div>
+                <div class="modal-body">
+                    <form id="admin-machine-form">
+                        <input type="hidden" id="admin-machine-id">
+                        <input type="hidden" id="admin-machine-system-id">
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label for="admin-machine-name"
+                                style="display: block; margin-bottom: 8px; font-weight: 600;">
+                                Tên máy <span style="color: red;">*</span>
+                            </label>
+                            <input type="text" id="admin-machine-name"
+                                name="machineName" required
+                                style="width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 8px;">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label for="admin-machine-location"
+                                style="display: block; margin-bottom: 8px; font-weight: 600;">
+                                Vị trí
+                            </label>
+                            <input type="text" id="admin-machine-location"
+                                name="machineLocation"
+                                style="width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 8px;">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label for="admin-machine-status"
+                                style="display: block; margin-bottom: 8px; font-weight: 600;">
+                                Trạng thái
+                            </label>
+                            <select id="admin-machine-status"
+                                name="machineStatus"
+                                style="width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 8px;">
+                                <option value="active">Hoạt động</option>
+                                <option value="inactive">Không hoạt
+                                    động</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label
+                                style="display: block; margin-bottom: 8px; font-weight: 600;">
+                                Hệ thống
+                            </label>
+                            <div id="admin-machine-system-display"
+                                style="padding: 12px; background-color: #f8f9fa; border-radius: 4px; color: #495057;">
+                                Chưa xác định
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label for="admin-machine-description"
+                                style="display: block; margin-bottom: 8px; font-weight: 600;">
+                                Mô tả
+                            </label>
+                            <textarea id="admin-machine-description"
+                                name="machineDescription" rows="3"
+                                style="width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 8px; resize: vertical;"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer"
+                    style="display: flex; justify-content: flex-end; gap: 10px; padding: 20px; border-top: 1px solid #dee2e6;">
+                    <button type="button" class="btn-secondary"
+                        id="admin-cancel-machine-btn">Hủy</button>
+                    <button type="button" class="btn-primary"
+                        id="admin-save-machine-btn">Lưu</button>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+        <!-- Modal quản lý người dùng sản xuất -->
+<div id="production-user-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 1200px;">
+        <div class="modal-header">
+            <h2>Quản lý người dùng sản xuất</h2>
+            <button type="button" class="btn-close close" aria-label="Close" id="close-production-user-modal"></button>
+        </div>
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <!-- Thông tin module -->
+            <div class="production-modal-info" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 32px;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 20px;">Quản lý người dùng - Module In NM1</h3>
+                        <p style="margin: 5px 0 0 0; opacity: 0.9;">Phân công chức vụ cho báo cáo sản xuất</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3 Card chức vụ -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
+                
+                <!-- Card Quản đốc -->
+                <div class="position-card" style="background: white; border: 2px solid #007bff; border-radius: 8px; padding: 15px;">
+                    <div class="position-header" style="background: #007bff; color: white; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 6px 6px 0 0;">
+                        <h4 style="margin: 0; text-align: center;">
+                            <i class="fas fa-user-tie"></i> Quản đốc
+                        </h4>
+                    </div>
+                    
+                    <!-- Tìm kiếm -->
+                    <div class="search-section" style="margin-bottom: 15px;">
+                        <div style="position: relative;">
+                            <input type="text" class="position-search" data-position="quan-doc" 
+                                   placeholder="Tìm theo tên hoặc mã NV..." 
+                                   style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                            <div class="search-results quan-doc-results" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Danh sách người dùng -->
+                    <div class="position-users quan-doc-users">
+                        <!-- Users will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Card Phụ máy 1 -->
+                <div class="position-card" style="background: white; border: 2px solid #28a745; border-radius: 8px; padding: 15px;">
+                    <div class="position-header" style="background: #28a745; color: white; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 6px 6px 0 0;">
+                        <h4 style="margin: 0; text-align: center;">
+                            <i class="fas fa-user-cog"></i> Phụ máy 1
+                        </h4>
+                    </div>
+                    
+                    <!-- Tìm kiếm -->
+                    <div class="search-section" style="margin-bottom: 15px;">
+                        <div style="position: relative;">
+                            <input type="text" class="position-search" data-position="phu-may-1" 
+                                   placeholder="Tìm theo tên hoặc mã NV..." 
+                                   style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                            <div class="search-results phu-may-1-results" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Danh sách người dùng -->
+                    <div class="position-users phu-may-1-users">
+                        <!-- Users will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Card Phụ máy 2 -->
+                <div class="position-card" style="background: white; border: 2px solid #ffc107; border-radius: 8px; padding: 15px;">
+                    <div class="position-header" style="background: #ffc107; color: #212529; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 6px 6px 0 0;">
+                        <h4 style="margin: 0; text-align: center;">
+                            <i class="fas fa-user-cog"></i> Phụ máy 2
+                        </h4>
+                    </div>
+                    
+                    <!-- Tìm kiếm -->
+                    <div class="search-section" style="margin-bottom: 15px;">
+                        <div style="position: relative;">
+                            <input type="text" class="position-search" data-position="phu-may-2" 
+                                   placeholder="Tìm theo tên hoặc mã NV..." 
+                                   style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                            <div class="search-results phu-may-2-results" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Danh sách người dùng -->
+                    <div class="position-users phu-may-2-users">
+                        <!-- Users will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 20px; border-top: 1px solid #dee2e6;">
+            <button type="button" class="btn-secondary" id="close-production-user-btn">Đóng</button>
+        </div>
+    </div>
+</div>
+
+
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+        <script src="./admin.js"></script>
+        <script src="../auth.js"></script>
+        <script src="../utils.js"></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.min.js"></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.js"></script>
+
+        <script>
+        // Xử lý modal phòng ban
+        (function() {
+            // Xử lý khi trang đã load
+            document.addEventListener('DOMContentLoaded', function() {
+                // Nút thêm phòng ban
+                const addBtn = document.getElementById('add-department-btn');
+                if (addBtn) {
+                    addBtn.onclick = function() {
+                        const modal = document.getElementById('department-modal');
+                        if (modal) {
+                            document.getElementById('department-form').reset();
+                            document.getElementById('department-id').value = '';
+                            document.getElementById('department-modal-title').textContent = 'Thêm phòng ban mới';
+                            modal.style.display = 'block';
+                        }
+                    };
+                }
+                
+                // Các nút chỉnh sửa phòng ban
+                const editBtns = document.querySelectorAll('.department-actions .btn-edit');
+                editBtns.forEach(btn => {
+                    btn.onclick = function() {
+                        const card = this.closest('.department-card');
+                        const name = card.querySelector('h3').textContent;
+                        const desc = card.querySelector('p').textContent;
+                        
+                        const modal = document.getElementById('department-modal');
+                        if (modal) {
+                            document.getElementById('department-form').reset();
+                            document.getElementById('department-id').value = name;
+                            document.getElementById('department-name').value = name;
+                            document.getElementById('department-description').value = desc;
+                            document.getElementById('department-modal-title').textContent = 'Chỉnh sửa phòng ban';
+                            modal.style.display = 'block';
+                        }
+                    };
+                });
+                
+                // Nút đóng modal
+                const closeBtns = document.querySelectorAll('#department-modal .close-modal, #cancel-department-btn');
+                closeBtns.forEach(btn => {
+                    btn.onclick = function() {
+                        document.getElementById('department-modal').style.display = 'none';
+                    };
+                });
+                
+                // Form submit
+                const form = document.getElementById('department-form');
+                if (form) {
+                    form.onsubmit = function(e) {
+                        e.preventDefault();
+                        
+                        const id = document.getElementById('department-id').value;
+                        const name = document.getElementById('department-name').value;
+                        const desc = document.getElementById('department-description').value;
+                        
+                        if (!name) {
+                            alert('Vui lòng nhập tên phòng ban!');
+                            return;
+                        }
+                        
+                        if (id) {
+                            // Cập nhật phòng ban
+                            const cards = document.querySelectorAll('.department-card');
+                            cards.forEach(card => {
+                                const header = card.querySelector('h3');
+                                if (header && header.textContent === id) {
+                                    header.textContent = name;
+                                    const descElement = card.querySelector('p');
+                                    if (descElement) descElement.textContent = desc;
+                                }
+                            });
+                        } else {
+                            // Thêm phòng ban mới
+                            const list = document.querySelector('.departments-list');
+                            if (list) {
+                                const newCard = document.createElement('div');
+                                newCard.className = 'department-card';
+                                newCard.innerHTML = `
+                                    <div class="department-info">
+                                        <h3>${name}</h3>
+                                        <p>${desc}</p>
+                                    </div>
+                                    <div class="department-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Nhân viên:</span>
+                                            <span class="stat-value">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="department-actions">
+                                        <button class="btn-edit" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                `;
+                                
+                                list.appendChild(newCard);
+                                
+                                // Gắn sự kiện cho nút chỉnh sửa mới
+                                const newBtn = newCard.querySelector('.btn-edit');
+                                if (newBtn) {
+                                    newBtn.onclick = function() {
+                                        const card = this.closest('.department-card');
+                                        const cardName = card.querySelector('h3').textContent;
+                                        const cardDesc = card.querySelector('p').textContent;
+                                        
+                                        document.getElementById('department-id').value = cardName;
+                                        document.getElementById('department-name').value = cardName;
+                                        document.getElementById('department-description').value = cardDesc;
+                                        document.getElementById('department-modal-title').textContent = 'Chỉnh sửa phòng ban';
+                                        document.getElementById('department-modal').style.display = 'block';
+                                    };
+                                }
+                                
+                                // Cập nhật số lượng phòng ban
+                                const countEl = document.getElementById('department-count');
+                                if (countEl) {
+                                    countEl.textContent = (parseInt(countEl.textContent || '0') + 1).toString();
+                                }
+                            }
+                        }
+                        
+                        // Đóng modal và hiển thị thông báo
+                        document.getElementById('department-modal').style.display = 'none';
+                        alert(id ? 'Đã cập nhật phòng ban thành công!' : 'Đã thêm phòng ban mới thành công!');
+                    };
+                }
+            });
+        })();
+
+
+
+// Hàm tải phân quyền phòng ban
+async function loadDepartmentPermissions() {
+  try {
+    const departmentSelect = document.getElementById('department-select');
+    if (!departmentSelect) return;
+    
+    const selectedDepartment = departmentSelect.value;
+    if (!selectedDepartment) {
+      console.log('Chưa chọn phòng ban');
+      return;
+    }
+    
+    console.log(`Đang tải quyền cho phòng ban: ${selectedDepartment}`);
+    
+    // Sử dụng API mới để lấy tất cả module và trạng thái quyền
+    const response = await fetch(`/api/users/permissions/department/all-modules?department=${encodeURIComponent(selectedDepartment)}`);
+    if (!response.ok) {
+      throw new Error('Không thể lấy quyền phòng ban');
+    }
+    
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Lỗi không xác định');
+    }
+    
+    console.log('Dữ liệu quyền phòng ban:', data);
+    
+    // Xóa tất cả checkbox hiện tại
+    const permissionsContainer = document.getElementById('department-permissions-container');
+    if (permissionsContainer) {
+      permissionsContainer.innerHTML = '';
+      
+      // Tạo checkbox cho từng module, được nhóm theo hệ thống
+      data.systems.forEach(system => {
+        // Tạo header cho hệ thống
+        const systemHeader = document.createElement('h4');
+        systemHeader.textContent = system.system_name;
+        permissionsContainer.appendChild(systemHeader);
+        
+        // Tạo container cho các module của hệ thống
+        const modulesContainer = document.createElement('div');
+        modulesContainer.className = 'module-permissions';
+        permissionsContainer.appendChild(modulesContainer);
+        
+        // Tạo checkbox cho từng module
+        system.modules.forEach(module => {
+          const moduleDiv = document.createElement('div');
+          moduleDiv.className = 'module-permission-item';
+          
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.id = `dept-${selectedDepartment.replace(/\s+/g, '-')}-module-${module.id}`;
+          checkbox.className = 'dept-module-permission';
+          checkbox.setAttribute('data-department', selectedDepartment);
+          checkbox.setAttribute('data-module', module.id);
+          checkbox.checked = module.can_access === 1;
+          
+          console.log(`Checkbox ${checkbox.id}: can_access=${module.can_access}, checked=${checkbox.checked}`);
+          
+          // Thêm sự kiện khi thay đổi checkbox
+          checkbox.addEventListener('change', function() {
+            updateDepartmentModulePermission(selectedDepartment, module.id, this.checked);
+          });
+          
+          const label = document.createElement('label');
+          label.htmlFor = checkbox.id;
+          label.textContent = module.name;
+          
+          moduleDiv.appendChild(checkbox);
+          moduleDiv.appendChild(label);
+          modulesContainer.appendChild(moduleDiv);
+        });
+      });
+    }
+  } catch (error) {
+    console.error('Lỗi khi tải quyền phòng ban:', error);
+    alert('Có lỗi khi tải quyền phòng ban: ' + error.message);
+  }
+}
+
+// Hàm cập nhật quyền module của phòng ban
+async function updateDepartmentModulePermission(department, moduleId, canAccess) {
+  try {
+    console.log(`Cập nhật quyền: ${department} - ${moduleId} = ${canAccess}`);
+    
+    const response = await fetch('/api/users/permissions/department/modules', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        department,
+        moduleId,
+        canAccess
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Lỗi không xác định');
+    }
+    
+    console.log('Cập nhật quyền thành công:', data);
+    
+  } catch (error) {
+    console.error('Lỗi khi cập nhật quyền module:', error);
+    alert('Có lỗi khi cập nhật quyền: ' + error.message);
+    
+    // Tải lại quyền để đảm bảo hiển thị đúng
+    loadDepartmentPermissions();
+  }
+}
+
+// Hàm lưu tất cả thay đổi quyền phòng ban
+async function saveDepartmentPermissions() {
+  try {
+    const departmentSelect = document.getElementById('department-select');
+    if (!departmentSelect) return;
+    
+    const selectedDepartment = departmentSelect.value;
+    if (!selectedDepartment) {
+      alert('Vui lòng chọn phòng ban');
+      return;
+    }
+    
+    // Thu thập tất cả trạng thái checkbox
+    const checkboxes = document.querySelectorAll('.dept-module-permission');
+    const permissions = [];
+    
+    checkboxes.forEach(checkbox => {
+      if (checkbox.getAttribute('data-department') === selectedDepartment) {
+        permissions.push({
+          department: selectedDepartment,
+          moduleId: checkbox.getAttribute('data-module'),
+          canAccess: checkbox.checked
+        });
+      }
+    });
+    
+    console.log('Đang lưu quyền:', permissions);
+    
+    // Lưu từng quyền một
+    let success = true;
+    
+    for (const perm of permissions) {
+      const response = await fetch('/api/users/permissions/department/modules', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(perm)
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        console.error(`Lỗi khi lưu quyền ${perm.department} - ${perm.moduleId}:`, data.error);
+        success = false;
+      }
+    }
+    
+    if (success) {
+      alert('Đã lưu quyền phòng ban thành công');
+      // Tải lại quyền để đảm bảo hiển thị đúng
+      loadDepartmentPermissions();
+    } else {
+      alert('Có lỗi khi lưu quyền phòng ban. Xem chi tiết trong console.');
+    }
+    
+  } catch (error) {
+    console.error('Lỗi khi lưu quyền phòng ban:', error);
+    alert('Có lỗi khi lưu quyền phòng ban: ' + error.message);
+  }
+}
+
+        </script>
+
+        <script>
+// Thêm JavaScript để xử lý tab giao diện người dùng
+            document.addEventListener('DOMContentLoaded', function() {
+                // Xử lý sự kiện click cho tab user-interface
+                const userInterfaceTab = document.querySelector('[data-tab="user-interface"]');
+                if (userInterfaceTab) {
+                    userInterfaceTab.addEventListener('click', function() {
+                        loadAdminUserInterface();
+                    });
+                }
+
+                // Sự kiện quay lại danh sách hệ thống trong admin view
+                const adminBackBtn = document.getElementById('admin-back-to-systems');
+                if (adminBackBtn) {
+                    adminBackBtn.addEventListener('click', function() {
+                        const systemsView = document.getElementById('admin-systems-view');
+                        const modulesView = document.getElementById('admin-modules-view');
+                        if (systemsView) systemsView.style.display = 'block';
+                        if (modulesView) modulesView.style.display = 'none';
+                    });
+                }
+
+                // Ẩn top-bar khi ở tab user-interface
+                const userInterfaceTabElement = document.getElementById('user-interface-tab');
+                const topBar = document.querySelector('.top-bar');
+                
+                // Observer để theo dõi khi tab user-interface được active
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                            if (userInterfaceTabElement && userInterfaceTabElement.classList.contains('active')) {
+                                if (topBar) topBar.style.display = 'none';
+                            } else {
+                                if (topBar) topBar.style.display = 'flex';
+                            }
+                        }
+                    });
+                });
+
+                if (userInterfaceTabElement) {
+                    observer.observe(userInterfaceTabElement, { attributes: true });
+                }
+            });
+
+            // Hàm tải giao diện người dùng cho admin
+            async function loadAdminUserInterface() {
+                try {
+                    // Đảm bảo hiển thị systems view trước
+                    const systemsView = document.getElementById('admin-systems-view');
+                    const modulesView = document.getElementById('admin-modules-view');
+                    if (systemsView) systemsView.style.display = 'block';
+                    if (modulesView) modulesView.style.display = 'none';
+
+                    // Tải danh sách hệ thống cho admin
+                    await loadAdminSystems();
+                } catch (error) {
+                    console.error('Lỗi khi tải giao diện người dùng:', error);
+                }
+            }
+
+            // Hàm tải danh sách hệ thống cho admin
+            async function loadAdminSystems() {
+                const systemsList = document.getElementById('admin-systems-list');
+                if (!systemsList) return;
+
+                systemsList.innerHTML = '<div style="text-align:center;padding:20px;">Đang tải danh sách hệ thống...</div>';
+
+                try {
+                    const response = await fetch('/api/systems/list');
+                    if (!response.ok) {
+                        throw new Error('Không thể lấy danh sách hệ thống');
+                    }
+
+                    const systems = await response.json();
+                    systemsList.innerHTML = '';
+
+                    if (!systems || systems.length === 0) {
+                        systemsList.innerHTML = '<div style="text-align:center;padding:20px;">Không có hệ thống nào.</div>';
+                        return;
+                    }
+
+                    // Admin có quyền truy cập tất cả hệ thống
+                    systems.forEach(system => {
+                        createAdminSystemCard(system);
+                    });
+
+                } catch (error) {
+                    console.error('Lỗi khi tải danh sách hệ thống:', error);
+                    systemsList.innerHTML = `<div style="text-align:center;color:red;padding:20px;">Lỗi: ${error.message}</div>`;
+                }
+            }
+
+            // Hàm tạo card hệ thống cho admin
+            function createAdminSystemCard(system) {
+                const systemsList = document.getElementById('admin-systems-list');
+                if (!systemsList) return;
+
+                const card = document.createElement('div');
+                card.className = 'system-card';
+                card.style.cursor = 'pointer';
+
+                card.innerHTML = `
+                    <div class="system-icon">
+                        ${system.icon ? (system.icon.startsWith('http') ? 
+    `<img src="${system.icon}" alt="Icon" style="width: 100px; height: 100px;">` : 
+    `<i class="${system.icon}"></i>`) : 
+    '<i class="fas fa-cog"></i>'}
+                    </div>
+                    <div class="system-name">${system.name || 'Không tên'}</div>
+                    <div class="system-description">${system.description || ''}</div>
+                    <div style="margin-top: 10px;">
+                        <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
+                            <i class="fas fa-check"></i> ADMIN ACCESS
+                        </span>
+                    </div>
+                `;
+
+                card.addEventListener('click', function() {
+                    loadAdminModules(system.id, system.name);
+                });
+
+                systemsList.appendChild(card);
+            }
+
+            // Hàm tải modules cho admin
+            async function loadAdminModules(systemId, systemName) {
+                const systemsView = document.getElementById('admin-systems-view');
+                const modulesView = document.getElementById('admin-modules-view');
+                const modulesList = document.getElementById('admin-modules-list');
+                const currentSystemName = document.getElementById('admin-current-system-name');
+
+                if (!modulesList) return;
+
+                modulesList.innerHTML = '<div style="text-align:center;padding:20px;">Đang tải danh sách module...</div>';
+
+                if (currentSystemName) {
+                    currentSystemName.textContent = systemName || '';
+                }
+
+                if (systemsView) systemsView.style.display = 'none';
+                if (modulesView) modulesView.style.display = 'block';
+
+                try {
+                    const response = await fetch(`/api/modules/list?system_id=${systemId}`);
+                    if (!response.ok) {
+                        throw new Error('Không thể lấy danh sách module');
+                    }
+
+                    const modules = await response.json();
+                    modulesList.innerHTML = '';
+
+                    if (!modules || modules.length === 0) {
+                        modulesList.innerHTML = '<div style="text-align:center;padding:20px;">Chưa có module nào trong hệ thống này.</div>';
+                        return;
+                    }
+
+                    // Admin có quyền truy cập tất cả modules
+                    modules.forEach(module => {
+                        createAdminModuleCard(module);
+                    });
+
+                } catch (error) {
+                    console.error('Lỗi khi tải danh sách module:', error);
+                    modulesList.innerHTML = `<div style="text-align:center;color:red;padding:20px;">Lỗi: ${error.message}</div>`;
+                }
+            }
+
+            // Hàm tạo card module cho admin
+            function createAdminModuleCard(module) {
+    const modulesList = document.getElementById('admin-modules-list');
+    if (!modulesList) return;
+
+    const card = document.createElement('div');
+    card.className = 'module-card';
+    card.style.cursor = 'pointer';
+
+    card.innerHTML = `
+        <div class="module-icon">
+            ${module.icon ? (module.icon.startsWith('http') ? 
+    `<img src="${module.icon}" alt="Icon" style="width: 100px; height: 100px;">` : 
+    `<i class="${module.icon}"></i>`) : 
+    '<i class="fas fa-cube"></i>'}
+        </div>
+        <div class="module-name">${module.name || 'Module không tên'}</div>
+        <div class="module-description" style="font-size: 12px; color: #666; margin-top: 5px;">${module.description || ''}</div>
+        <div style="color: #28a745; margin-top: 5px; font-size: 12px;">
+            <i class="fas fa-crown"></i> Admin Access
+        </div>
+    `;
+
+    card.addEventListener('click', function() {
+        if (module.path) {
+            // Hiển thị modal chọn máy thay vì mở trực tiếp
+            openAdminMachineSelectionModal(module);
+        } else {
+            showToast(`Module "${module.name}" không có đường dẫn!`, 'error');
+        }
+    });
+
+    modulesList.appendChild(card);
+}
+        </script>
+
+    </body>
+</html>

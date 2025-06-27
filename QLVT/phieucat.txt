@@ -1,0 +1,89 @@
+Danh sách biến phiếu cắt (PC)
+Biến trong phiếu cắt (Danhsach_PC)==========================================
+r - Chỉ số R
+soPhieu - Số phiếu
+ngayCT - Ngày chứng từ
+soLSX - Số lệnh sản xuất
+dienGiai - Diễn giải
+khachHang - Khách hàng
+sanPham - Sản phẩm
+maPhu - Mã phụ
+lo - Lô
+viTri - Vị trí
+stt - Số thứ tự
+maNL - Mã nguyên liệu
+slDat - Số lượng đặt
+dinhLuong - Định lượng
+soTam - Số tấm
+soCon - Số con
+khoCat - Khổ cắt
+daiCat - Dài cắt
+khoXen - Khổ xén
+daiXen - Dài xén
+soLanXen - Số lần xén
+tlDuKien - Trọng lượng dự kiến
+tonSL - Tồn số lượng
+tonTL - Tồn trọng lượng
+tonTT - Tồn tạm tính
+ghiChu - Ghi chú
+Biến trong formula của phiếu cắt (PC_formula)
+ws - Worksheet (số LSX)
+soPhieu - Số phiếu
+maPhieuPhu - Mã phiếu phụ
+phieu - Phiếu
+wsF - Worksheet Formula
+ngayCT - Ngày chứng từ
+maKH - Mã khách hàng
+khachHang - Tên khách hàng
+maSP - Mã sản phẩm
+maNL - Mã nguyên liệu
+slDat - Số lượng đặt
+dinhLuong - Định lượng
+soTam - Số tấm
+soCon - Số con
+khoCat - Khổ cắt
+daiCat - Dài cắt
+xa - Xa
+khoXa - Khổ xa
+tlDuTinh - Trọng lượng dự tính
+khoXen - Khổ xén
+daiXen - Dài xén
+khoDaiKhoXen - Tỷ lệ khổ dài/khổ xén
+giayRam - Giấy RAM (ghi chú)
+dienGiai - Diễn giải
+
+
+
+Routes và hàm xử lý phiếu cắt (cat.js)
+Routes trong cat.js======================================================
+GET /list - Lấy danh sách phiếu cắt từ bảng Danhsach_PC
+Trả về tất cả bản ghi phiếu cắt, sắp xếp theo số phiếu và STT
+GET /formula - Lấy danh sách formula phiếu cắt từ bảng PC_formula
+Trả về tất cả bản ghi formula, sắp xếp theo số phiếu và mã nguyên liệu
+POST / - Thêm phiếu cắt mới vào bảng Danhsach_PC
+Nhận thông tin phiếu mới từ request body
+Tự động tạo formula tương ứng sau khi thêm phiếu thành công
+PUT /:id - Cập nhật phiếu cắt có id cụ thể
+Nhận thông tin cập nhật từ request body
+Tự động cập nhật formula tương ứng
+DELETE /:id - Xóa phiếu cắt có id cụ thể
+Xóa cả formula tương ứng
+POST /delete-multiple - Xóa nhiều phiếu cắt
+Nhận danh sách id cần xóa từ request body
+Xóa cả formula tương ứng
+GET /search - Tìm kiếm phiếu cắt theo từ khóa
+Tìm trong các trường: số phiếu, khách hàng, mã nguyên liệu, sản phẩm
+Các hàm phụ trợ=====================================================
+createFormulaFromPhieu(phieu, callback) - Tạo bản ghi formula từ dữ liệu phiếu
+Xử lý ngày chứng từ (chuyển từ yyyy-mm-dd sang dd/mm/yyyy)
+Tính tỷ lệ khổ cắt/khổ xén
+Tìm kiếm thông tin khách hàng trong bảng customers
+Chuyển đổi định dạng dữ liệu và lưu vào bảng PC_formula
+updateFormulaFromPhieu(phieu, callback) - Cập nhật formula
+Xóa formula cũ của phiếu
+Tạo formula mới với dữ liệu phiếu cập nhật
+formatNumberForFormula(value) - Chuyển đổi định dạng số cho formula
+Xử lý chuỗi thành số
+Xóa dấu phẩy, chuẩn hóa dấu thập phân
+Làm tròn đến 1 chữ số thập phân
+Loại bỏ .0 nếu có

@@ -1,0 +1,55 @@
+{
+  "name": "project1",
+  "version": "1.0.0",
+  "main": "server/server.js",
+  "bin": {
+    "project1": "server/server.js"
+  },
+  "pkg": {
+    "assets": [
+      "server/**/*",
+      "QLVT/**/*",
+      "BaoCaoSCL/**/*",
+      "login/**/*",
+      "user/**/*",
+      "admin/**/*",
+      "auth.css",
+      "auth.js",
+      "utils.js"
+    ],
+    "scripts": [
+      "server/**/*.js",
+      "login/**/*.js",
+      "user/**/*.js",
+      "admin/**/*.js"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ]
+  },
+  "scripts": {
+  "start": "node server/server.js",
+  "build": "node build-simple.js"
+},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DoTuongVy/project1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DoTuongVy/project1/issues"
+  },
+  "homepage": "https://github.com/DoTuongVy/project1#readme",
+  "description": "Ứng dụng Quản lý Báo cáo SCL",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
+}
