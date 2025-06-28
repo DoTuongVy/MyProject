@@ -1214,6 +1214,16 @@ function validateEndData() {
 
 // Thu thập dữ liệu kết thúc
 async function collectEndReportData() {
+
+    // Lấy danh sách báo cáo để tính thành phẩm
+const existingReports = await new Promise((resolve, reject) => {
+    fetch('/api/bao-cao-in/list?exclude_stop_only=true')
+        .then(response => response.json())
+        .then(data => resolve(data))
+        .catch(err => resolve([]));
+});
+
+
     try {
         const ketThuc = {
             thoiGianKetThuc: new Date().toISOString(),
@@ -1230,7 +1240,14 @@ async function collectEndReportData() {
             // Tính tổng
             tongSoLuong: await calculateTongWithSum('thanh_pham'),
 tongPheLieu: await calculateTongWithSum('phe_lieu'),
-tongPhelieuTrang: await calculateTongWithSum('phe_lieu_trang')
+tongPhelieuTrang: await calculateTongWithSum('phe_lieu_trang'),
+// Tính thành phẩm
+thanhPham: await calculateThanhPham(
+    getInputValue('ws'),
+    getSelectValue('tuychon'), 
+    await calculateTongWithSum('thanh_pham'),
+    existingReports
+)
         };
 
         // Thu thập dữ liệu dừng máy nếu có
@@ -1343,6 +1360,56 @@ if (!allowSummation) {
         // Nếu có lỗi, return thành phẩm hiện tại
         return currentValue;
     }
+}
+
+
+
+
+
+// Tính thành phẩm theo logic đặc biệt
+async function calculateThanhPham(ws, tuychon, tongSoLuong, existingReports) {
+    if (!ws || ws.trim() === '') return 0;
+    
+    const tuychonValue = tuychon; // 1,2,3,4,5,6
+    const tongSoLuongValue = parseFloat(tongSoLuong) || 0;
+    
+    // Nếu tùy chọn 4,5,6 thì thành phẩm = tổng số lượng
+    if (['4', '5', '6'].includes(tuychonValue)) {
+        return tongSoLuongValue;
+    }
+    
+    // Với tùy chọn 1,2,3 - tìm cặp tương ứng
+    const pairMap = { '1': '4', '2': '5', '3': '6' };
+    const targetTuychon = pairMap[tuychonValue];
+    
+    if (!targetTuychon) return tongSoLuongValue;
+    
+    // Tìm báo cáo có cùng điều kiện nhưng tùy chọn là cặp tương ứng
+    const pairReport = existingReports.find(report => {
+        if (report.ws !== ws) return false;
+        if (report.tuy_chon !== getTextFromValue(targetTuychon)) return false;
+        return true;
+    });
+    
+    if (pairReport) {
+        const pairPheLieu = parseFloat(pairReport.tong_phe_lieu) || 0;
+        return tongSoLuongValue - pairPheLieu;
+    }
+    
+    return tongSoLuongValue;
+}
+
+// Helper function để chuyển value thành text
+function getTextFromValue(value) {
+    const map = {
+        '1': '1. In',
+        '2': '2. In + Cán bóng', 
+        '3': '3. Cán bóng',
+        '4': '4. In dặm',
+        '5': '5. In dặm + Cán bóng',
+        '6': '6. Cán bóng lại'
+    };
+    return map[value] || '';
 }
 
 
@@ -2739,6 +2806,7 @@ function setupSearchAndFilterEvents() {
 
     // Pagination
     setupPaginationEvents();
+
 }
 
 // Tải danh sách báo cáo In
@@ -2776,6 +2844,14 @@ async function loadReportList() {
         showLoadingInTable(false);
         showNotification('Lỗi khi tải danh sách báo cáo', 'error');
     }
+
+
+    // Khởi tạo chức năng ẩn cột sau khi load xong
+    setTimeout(() => {
+        initializeColumnHiding();
+    }, 200);
+
+
 }
 
 // Hiển thị loading trong bảng
@@ -2876,11 +2952,31 @@ function renderReportTable() {
             <td>${report.phu_may_1 || ''}</td>
             <td>${report.phu_may_2 || ''}</td>
             <td>${report.so_pass_in || ''}</td>
+            <td =>${report.thanh_pham || ''}</td>
         </tr>
     `).join('');
 
     // Cập nhật thông tin trang
     updatePageInfo();
+
+
+    // Đảm bảo table có thể scroll và sticky hoạt động
+    const tableContainer = document.querySelector('.table-responsive');
+    if (tableContainer) {
+        tableContainer.style.position = 'relative';
+        tableContainer.style.overflowX = 'auto';
+    }
+
+
+    // Áp dụng cố định cột và ẩn cột sau khi render
+    setTimeout(() => {
+        applyColumnVisibility();
+        if (fixedColumns.length > 0) {
+            applyFixedColumns();
+        }
+    }, 100);
+
+
 }
 
 // Format date
@@ -3215,7 +3311,9 @@ function exportToExcel() {
             'Chênh lệch TT-WS': report.chenh_lech_tt_ws || '',
             'Chênh lệch TT-SCC': report.chenh_lech_tt_scc || '',
             'Phụ máy 1': report.phu_may_1 || '',
-            'Phụ máy 2': report.phu_may_2 || ''
+            'Phụ máy 2': report.phu_may_2 || '',
+            'Số pass in': report.so_pass_in || '',
+            'Thành phẩm': report.thanh_pham || ''
         }));
 
         // Tạo workbook
@@ -3270,7 +3368,9 @@ function exportToExcel() {
             { wch: 18 },  // Chênh lệch TT-WS
             { wch: 18 },  // Chênh lệch TT-SCC
             { wch: 20 },  // Phụ máy 1
-            { wch: 20 }   // Phụ máy 2
+            { wch: 20 },   // Phụ máy 2
+            { wch: 20 },   // số pass in
+            { wch: 20 },   // Thành phẩm cuối
         ];
 
         ws['!cols'] = colWidths;
@@ -3396,6 +3496,7 @@ function generateReportDetailHTML(report) {
                     <tr><td><strong>PL trắng:</strong></td><td>${report.phe_lieu_trang || ''}</td></tr>
                     <tr><td><strong>Tổng số lượng:</strong></td><td class="fw-bold">${report.tong_so_luong || ''}</td></tr>
                     <tr><td><strong>SL giấy ream:</strong></td><td>${report.sl_giay_ream || ''}</td></tr>
+                    <tr><td><strong>Thành phẩm:</strong></td><td class="fw-bold text-success">${report.thanh_pham || ''}</td></tr>
                 </table>
                 
                 <h6 class="text-primary">Thời gian</h6>
@@ -3770,6 +3871,379 @@ const soLuongDaIn = matchingReports.reduce((total, report) => {
     }
 }
 
+
+
+
+
+
+// ====================================================================================================================================
+// CỐ ĐỊNH CỘT VÀ ẨN CỘT
+// ====================================================================================================================================
+
+// Biến toàn cục
+let fixedColumns = [];
+let hiddenColumns = [];
+let selectedColumns = [];
+let isFixedMode = false;
+
+
+
+// Áp dụng cố định cột vào bảng
+function applyFixedColumns() {
+    const table = document.querySelector('#reportTableBody').closest('table');
+    
+    // Xóa class cũ
+    removeFixedColumns();
+    
+    if (fixedColumns.length === 0) return;
+    
+    // Sắp xếp cột theo thứ tự từ trái sang phải
+    const sortedColumns = [...fixedColumns].sort((a, b) => a - b);
+    
+    // Di chuyển các cột về đầu bảng
+    const thead = table.querySelector('thead tr');
+    const tbody = table.querySelector('tbody');
+    
+    // Lưu tất cả headers và rows
+    const allHeaders = Array.from(thead.children);
+    const allRows = Array.from(tbody.children);
+    
+    // Tạo lại thứ tự cột: cố định trước, còn lại sau
+    const newColumnOrder = [];
+    
+    // Thêm cột cố định trước
+    sortedColumns.forEach(colIndex => {
+        newColumnOrder.push(colIndex);
+    });
+    
+    // Thêm cột không cố định sau
+    for (let i = 0; i < allHeaders.length; i++) {
+        if (!fixedColumns.includes(i)) {
+            newColumnOrder.push(i);
+        }
+    }
+    
+    // Sắp xếp lại header
+    thead.innerHTML = '';
+    newColumnOrder.forEach((colIndex, newIndex) => {
+        const header = allHeaders[colIndex].cloneNode(true);
+        if (fixedColumns.includes(colIndex)) {
+            header.classList.add('fixed-column-header');
+            header.style.left = '0px';
+        }
+        thead.appendChild(header);
+    });
+    
+    // Sắp xếp lại body rows
+    allRows.forEach(row => {
+        const cells = Array.from(row.children);
+        row.innerHTML = '';
+        
+        newColumnOrder.forEach((colIndex, newIndex) => {
+            const cell = cells[colIndex].cloneNode(true);
+            if (fixedColumns.includes(colIndex)) {
+                cell.classList.add('fixed-column-cell');
+                cell.style.left = '0px';
+            }
+            row.appendChild(cell);
+        });
+    });
+    
+    // Khởi tạo lại event listeners cho headers
+    setTimeout(() => {
+        initializeColumnHiding();
+    }, 100);
+}
+
+
+
+// Xóa cố định cột
+function removeFixedColumns() {
+    // Reload lại bảng để về thứ tự ban đầu
+    renderReportTable();
+}
+
+// Khởi tạo chức năng ẩn cột
+function initializeColumnHiding() {
+    const table = document.querySelector('#reportTableBody').closest('table');
+    const headers = table.querySelectorAll('thead th');
+    
+    headers.forEach((header, index) => {
+        // Thêm dropdown toggle
+        if (!header.querySelector('.column-dropdown-toggle')) {
+            const dropdown = document.createElement('span');
+            dropdown.className = 'column-dropdown-toggle';
+            dropdown.innerHTML = '▼';
+            header.style.position = 'relative';
+            header.appendChild(dropdown);
+            
+            dropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showColumnDropdown(e, index);
+            });
+        }
+        
+        // Click để chọn cột
+        header.addEventListener('click', (e) => {
+            if (e.target.classList.contains('column-dropdown-toggle')) return;
+            toggleColumnSelection(index);
+        });
+    });
+    
+    // Context menu cho chuột phải
+    document.addEventListener('contextmenu', handleRightClick);
+    document.addEventListener('click', hideContextMenu);
+}
+
+// Toggle chọn cột
+function toggleColumnSelection(colIndex) {
+    const table = document.querySelector('#reportTableBody').closest('table');
+    const headers = Array.from(table.querySelectorAll('thead th'));
+    
+    // Tìm index thực tế trong DOM hiện tại
+    let actualIndex = colIndex;
+    
+    const headerCell = headers[actualIndex];
+    const bodyCells = table.querySelectorAll(`tbody td:nth-child(${actualIndex + 1})`);
+    
+    if (selectedColumns.includes(colIndex)) {
+        selectedColumns = selectedColumns.filter(i => i !== colIndex);
+        headerCell?.classList.remove('column-selected');
+        bodyCells.forEach(cell => cell.classList.remove('column-selected'));
+    } else {
+        selectedColumns.push(colIndex);
+        headerCell?.classList.add('column-selected');
+        bodyCells.forEach(cell => cell.classList.add('column-selected'));
+    }
+}
+
+// Hiển thị dropdown cột
+function showColumnDropdown(e, colIndex) {
+    hideContextMenu();
+    
+    const menu = document.createElement('div');
+    menu.className = 'column-context-menu';
+    menu.id = 'columnDropdown';
+    
+    const hideItem = document.createElement('div');
+    hideItem.className = 'context-menu-item';
+    hideItem.textContent = 'Ẩn cột';
+    hideItem.addEventListener('click', () => {
+        hideColumn(colIndex);
+        hideContextMenu();
+    });
+    
+    menu.appendChild(hideItem);
+    
+    menu.style.left = e.pageX + 'px';
+    menu.style.top = e.pageY + 'px';
+    
+    document.body.appendChild(menu);
+}
+// Xử lý chuột phải
+function handleRightClick(e) {
+    if (selectedColumns.length === 0) return;
+    
+    e.preventDefault();
+    hideContextMenu();
+    
+    const menu = document.createElement('div');
+    menu.className = 'column-context-menu';
+    menu.id = 'contextMenu';
+    
+    // Item ẩn cột
+    const hideItem = document.createElement('div');
+    hideItem.className = 'context-menu-item';
+    hideItem.textContent = `Ẩn ${selectedColumns.length} cột`;
+    hideItem.addEventListener('click', () => {
+        hideSelectedColumns();
+        hideContextMenu();
+    });
+    
+    // Item cố định cột  
+    const fixItem = document.createElement('div');
+    fixItem.className = 'context-menu-item';
+    fixItem.textContent = `Cố định ${selectedColumns.length} cột`;
+    fixItem.addEventListener('click', () => {
+        fixSelectedColumns();
+        hideContextMenu();
+    });
+    
+    // Item bỏ cố định (chỉ hiện khi có cột được cố định)
+    if (fixedColumns.length > 0) {
+        const unfixItem = document.createElement('div');
+        unfixItem.className = 'context-menu-item';
+        unfixItem.textContent = 'Bỏ cố định tất cả';
+        unfixItem.addEventListener('click', () => {
+            clearAllFixedColumns();
+            hideContextMenu();
+        });
+        menu.appendChild(unfixItem);
+    }
+    
+    menu.appendChild(hideItem);
+    menu.appendChild(fixItem);
+    
+    menu.style.left = e.pageX + 'px';
+    menu.style.top = e.pageY + 'px';
+    
+    document.body.appendChild(menu);
+}
+
+// Ẩn context menu
+function hideContextMenu() {
+    const existingMenus = document.querySelectorAll('.column-context-menu');
+    existingMenus.forEach(menu => menu.remove());
+}
+
+// Ẩn một cột
+function hideColumn(colIndex) {
+    if (!hiddenColumns.includes(colIndex)) {
+        hiddenColumns.push(colIndex);
+        
+        // Nếu cột đang được cố định thì xóa khỏi danh sách cố định
+        if (fixedColumns.includes(colIndex)) {
+            fixedColumns = fixedColumns.filter(i => i !== colIndex);
+        }
+        
+        applyColumnVisibility();
+        showNotification('Đã ẩn cột', 'info');
+    }
+}
+
+// Ẩn các cột đã chọn
+function hideSelectedColumns() {
+    const columnsToHide = [...selectedColumns]; // Copy array
+    
+    columnsToHide.forEach(colIndex => {
+        if (!hiddenColumns.includes(colIndex)) {
+            hiddenColumns.push(colIndex);
+        }
+        
+        // Xóa khỏi cố định nếu có
+        if (fixedColumns.includes(colIndex)) {
+            fixedColumns = fixedColumns.filter(i => i !== colIndex);
+        }
+    });
+    
+    selectedColumns = [];
+    applyColumnVisibility();
+    showNotification(`Đã ẩn ${columnsToHide.length} cột`, 'info');
+}
+
+
+// Cố định các cột đã chọn - THÊM HÀM MỚI
+function fixSelectedColumns() {
+    // Thêm các cột chọn vào danh sách cố định
+    selectedColumns.forEach(colIndex => {
+        if (!fixedColumns.includes(colIndex)) {
+            fixedColumns.push(colIndex);
+        }
+    });
+    
+    selectedColumns = [];
+    applyFixedColumns();
+    showNotification(`Đã cố định cột`, 'success');
+}
+
+// Bỏ cố định tất cả - THÊM HÀM MỚI  
+function clearAllFixedColumns() {
+    fixedColumns = [];
+    selectedColumns = [];
+    removeFixedColumns();
+    showNotification('Đã bỏ cố định tất cả cột', 'info');
+}
+
+
+
+
+// Hiện cột
+function showColumn(colIndex) {
+    hiddenColumns = hiddenColumns.filter(i => i !== colIndex);
+    applyColumnVisibility();
+    showNotification('Đã hiện cột', 'success');
+}
+
+// Áp dụng ẩn/hiện cột
+function applyColumnVisibility() {
+    const table = document.querySelector('#reportTableBody').closest('table');
+    const thead = table.querySelector('thead tr');
+    const tbody = table.querySelector('tbody');
+    
+    // Xóa tất cả indicators cũ
+    const oldIndicators = table.querySelectorAll('.hidden-column-indicator');
+    oldIndicators.forEach(indicator => indicator.remove());
+    
+    // Reset tất cả cột
+    const allHeaders = table.querySelectorAll('thead th');
+    const allRows = table.querySelectorAll('tbody tr');
+    
+    allHeaders.forEach((header, index) => {
+        header.style.display = '';
+        header.classList.remove('column-selected');
+    });
+    
+    allRows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        cells.forEach((cell, index) => {
+            cell.style.display = '';
+            cell.classList.remove('column-selected');
+        });
+    });
+    
+    // Ẩn các cột và thêm indicators
+    hiddenColumns.forEach((colIndex) => {
+        // Tìm vị trí hiện tại của cột (có thể đã thay đổi do cố định)
+        const headers = Array.from(table.querySelectorAll('thead th'));
+        const rows = Array.from(table.querySelectorAll('tbody tr'));
+        
+        // Tìm header chứa text gốc để xác định đúng cột cần ẩn
+        let actualColumnIndex = -1;
+        headers.forEach((header, index) => {
+            // So sánh với header gốc để tìm đúng cột
+            const originalHeaders = document.querySelectorAll('thead th');
+            if (originalHeaders[colIndex] && 
+                header.textContent.trim() === originalHeaders[colIndex].textContent.trim()) {
+                actualColumnIndex = index;
+            }
+        });
+        
+        if (actualColumnIndex === -1) return;
+        
+        // Ẩn header
+        const headerCell = headers[actualColumnIndex];
+        if (headerCell) {
+            headerCell.style.display = 'none';
+            
+            // Thêm indicator
+            const indicator = document.createElement('th');
+            indicator.className = 'hidden-column-indicator';
+            indicator.title = `Click để hiện cột: ${headerCell.textContent.trim()}`;
+            indicator.addEventListener('click', () => showColumn(colIndex));
+            
+            headerCell.parentNode.insertBefore(indicator, headerCell.nextSibling);
+        }
+        
+        // Ẩn body cells
+        rows.forEach(row => {
+            const cell = row.children[actualColumnIndex];
+            if (cell) {
+                cell.style.display = 'none';
+                
+                const bodyIndicator = document.createElement('td');
+                bodyIndicator.className = 'hidden-column-indicator';
+                bodyIndicator.addEventListener('click', () => showColumn(colIndex));
+                
+                cell.parentNode.insertBefore(bodyIndicator, cell.nextSibling);
+            }
+        });
+    });
+    
+    // Áp dụng lại cố định cột nếu có
+    if (fixedColumns.length > 0) {
+        setTimeout(() => applyFixedColumns(), 50);
+    }
+}
 
 
 

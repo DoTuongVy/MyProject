@@ -314,9 +314,10 @@ body {
 }
 
 .quantity-value {
-    font-size: 16px;
+    font-size: 19px;
     font-weight: 700;
     color: #28a745;
+    margin: 0px 10px;
 }
 
 .single-quantity {
@@ -324,7 +325,8 @@ body {
 }
 
 .single-quantity .quantity-value {
-    font-size: 24px;
+    font-size: 19px;
+    margin: 0px 10px;
 }
 
 .time-info {
@@ -479,11 +481,17 @@ body {
     font-size: 13px;
 }
 
+
+
 .detail-table {
     background: white;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    min-width: 100%;
+width: max-content;
+overflow-x: auto;
+-webkit-overflow-scrolling: touch;
 }
 
 .detail-table th {
@@ -494,6 +502,8 @@ body {
     padding: 12px 8px;
     text-align: center;
     border: none;
+    white-space: nowrap;
+    min-width: 120px;
 }
 
 .detail-table td {
@@ -502,6 +512,8 @@ body {
     font-size: 13px;
     border: none;
     border-bottom: 1px solid #f1f3f4;
+    white-space: nowrap;
+min-width: 120px;
 }
 
 .detail-table tbody tr:hover {

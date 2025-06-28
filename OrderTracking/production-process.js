@@ -59,7 +59,7 @@ const PRODUCTION_STAGES = [
     {
         id: 'in',
         name: 'IN',
-        displayName: 'In Offset',
+        displayName: 'IN OFFSET',
         color: '#28a745',
         quantityFields: ['tong_so_luong'], //Tổng số lượng
         quantityLabels: ['SL'],

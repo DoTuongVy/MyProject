@@ -17,8 +17,6 @@
         <script
             src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-
-
     </head>
 
     <body class="bg-light p-4">
@@ -54,8 +52,6 @@
                 role="tabpanel"
                 aria-labelledby="nav-baocaoinoffset-tab"
                 tabindex="0">
-
-                .row
 
                 <!-- Bắt đầu báo cáo -->
                 <div
@@ -99,7 +95,9 @@
                             <div class="d-flex gap-2 mb-3">
                                 <div class="form-floating"
                                     style="flex: 1 0 0%;">
-                                    <input type="text" class="form-control" id="ca" disabled style="border: 1px solid blue; font-weight: bold;">
+                                    <input type="text" class="form-control"
+                                        id="ca" disabled
+                                        style="border: 1px solid blue; font-weight: bold;">
                                     <label for="ca">Ca</label>
                                 </div>
                             </div>
@@ -517,13 +515,17 @@
                             <div class="mb-3">
                                 <label class="fw-bold"
                                     style="font-weight: bold;">Mã giấy 1</label>
-                                    <input type="text" class="form-control" id="magiay1" disabled style="color: blue;">
+                                <input type="text" class="form-control"
+                                    id="magiay1" disabled style="color: blue;">
                             </div>
 
                             <div class="mb-3">
-                                <label class="fw-bold" style="font-weight: bold;">SL giấy nhận 1</label>
-                                <input type="number" class="form-control bg-white"
-                                    id="slgiaynhan1" >
+                                <label class="fw-bold"
+                                    style="font-weight: bold;">SL giấy nhận
+                                    1</label>
+                                <input type="number"
+                                    class="form-control bg-white"
+                                    id="slgiaynhan1">
                             </div>
 
                         </div>
@@ -545,9 +547,12 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="fw-bold" style="font-weight: bold;">SL giấy nhận 2</label>
-                                <input type="number" class="form-control bg-white"
-                                    id="slgiaynhan2" >
+                                <label class="fw-bold"
+                                    style="font-weight: bold;">SL giấy nhận
+                                    2</label>
+                                <input type="number"
+                                    class="form-control bg-white"
+                                    id="slgiaynhan2">
                             </div>
 
                         </div>
@@ -562,15 +567,20 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="fw-bold" style="font-weight: bold;">Mã giấy 3</label>
-                                <input type="number" class="form-control bg-white"
-                                    id="magiay3" >
+                                <label class="fw-bold"
+                                    style="font-weight: bold;">Mã giấy 3</label>
+                                <input type="number"
+                                    class="form-control bg-white"
+                                    id="magiay3">
                             </div>
 
                             <div class="mb-3">
-                                <label class="fw-bold" style="font-weight: bold;">SL giấy nhận 3</label>
-                                <input type="number" class="form-control bg-white"
-                                    id="slgiaynhan3" >
+                                <label class="fw-bold"
+                                    style="font-weight: bold;">SL giấy nhận
+                                    3</label>
+                                <input type="number"
+                                    class="form-control bg-white"
+                                    id="slgiaynhan3">
                             </div>
 
                         </div>
@@ -624,20 +634,28 @@
                                     <option value="Máy hư">F1 : Máy hư</option>
                                     <option value="Chờ giấy">F2 : Chờ
                                         giấy</option>
-                                    <option value="Chờ tiếp thị">F3 : Chờ tiếp thị</option>
-                                    <option value="Chờ kế hoạch">F4 : Chờ kế hoạch</option>
+                                    <option value="Chờ tiếp thị">F3 : Chờ tiếp
+                                        thị</option>
+                                    <option value="Chờ kế hoạch">F4 : Chờ kế
+                                        hoạch</option>
                                     <option value="Vệ sinh">F5 : Vệ
                                         sinh</option>
                                     <option value="Khác">F6 :
                                         Khác</option>
                                     <option value="Bảo dưỡng">F7 : Bảo
                                         dưỡng</option>
-                                    <option value="Cúp điện , mất hơi">F8 : Sửa kẽm</option>
-                                    <option value="Thay su">F9 : Thay su</option>
-                                    <option value="CHỜ KHÁCH TỚI KÝ BÀI">F10 : CHỜ KHÁCH TỚI KÝ BÀI</option>
-                                    <option value="Cắt bảng DB">F11 : Cắt bảng DB</option>
-                                    <option value="Giải lao">F12 : Giải lao</option>
-                                    <option value="Cúp điện">F13 : Cúp điện</option>
+                                    <option value="Cúp điện , mất hơi">F8 : Sửa
+                                        kẽm</option>
+                                    <option value="Thay su">F9 : Thay
+                                        su</option>
+                                    <option value="CHỜ KHÁCH TỚI KÝ BÀI">F10 :
+                                        CHỜ KHÁCH TỚI KÝ BÀI</option>
+                                    <option value="Cắt bảng DB">F11 : Cắt bảng
+                                        DB</option>
+                                    <option value="Giải lao">F12 : Giải
+                                        lao</option>
+                                    <option value="Cúp điện">F13 : Cúp
+                                        điện</option>
                                 </select>
                             </div>
 
@@ -805,11 +823,6 @@
                                 <option value="100">100</option>
                             </select>
                             <span> mục</span>
-                            <button class="btn btn-success btn-sm ms-3"
-                                id="btnFixColumns">
-                                <i class="fas fa-thumbtack me-1"></i> Cố định
-                                cột
-                            </button>
                         </div>
                         <div
                             class="d-flex justify-content-between align-items-center ">
@@ -833,24 +846,29 @@
                                         style="min-width: 100px;">Ngày</th>
                                     <th class="text-nowrap"
                                         style="min-width: 80px;">Máy</th>
-                                        <th class="text-nowrap"
-                                            style="min-width: 250px;">Quản đốc</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 250px;">Quản đốc</th>
                                     <th class="text-nowrap"
                                         style="min-width: 80px;">Ca</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 250px;">Trưởng máy</th>
+                                        style="min-width: 250px;">Trưởng
+                                        máy</th>
                                     <th class="text-nowrap"
                                         style="min-width: 200px;">Số WS</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 80px;">Số lần chạy</th>
+                                        style="min-width: 80px;">Số lần
+                                        chạy</th>
                                     <th class="text-nowrap"
                                         style="min-width: 100px;">Ngày phụ</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 120px;">Khách hàng</th>
+                                        style="min-width: 120px;">Khách
+                                        hàng</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 350px;">Mã sản phẩm</th>
+                                        style="min-width: 350px;">Mã sản
+                                        phẩm</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 150px;">Số lượng đơn hàng</th>
+                                        style="min-width: 150px;">Số lượng đơn
+                                        hàng</th>
                                     <th class="text-nowrap"
                                         style="min-width: 90px;">Số con</th>
                                     <th class="text-nowrap"
@@ -870,11 +888,14 @@
                                     <th class="text-nowrap"
                                         style="min-width: 80px;">Mẫu 3 tone</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 180px;">SL giấy TT 1</th>
+                                        style="min-width: 180px;">SL giấy TT
+                                        1</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 100px;">SL giấy TT 2</th>
+                                        style="min-width: 100px;">SL giấy TT
+                                        2</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 100px;">SL giấy TT 3</th>
+                                        style="min-width: 100px;">SL giấy TT
+                                        3</th>
                                     <th class="text-nowrap"
                                         style="min-width: 80px;">Số kẽm</th>
                                     <th class="text-nowrap"
@@ -884,13 +905,17 @@
                                     <th class="text-nowrap"
                                         style="min-width: 130px;">Phun bột</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 150px;">TG canh máy</th>
+                                        style="min-width: 150px;">TG canh
+                                        máy</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 200px;">TG bắt đầu</th>
+                                        style="min-width: 200px;">TG bắt
+                                        đầu</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 200px;">TG kết thúc</th>
+                                        style="min-width: 200px;">TG kết
+                                        thúc</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 160px;">Thành phẩm in</th>
+                                        style="min-width: 160px;">Thành phẩm
+                                        in</th>
                                     <th class="text-nowrap"
                                         style="min-width: 160px;">PL</th>
                                     <th class="text-nowrap"
@@ -898,32 +923,46 @@
                                     <th class="text-nowrap"
                                         style="min-width: 300px;">Ghi chú</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 200px;">Tổng số lượng</th>
+                                        style="min-width: 200px;">Tổng số
+                                        lượng</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 200px;">Tổng phế liệu</th>
+                                        style="min-width: 200px;">Tổng phế
+                                        liệu</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 200px;">Tổng PL trắng</th>
+                                        style="min-width: 200px;">Tổng PL
+                                        trắng</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 200px;">SL giấy ream</th>
+                                        style="min-width: 200px;">SL giấy
+                                        ream</th>
                                     <th class="text-nowrap"
                                         style="min-width: 80px;">Tuần</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 150px;">Giờ làm việc</th>
+                                        style="min-width: 150px;">Giờ làm
+                                        việc</th>
                                     <th class="text-nowrap"
                                         style="min-width: 100px;">Mã ca</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 150px;">SL giấy theo WS</th>
+                                        style="min-width: 150px;">SL giấy theo
+                                        WS</th>
                                     <th class="text-nowrap"
                                         style="min-width: 150px;">SL cắt</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 150px;">Chênh lệch TT-WS</th>
+                                        style="min-width: 150px;">Chênh lệch
+                                        TT-WS</th>
                                     <th class="text-nowrap"
-                                        style="min-width: 150px;">Chênh lệch TT-SCC</th>
+                                        style="min-width: 150px;">Chênh lệch
+                                        TT-SCC</th>
                                     <th class="text-nowrap"
                                         style="min-width: 220px;">Phụ máy 1</th>
                                     <th class="text-nowrap"
                                         style="min-width: 220px;">Phụ máy 2</th>
-                                        <th class="text-nowrap" style="min-width: 150px;">Số pass in</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 150px;">Số pass
+                                        in</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 160px;">Thành
+                                        phẩm</th>
+
                                 </tr>
                             </thead>
                             <tbody id="reportTableBody">
@@ -1066,23 +1105,24 @@
                                 <tr>
                                     <th class="text-nowrap"
                                         style="min-width: 60px;">STT</th>
-                                        <th class="text-nowrap"
+                                    <th class="text-nowrap"
                                         style="min-width: 80px;">Ca</th>
-                                        <th class="text-nowrap"
+                                    <th class="text-nowrap"
                                         style="min-width: 100px;">Giờ làm
                                         việc</th>
-                                        <th class="text-nowrap"
+                                    <th class="text-nowrap"
                                         style="min-width: 90px;">Mã ca</th>
-                                        <th class="text-nowrap"
-                                        style="min-width: 100px;">Trưởng máy</th>
-                                        <th class="text-nowrap"
+                                    <th class="text-nowrap"
+                                        style="min-width: 100px;">Trưởng
+                                        máy</th>
+                                    <th class="text-nowrap"
                                         style="min-width: 120px;">Số
                                         WS</th>
-                                        <th class="text-nowrap"
-                                            style="min-width: 80px;">Máy</th>
-                                            <th class="text-nowrap"
-                                                style="min-width: 180px;">Thời gian
-                                                dừng</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 80px;">Máy</th>
+                                    <th class="text-nowrap"
+                                        style="min-width: 180px;">Thời gian
+                                        dừng</th>
                                     <th class="text-nowrap"
                                         style="min-width: 180px;">Thời gian
                                         dừng máy</th>

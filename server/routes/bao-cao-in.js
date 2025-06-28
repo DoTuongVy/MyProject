@@ -71,6 +71,47 @@ async function calculateSoLanChay(ws, tuychon, existingReports) {
     return samePairs.length + 1;
 }
 
+
+
+// Tính thành phẩm theo logic đặc biệt
+async function calculateThanhPham(ws, tuychonValue, tongSoLuong, existingReports) {
+    if (!ws || ws.trim() === '') return 0;
+    
+    const tongSoLuongValue = parseFloat(tongSoLuong) || 0;
+    
+    // Nếu tùy chọn 4,5,6 thì thành phẩm = tổng số lượng
+    if (['4', '5', '6'].includes(tuychonValue)) {
+        return tongSoLuongValue;
+    }
+    
+    // Với tùy chọn 1,2,3 - tìm cặp tương ứng
+    const pairMap = { '1': '4', '2': '5', '3': '6' };
+    const targetTuychon = pairMap[tuychonValue];
+    
+    if (!targetTuychon) return tongSoLuongValue;
+    
+    // Chuyển value thành text để so sánh
+    const textMap = {
+        '4': '4. In dặm',
+        '5': '5. In dặm + Cán bóng',
+        '6': '6. Cán bóng lại'
+    };
+    const targetText = textMap[targetTuychon];
+    
+    // Tìm báo cáo có cùng WS và tùy chọn cặp tương ứng
+    const pairReport = existingReports.find(report => {
+        return report.ws === ws && report.tuy_chon === targetText;
+    });
+    
+    if (pairReport) {
+        const pairPheLieu = parseFloat(pairReport.tong_phe_lieu) || 0;
+        return tongSoLuongValue - pairPheLieu;
+    }
+    
+    return tongSoLuongValue;
+}
+
+
 // API lấy danh sách báo cáo In
 router.get('/list', (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -153,17 +194,19 @@ router.post('/submit', async (req, res) => {
 
         const stt = (sttRow?.max_stt || 0) + 1;
 
-        // Lấy danh sách báo cáo hiện có để tính số lần chạy
-        // const existingReports = await new Promise((resolve, reject) => {
-        //     db.all(`SELECT ws, tuy_chon FROM bao_cao_in WHERE ws IS NOT NULL`, [], (err, rows) => {
-        //         if (err) reject(err);
-        //         else resolve(rows || []);
-        //     });
-        // });
+        // Lấy danh sách báo cáo hiện có để tính số lần chạy và thành phẩm
+const existingReports = await new Promise((resolve, reject) => {
+    db.all(`SELECT ws, tuy_chon, tong_phe_lieu FROM bao_cao_in WHERE ws IS NOT NULL AND ws != ''`, [], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+    });
+});
 
 
         // Tính số lần chạy
 const soLanChay = await calculateSoLanChay(batDau.ws, batDau.tuychon, existingReports);
+// Tính thành phẩm
+const thanhPham = await calculateThanhPham(batDau.ws, batDau.tuychon, ketThuc.tongSoLuong, existingReports);
 
         // Lấy dữ liệu từ WS-Tổng
         let wsData = {};
@@ -219,6 +262,7 @@ const soLanChay = await calculateSoLanChay(batDau.ws, batDau.tuychon, existingRe
             // Nếu > 6 và không phải máy 2M thì để người dùng chọn
         }
 
+
         // Lưu vào database
         const insertSQL = `INSERT INTO bao_cao_in (
             id, stt, ngay, may, quan_doc, ca, truong_may, ws, so_lan_chay, ngay_phu,
@@ -228,8 +272,8 @@ const soLanChay = await calculateSoLanChay(batDau.ws, batDau.tuychon, existingRe
             thoi_gian_ket_thuc, thanh_pham_in, phe_lieu, phe_lieu_trang, ghi_chu,
             tong_so_luong, tong_phe_lieu, tong_phe_lieu_trang, sl_giay_ream, tuan,
             gio_lam_viec, ma_ca, sl_giay_theo_ws, sl_cat, chenh_lech_tt_ws, chenh_lech_tt_scc,
-            phu_may_1, phu_may_2, so_pass_in, dung_may, nguoi_thuc_hien, user_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            phu_may_1, phu_may_2, so_pass_in, thanh_pham, dung_may, nguoi_thuc_hien, user_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         
         await new Promise((resolve, reject) => {
             db.run(insertSQL, [
@@ -281,6 +325,7 @@ const soLanChay = await calculateSoLanChay(batDau.ws, batDau.tuychon, existingRe
                 batDau.phumay1 || '',
                 batDau.phumay2 || '',
                 soPassIn,
+                thanhPham,
                 ketThuc.dungMay ? 1 : 0,
                 batDau.nguoiThucHien || '',
                 nguoiDung.id || ''
@@ -388,9 +433,9 @@ router.post('/submit-start', async (req, res) => {
 
         const stt = (sttRow?.max_stt || 0) + 1;
 
-        // Lấy danh sách báo cáo hiện có để tính số lần chạy
+// Lấy danh sách báo cáo hiện có để tính số lần chạy
 const existingReports = await new Promise((resolve, reject) => {
-    db.all(`SELECT ws, tuy_chon FROM bao_cao_in WHERE ws IS NOT NULL AND ws != ''`, [], (err, rows) => {
+    db.all(`SELECT ws, tuy_chon, tong_phe_lieu FROM bao_cao_in WHERE ws IS NOT NULL AND ws != ''`, [], (err, rows) => {
         if (err) reject(err);
         else resolve(rows || []);
     });
@@ -398,6 +443,8 @@ const existingReports = await new Promise((resolve, reject) => {
 
 // Tính số lần chạy
 const soLanChay = await calculateSoLanChay(startData.ws, startData.tuychon, existingReports);
+// Tính thành phẩm (mặc định = 0 cho phần bắt đầu)
+const thanhPham = 0;
 
         // Lấy dữ liệu từ WS-Tổng
         let wsData = {};
@@ -435,8 +482,8 @@ const soLanChay = await calculateSoLanChay(startData.ws, startData.tuychon, exis
             id, stt, ngay, may, quan_doc, ca, truong_may, ws, so_lan_chay, khach_hang, ma_sp,
             sl_don_hang, so_con, so_mau, ma_giay_1, ma_giay_2, ma_giay_3, kho, dai_giay,
             tuy_chon, mau_3_tone, so_kem, mat_sau, phu_keo, phun_bot, gio_lam_viec,
-            ma_ca, phu_may_1, phu_may_2, so_pass_in, thoi_gian_bat_dau, nguoi_thuc_hien, is_started_only, sl_giay_theo_ws
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            ma_ca, phu_may_1, phu_may_2, so_pass_in, thanh_pham, thoi_gian_bat_dau, nguoi_thuc_hien, is_started_only, sl_giay_theo_ws, thanh_pham
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         
         await new Promise((resolve, reject) => {
             db.run(insertSQL, [
@@ -468,10 +515,12 @@ const soLanChay = await calculateSoLanChay(startData.ws, startData.tuychon, exis
                 startData.phumay1 || '',
                 startData.phumay2 || '',
                 startData.soPassIn || '',
+                thanhPham,
                 startData.thoiGianBatDau || '',
                 startData.nguoiThucHien || '',
                 1,  // Đánh dấu là chỉ mới bắt đầu
-                wsData.slGiayTheoWS || ''
+                wsData.slGiayTheoWS || '',
+                thanhPham
             ], function (err) {
                 if (err) reject(err);
                 else resolve(this.lastID);
@@ -541,7 +590,7 @@ router.put('/update-start/:id', async (req, res) => {
     quan_doc = ?, ca = ?, truong_may = ?, ws = ?, khach_hang = ?, ma_sp = ?,
     sl_don_hang = ?, so_con = ?, so_mau = ?, ma_giay_1 = ?, ma_giay_2 = ?, ma_giay_3 = ?, 
     kho = ?, dai_giay = ?, tuy_chon = ?, mau_3_tone = ?, so_kem = ?, mat_sau = ?, 
-    phu_keo = ?, phun_bot = ?, gio_lam_viec = ?, ma_ca = ?, phu_may_1 = ?, phu_may_2 = ?, so_pass_in = ?,
+    phu_keo = ?, phun_bot = ?, gio_lam_viec = ?, ma_ca = ?, phu_may_1 = ?, phu_may_2 = ?, so_pass_in = ?, thanh_pham = ?,
     thoi_gian_bat_dau = ?, nguoi_thuc_hien = ?, sl_giay_theo_ws = ?
     WHERE id = ?`;
         
@@ -621,9 +670,9 @@ router.put('/update-end/:id', async (req, res) => {
         }
 
 
-        // Lấy danh sách báo cáo hiện có để tính số lần chạy
+// Lấy danh sách báo cáo hiện có để tính số lần chạy và thành phẩm
 const existingReports = await new Promise((resolve, reject) => {
-    db.all(`SELECT ws, tuy_chon FROM bao_cao_in WHERE ws IS NOT NULL AND ws != '' AND id != ?`, [id], (err, rows) => {
+    db.all(`SELECT ws, tuy_chon, tong_phe_lieu FROM bao_cao_in WHERE ws IS NOT NULL AND ws != '' AND id != ?`, [id], (err, rows) => {
         if (err) reject(err);
         else resolve(rows || []);
     });
@@ -631,6 +680,9 @@ const existingReports = await new Promise((resolve, reject) => {
 
 // Tính số lần chạy
 const soLanChay = await calculateSoLanChay(currentReport.ws, currentReport.tuy_chon, existingReports);
+// Tính thành phẩm
+const tuychonValue = currentReport.tuy_chon ? currentReport.tuy_chon.split('.')[0] : '';
+const thanhPham = await calculateThanhPham(currentReport.ws, tuychonValue, ketThuc.tongSoLuong, existingReports);
 
         // Tính tuần trong tháng
         const tuan = calculateWeekInMonth(currentReport.ngay);
@@ -670,7 +722,7 @@ if (ketThuc.thoiGianKetThuc) {
             thoi_gian_ket_thuc = ?, thoi_gian_canh_may = ?, thanh_pham_in = ?, phe_lieu = ?, 
             phe_lieu_trang = ?, ghi_chu = ?, tong_so_luong = ?, tong_phe_lieu = ?, 
             tong_phe_lieu_trang = ?, sl_giay_ream = ?, tuan = ?, chenh_lech_tt_ws = ?,
-            sl_giay_tt_1 = ?, sl_giay_tt_2 = ?, sl_giay_tt_3 = ?, dung_may = ?, is_started_only = ?, ngay_phu = ?, so_lan_chay = ?
+            sl_giay_tt_1 = ?, sl_giay_tt_2 = ?, sl_giay_tt_3 = ?, dung_may = ?, is_started_only = ?, ngay_phu = ?, so_lan_chay = ?, thanh_pham = ?
             WHERE id = ?`;
         
         await new Promise((resolve, reject) => {
@@ -694,6 +746,7 @@ if (ketThuc.thoiGianKetThuc) {
                 0,  // Đánh dấu đã hoàn thành
                 ngayPhu,
                 soLanChay,
+                thanhPham,
                 id
             ], function (err) {
                 if (err) reject(err);

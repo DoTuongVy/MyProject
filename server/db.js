@@ -1068,7 +1068,8 @@ db.run(`CREATE TABLE IF NOT EXISTS bao_cao_in (
   chenh_lech_tt_scc TEXT, -- Để trống
   phu_may_1 TEXT, -- Phụ máy 1 (từ production_users)
   phu_may_2 TEXT, -- Phụ máy 2 (từ production_users)
-  so_pass_in TEXT, -- Số pass in (logic đặc biệt theo số màu)
+  so_pass_in TEXT, -- Số pass in (logic đặc biệt theo số màu),
+  thanh_pham TEXT, --Thành phẩm cuối
   dung_may INTEGER DEFAULT 0, -- Dừng máy (0: Không, 1: Có)
   nguoi_thuc_hien TEXT, -- Người thực hiện
   user_id TEXT, -- ID người dùng

@@ -51,3 +51,104 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
 }
+
+
+
+
+
+/* CSS cho cố định cột */
+
+/* Đảm bảo table container có thể scroll ngang */
+.table-responsive {
+  overflow-x: auto !important;
+  position: relative !important;
+}
+
+.table {
+  min-width: 100% !important;
+}
+
+.fixed-column-header {
+  background-color: #d1ecf1 !important;
+  position: sticky !important;
+  z-index: 15 !important;
+  border-right: 2px solid #bee5eb !important;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.fixed-column-cell {
+  background-color: #f8f9fa !important;
+  position: sticky !important;
+  z-index: 10 !important;
+  border-right: 1px solid #dee2e6 !important;
+  box-shadow: 2px 0 3px rgba(0,0,0,0.05);
+}
+
+
+/* CSS cho ẩn cột - mũi tên ngang */
+.hidden-column-indicator {
+  position: relative;
+  width: 20px;
+  background-color: #e9ecef;
+  border-left: 2px solid #6c757d;
+  border-right: 2px solid #6c757d;
+  cursor: pointer;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 12px;
+  color: #005eb0;
+  padding: 4px 0;
+}
+
+.hidden-column-indicator:hover {
+  background-color: #dee2e6;
+  color: #004992;
+}
+
+.hidden-column-indicator::before {
+  content: "→";
+  font-weight: bold;
+}
+
+/* CSS cho selection */
+.column-selected {
+  background-color: #e3f2fd !important;
+}
+
+/* CSS cho dropdown toggle */
+.column-dropdown-toggle {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  font-size: 10px;
+}
+
+th:hover .column-dropdown-toggle {
+  opacity: 1;
+}
+
+/* Context menu */
+.column-context-menu {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px 0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  z-index: 1000;
+  min-width: 120px;
+}
+
+.context-menu-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.context-menu-item:hover {
+  background-color: #f5f5f5;
+}

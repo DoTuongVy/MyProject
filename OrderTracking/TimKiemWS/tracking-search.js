@@ -598,7 +598,9 @@ let quantityHtml = '';
         quantityHtml = `
         <div class="quantity-section">
             <div class="quantity-label" style="display: flex; align-items: center; justify-content: space-between;">
-                <span>SL (${stage.quantityUnit}):</span>
+                <span>SL (${stage.quantityUnit}): <span class="quantity-value">${PP.formatQuantity(stageInfo.quantities[0].value)}</span></span>
+
+
                 <button type="button" class="btn btn-sm p-1" style="border: none; background: none; color: #6c757d;"
                         data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="hover"
                         data-bs-html="true" data-bs-content="${popoverHtml.replace(/"/g, '&quot;')}"
@@ -607,7 +609,7 @@ let quantityHtml = '';
                 </button>
             </div>
             <div class="single-quantity">
-                <div class="quantity-value">${PP.formatQuantity(stageInfo.quantities[0].value)}</div>
+                
             </div>
         </div>
     `;
@@ -629,11 +631,11 @@ let quantityHtml = '';
 } else {
     // Hiển thị một số lượng (như GMC: tổng số tấm)
     quantityHtml = `
-        <div class="quantity-section">
-            <div class="quantity-label">SL (${stage.quantityUnit}):</div>
-            <div class="single-quantity">
-                <div class="quantity-value">${PP.formatQuantity(stageInfo.totalQuantity)}</div>
-            </div>
+        <div class="quantity-section" style= "display: flex; align-items: center; justify-content: space-between;">
+            <span class="quantity-label">SL (${stage.quantityUnit}): <span class= "quantity-value">${PP.formatQuantity(stageInfo.totalQuantity)}</span></span>
+            
+                <div class=" text-center"></div>
+            
         </div>
     `;
 }
@@ -653,7 +655,7 @@ let quantityHtml = '';
         endTimeHtml = `
             <div class="time-info">
                 <span class="time-label">Thời gian kết thúc:</span>
-                <span class="time-value">${PP.formatDisplayTime(stageInfo.endTime)}</span>
+                <span class="time-value" style=" color: red;">${PP.formatDisplayTime(stageInfo.endTime)}</span>
             </div>
         `;
     }
@@ -684,13 +686,14 @@ let quantityHtml = '';
     
     ${quantityHtml}
     
-    <div class="time-info">
-        <span class="time-label">Thời gian bắt đầu:</span>
-        <span class="time-value">${PP.formatDisplayTime(stageInfo.startTime)}</span>
-    </div>
-    ${endTimeHtml}
+    
     
     <div class="text-center mt-auto">
+    <div class="time-info">
+        <span class="time-label">Thời gian bắt đầu:</span>
+        <span class="time-value" style=" color: green;">${PP.formatDisplayTime(stageInfo.startTime)}</span>
+    </div>
+    ${endTimeHtml}
         <button class="btn detail-btn" onclick="showStageDetail('${stage.id}')">
             Xem chi tiết (${stageInfo.recordCount} phiếu)
         </button>
@@ -812,12 +815,12 @@ function getTableHeaders(stageId) {
             ];
         case 'gmc':
             return [
-                'MÁY', 'SỐ PHIẾU', 'SỐ TẤM CẮT ĐƯỢC', 'KHỔ (MM)', 'DÀI (MM)', 'ĐẦU CUỘN', 'RÁCH MÓP', 'PHẾ LIỆU SẢN XUẤT',
+                'MÁY', 'SỐ PHIẾU', 'KHÁCH HÀNG', 'MÃ GIẤY', 'ĐỊNH LƯỢNG','KHỔ CẮT', 'TLN','SỐ TẤM CẮT ĐƯỢC', 'KHỔ (MM)', 'DÀI (MM)', 'ĐẦU CUỘN', 'RÁCH MÓP', 'PHẾ LIỆU SẢN XUẤT',
                 'TG BẮT ĐẦU', 'TG KẾT THÚC'
             ];
             case 'in':
     return [
-        'MÁY', 'MÃ CA', 'QUẢN ĐỐC', 'TRƯỞNG MÁY', 'WS', 'KHÁCH HÀNG', 
+        'MÁY', 'MÃ CA', 'QUẢN ĐỐC', 'TRƯỞNG MÁY', 'KHÁCH HÀNG', 
         'MÃ SẢN PHẨM', 'SL ĐƠN HÀNG', 'SỐ CON', 'SỐ MÀU', 'MÃ GIẤY 1', 
         'KHỔ', 'DÀI GIẤY', 'TÙY CHỌN', 'PHỦ KEO', 'THÀNH PHẨM IN', 
         'PHẾ LIỆU', 'PHẾ LIỆU TRẮNG', 'SỐ PASS IN', 'TG BẮT ĐẦU', 'TG KẾT THÚC'
@@ -892,6 +895,11 @@ function getTableRowHTML(stageId, item, PP) {
             return `
                 <td>${PP.safeValue(item.may)}</td>
                 <td>${PP.safeValue(item.so_phieu_cat_giay)}</td>
+                <td>${PP.safeValue(item.khach_hang)}</td>
+                <td>${PP.safeValue(item.ma_giay)}</td>
+                <td>${PP.formatQuantity(PP.safeNumber(item.dinh_luong))}</td>
+                <td>${PP.formatQuantity(PP.safeNumber(item.kho_cat))}</td>
+                <td>${PP.formatQuantity(PP.safeNumber(item.trong_luong_nhan))}</td>
                 <td>${PP.formatQuantity(PP.safeNumber(item.so_tam_cat_duoc))}</td>
                 <td>${PP.formatQuantity(PP.safeNumber(item.kho_mm))}</td>
                 <td>${PP.formatQuantity(PP.safeNumber(item.dai_mm))}</td>
@@ -907,7 +915,6 @@ function getTableRowHTML(stageId, item, PP) {
         <td>${PP.safeValue(item.ma_ca)}</td>
         <td>${PP.safeValue(item.quan_doc)}</td>
         <td>${PP.safeValue(item.truong_may)}</td>
-        <td>${PP.safeValue(item.ws)}</td>
         <td>${PP.safeValue(item.khach_hang)}</td>
         <td>${PP.safeValue(item.ma_sp)}</td>
         <td>${PP.formatQuantity(PP.safeNumber(item.sl_don_hang))}</td>
