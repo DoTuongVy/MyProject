@@ -1,0 +1,160 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Code\\GIT\\MyProject\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\GIT\\MyProject\\OrderTracking\\TimKiemWS\\styles.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:OrderTracking\\TimKiemWS\\styles.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\GIT\\MyProject\\OrderTracking\\TimKiemWS\\tracking-search.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:OrderTracking\\TimKiemWS\\tracking-search.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\GIT\\MyProject\\OrderTracking\\production-process.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:OrderTracking\\production-process.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\GIT\\MyProject\\OrderTracking\\TimKiemWS\\index.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:OrderTracking\\TimKiemWS\\index.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\GIT\\MyProject\\BaoCaoIn\\InOffset.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:BaoCaoIn\\InOffset.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\GIT\\MyProject\\BaoCaoIn\\in.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:BaoCaoIn\\in.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\GIT\\MyProject\\BaoCaoIn\\in.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:BaoCaoIn\\in.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\GIT\\MyProject\\server\\routes\\bao-cao-in.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:server\\routes\\bao-cao-in.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "tracking-search.js",
+              "DocumentMoniker": "D:\\Code\\GIT\\MyProject\\OrderTracking\\TimKiemWS\\tracking-search.js",
+              "RelativeDocumentMoniker": "OrderTracking\\TimKiemWS\\tracking-search.js",
+              "ToolTip": "D:\\Code\\GIT\\MyProject\\OrderTracking\\TimKiemWS\\tracking-search.js",
+              "RelativeToolTip": "OrderTracking\\TimKiemWS\\tracking-search.js",
+              "ViewState": "AgIAAEwCAAAAAAAAAIAzwFQCAABFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-27T02:55:19.753Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "styles.css",
+              "DocumentMoniker": "D:\\Code\\GIT\\MyProject\\OrderTracking\\TimKiemWS\\styles.css",
+              "RelativeDocumentMoniker": "OrderTracking\\TimKiemWS\\styles.css",
+              "ToolTip": "D:\\Code\\GIT\\MyProject\\OrderTracking\\TimKiemWS\\styles.css",
+              "RelativeToolTip": "OrderTracking\\TimKiemWS\\styles.css",
+              "ViewState": "AgIAAHMCAAAAAAAAAAAswH4CAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2025-06-27T02:55:19.162Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "index.html",
+              "DocumentMoniker": "D:\\Code\\GIT\\MyProject\\OrderTracking\\TimKiemWS\\index.html",
+              "RelativeDocumentMoniker": "OrderTracking\\TimKiemWS\\index.html",
+              "ToolTip": "D:\\Code\\GIT\\MyProject\\OrderTracking\\TimKiemWS\\index.html",
+              "RelativeToolTip": "OrderTracking\\TimKiemWS\\index.html",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAABVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
+              "WhenOpened": "2025-06-27T02:55:18.415Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "production-process.js",
+              "DocumentMoniker": "D:\\Code\\GIT\\MyProject\\OrderTracking\\production-process.js",
+              "RelativeDocumentMoniker": "OrderTracking\\production-process.js",
+              "ToolTip": "D:\\Code\\GIT\\MyProject\\OrderTracking\\production-process.js",
+              "RelativeToolTip": "OrderTracking\\production-process.js",
+              "ViewState": "AgIAAPAAAAAAAAAAAAAzwPsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-27T02:55:17.152Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "InOffset.html",
+              "DocumentMoniker": "D:\\Code\\GIT\\MyProject\\BaoCaoIn\\InOffset.html",
+              "RelativeDocumentMoniker": "BaoCaoIn\\InOffset.html",
+              "ToolTip": "D:\\Code\\GIT\\MyProject\\BaoCaoIn\\InOffset.html",
+              "RelativeToolTip": "BaoCaoIn\\InOffset.html",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
+              "WhenOpened": "2025-06-27T02:55:05.857Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "in.js",
+              "DocumentMoniker": "D:\\Code\\GIT\\MyProject\\BaoCaoIn\\in.js",
+              "RelativeDocumentMoniker": "BaoCaoIn\\in.js",
+              "ToolTip": "D:\\Code\\GIT\\MyProject\\BaoCaoIn\\in.js",
+              "RelativeToolTip": "BaoCaoIn\\in.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-27T02:55:05.194Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "in.css",
+              "DocumentMoniker": "D:\\Code\\GIT\\MyProject\\BaoCaoIn\\in.css",
+              "RelativeDocumentMoniker": "BaoCaoIn\\in.css",
+              "ToolTip": "D:\\Code\\GIT\\MyProject\\BaoCaoIn\\in.css",
+              "RelativeToolTip": "BaoCaoIn\\in.css",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2025-06-27T02:55:04.68Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "bao-cao-in.js",
+              "DocumentMoniker": "D:\\Code\\GIT\\MyProject\\server\\routes\\bao-cao-in.js",
+              "RelativeDocumentMoniker": "server\\routes\\bao-cao-in.js",
+              "ToolTip": "D:\\Code\\GIT\\MyProject\\server\\routes\\bao-cao-in.js",
+              "RelativeToolTip": "server\\routes\\bao-cao-in.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-27T02:55:01.325Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

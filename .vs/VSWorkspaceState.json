@@ -3,9 +3,11 @@
     "",
     "\\BaoCaoGMC",
     "\\BaoCaoIn",
+    "\\OrderTracking",
+    "\\OrderTracking\\TimKiemWS",
     "\\server",
     "\\server\\routes"
   ],
-  "SelectedNode": "\\server\\routes\\bao-cao-in.js",
+  "SelectedNode": "\\OrderTracking\\TimKiemWS\\tracking-search.js",
   "PreviewInSolutionExplorer": false
 }
