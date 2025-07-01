@@ -55,60 +55,268 @@ function calculateWeekInMonth(dateString) {
 
 
 // Hàm tính số lần chạy
-async function calculateSoLanChay(ws, tuychon, existingReports) {
+async function calculateSoLanChay(ws, tuychonText, existingReports) {
     if (!ws || ws.trim() === '') return '';
     
-    // Nếu chọn "In dặm" (4) hoặc "In dặm + Cán bóng" (5) thì số lần chạy là 0
-    if (tuychon === '4' || tuychon === '5') {
+    console.log(`🔍 Tính số lần chạy: WS=${ws}, Tùy chọn=${tuychonText}`);
+    
+    // **BƯỚC 1: THÊM ĐẦY ĐỦ MAP TÙY CHỌN**
+    const tuychonValueMap = {
+        '1. In': '1',
+        '2. In + Cán bóng': '2', 
+        '3. Cán bóng': '3',
+        '4. In dặm': '4',
+        '5. In dặm + Cán bóng': '5',
+        '6. Cán bóng lại': '6',
+        '7. In dặm (Gia công)': '7',
+        '8. In dặm + Cán bóng (Gia công)': '8',
+        '9. Cán bóng lại (Gia công)': '9'
+    };
+    
+    const tuychonValue = tuychonValueMap[tuychonText];
+    
+    // **BƯỚC 2: TÙY CHỌN 4,5,6,7,8,9 → SỐ LẦN CHẠY = 0**
+    if (['4', '5', '6', '7', '8', '9'].includes(tuychonValue)) {
+        console.log(`✅ Tùy chọn ${tuychonText} -> Số lần chạy = 0`);
         return 0;
     }
     
-    // Đếm các báo cáo có cùng WS và tùy chọn (chuyển sang text để so sánh)
+    // **BƯỚC 3: TÙY CHỌN 1,2,3 → ĐẾM SỐ LẦN CHẠY**
     const samePairs = existingReports.filter(report => 
-        report.ws === ws && report.tuy_chon === tuychon
+        report.ws === ws && report.tuy_chon === tuychonText
     );
     
-    return samePairs.length + 1;
+    const soLanChay = samePairs.length + 1;
+    console.log(`✅ Tùy chọn ${tuychonText} -> Số lần chạy = ${soLanChay} (${samePairs.length} báo cáo trước + 1)`);
+    
+    return soLanChay;
+}
+
+
+// Hàm tính thành phẩm dựa trên ghép cặp tùy chọn
+async function calculateThanhPham(currentReportId, wsValue, tuychonText, tongSoLuong) {
+    try {
+        if (!wsValue) return parseFloat(tongSoLuong) || 0;
+        
+        console.log(`🔍 Backend tính THÀNH PHẨM: WS=${wsValue}, Tùy chọn=${tuychonText}, Tổng SL=${tongSoLuong}`);
+        
+        const tuychonValueMap = {
+            '1. In': '1',
+            '2. In + Cán bóng': '2', 
+            '3. Cán bóng': '3',
+            '4. In dặm': '4',
+            '5. In dặm + Cán bóng': '5',
+            '6. Cán bóng lại': '6',
+            '7. In dặm (Gia công)': '7',
+            '8. In dặm + Cán bóng (Gia công)': '8',
+            '9. Cán bóng lại (Gia công)': '9'
+        };
+        
+        const tuychonValue = tuychonValueMap[tuychonText];
+        
+        // **TÙY CHỌN 4,5,6,7,8,9 = TỔNG SỐ LƯỢNG (KHÔNG TRỪ GÌ)**
+        if (['4', '5', '6', '7', '8', '9'].includes(tuychonValue)) {
+            console.log(`✅ Tùy chọn ${tuychonText} -> THÀNH PHẨM = Tổng số lượng = ${tongSoLuong}`);
+            return parseFloat(tongSoLuong);
+        }
+        
+        // **TÙY CHỌN 1,2,3 = TỔNG SỐ LƯỢNG - TỔNG PHẾ LIỆU CỦA CẶP TƯƠNG ỨNG**
+        if (['1', '2', '3'].includes(tuychonValue)) {
+            // Map tùy chọn với cặp tương ứng
+            const pairMap = {
+                '1. In': '4. In dặm',
+                '2. In + Cán bóng': '5. In dặm + Cán bóng', 
+                '3. Cán bóng': '6. Cán bóng lại'
+            };
+            
+            const pairTuychon = pairMap[tuychonText];
+            
+            if (!pairTuychon) {
+                console.log(`❌ Không tìm thấy cặp cho ${tuychonText}`);
+                return parseFloat(tongSoLuong);
+            }
+            
+            // Lấy báo cáo hiện tại để có thông tin điều kiện
+            const currentReport = await new Promise((resolve, reject) => {
+                db.get(`SELECT * FROM bao_cao_in WHERE id = ?`, [currentReportId], (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                });
+            });
+            
+            if (!currentReport) {
+                return parseFloat(tongSoLuong);
+            }
+            
+            // **TÌM TỔNG PHẾ LIỆU CỦA TẤT CẢ BÁO CÁO CẶP CÙNG WS**
+            const pairReports = await new Promise((resolve, reject) => {
+                db.all(`SELECT tong_phe_lieu, phe_lieu, phe_lieu_trang FROM bao_cao_in 
+                        WHERE ws = ? AND tuy_chon = ? 
+                        AND mat_sau = ? AND so_pass_in = ? 
+                        AND (? = '2M' OR may = ?) 
+                        AND (phu_keo = ? OR ? = '' OR phu_keo IS NULL)
+                        AND id != ? 
+                        AND (tong_phe_lieu IS NOT NULL OR (phe_lieu IS NOT NULL AND phe_lieu_trang IS NOT NULL))
+                        ORDER BY created_at DESC`, 
+                    [
+                        wsValue, 
+                        pairTuychon,
+                        currentReport.mat_sau || 0,
+                        currentReport.so_pass_in || '',
+                        currentReport.may, currentReport.may,
+                        currentReport.phu_keo || '', currentReport.phu_keo || '',
+                        currentReportId
+                    ], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows || []);
+                });
+            });
+            
+            if (pairReports.length > 0) {
+                // **TÍNH TỔNG PHẾ LIỆU CỦA CÁC BÁO CÁO CẶP**
+                const tongPheLieuCap = pairReports.reduce((total, report) => {
+                    // Ưu tiên tong_phe_lieu, nếu không có thì tính từ phe_lieu + phe_lieu_trang
+                    let pheLieu = 0;
+                    if (report.tong_phe_lieu !== null && report.tong_phe_lieu !== undefined) {
+                        pheLieu = parseFloat(report.tong_phe_lieu) || 0;
+                    } else {
+                        const pl1 = parseFloat(report.phe_lieu) || 0;
+                        const pl2 = parseFloat(report.phe_lieu_trang) || 0;
+                        pheLieu = pl1 + pl2;
+                    }
+                    return total + pheLieu;
+                }, 0);
+                
+                console.log(`✅ Có ${pairReports.length} báo cáo cặp ${pairTuychon}, tổng phế liệu: ${tongPheLieuCap}`);
+                
+                // **THÀNH PHẨM = TỔNG SỐ LƯỢNG - TỔNG PHẾ LIỆU CỦA CẶP**
+                const thanhPham = Math.max(0, parseFloat(tongSoLuong) - tongPheLieuCap);
+                
+                console.log(`📊 THÀNH PHẨM = ${tongSoLuong} - ${tongPheLieuCap} = ${thanhPham}`);
+                return thanhPham;
+            } else {
+                // Không có cặp: THÀNH PHẨM = Tổng số lượng
+                console.log(`❌ Không có cặp ${pairTuychon} - THÀNH PHẨM = Tổng số lượng = ${tongSoLuong}`);
+                return parseFloat(tongSoLuong);
+            }
+        }
+        
+        // Fallback
+        return parseFloat(tongSoLuong);
+        
+    } catch (error) {
+        console.error('Lỗi khi tính thành phẩm:', error);
+        return parseFloat(tongSoLuong) || 0;
+    }
 }
 
 
 
-// Tính thành phẩm theo logic đặc biệt
-async function calculateThanhPham(ws, tuychonValue, tongSoLuong, existingReports) {
-    if (!ws || ws.trim() === '') return 0;
-    
-    const tongSoLuongValue = parseFloat(tongSoLuong) || 0;
-    
-    // Nếu tùy chọn 4,5,6 thì thành phẩm = tổng số lượng
-    if (['4', '5', '6'].includes(tuychonValue)) {
-        return tongSoLuongValue;
+// Hàm cập nhật lại thành phẩm của các báo cáo liên quan khi có báo cáo mới
+async function updateRelatedReportsThanhPham(wsValue, tuychonText, currentReportId) {
+    try {
+        console.log(`🔄 Cập nhật báo cáo liên quan: WS=${wsValue}, Tùy chọn=${tuychonText}`);
+        
+        const tuychonValueMap = {
+            '1. In': '1',
+            '2. In + Cán bóng': '2', 
+            '3. Cán bóng': '3',
+            '4. In dặm': '4',
+            '5. In dặm + Cán bóng': '5',
+            '6. Cán bóng lại': '6',
+            '7. In dặm (Gia công)': '7',
+            '8. In dặm + Cán bóng (Gia công)': '8',
+            '9. Cán bóng lại (Gia công)': '9'
+        };
+        
+        const tuychonValue = tuychonValueMap[tuychonText];
+        
+        // **CHỈ CẬP NHẬT KHI LÀ TÙY CHỌN 4,5,6,7,8,9 (VÌ KHI CÓ THÊM PHẾ LIỆU THÌ CẦN CẬP NHẬT THÀNH PHẨM CỦA 1,2,3)**
+        if (!['4', '5', '6', '7', '8', '9'].includes(tuychonValue)) {
+            console.log(`❌ Tùy chọn ${tuychonText} không cần cập nhật báo cáo liên quan`);
+            return;
+        }
+        
+        // Map ngược để tìm tùy chọn cần cập nhật
+        const reversePairMap = {
+            '4. In dặm': '1. In',
+            '5. In dặm + Cán bóng': '2. In + Cán bóng',
+            '6. Cán bóng lại': '3. Cán bóng',
+            '7. In dặm (Gia công)': null,           // Gia công không có cặp
+            '8. In dặm + Cán bóng (Gia công)': null,
+            '9. Cán bóng lại (Gia công)': null
+        };
+        
+        const targetTuychon = reversePairMap[tuychonText];
+        
+        if (!targetTuychon) {
+            console.log(`❌ Tùy chọn ${tuychonText} không có cặp tương ứng hoặc là gia công`);
+            return;
+        }
+        
+        console.log(`🔄 Cập nhật thành phẩm cho nhóm "${targetTuychon}" sau khi hoàn thành "${tuychonText}"`);
+        
+        // Lấy báo cáo hiện tại để có thông tin đầy đủ
+        const currentReport = await new Promise((resolve, reject) => {
+            db.get(`SELECT * FROM bao_cao_in WHERE id = ?`, [currentReportId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        if (!currentReport) return;
+        
+        // **TÌM TẤT CẢ BÁO CÁO NHÓM ĐÍCH CÙNG WS VÀ CÁC ĐIỀU KIỆN MATCHING**
+        const targetReports = await new Promise((resolve, reject) => {
+            db.all(`SELECT * FROM bao_cao_in 
+                    WHERE ws = ? AND tuy_chon = ? 
+                    AND mat_sau = ? AND so_pass_in = ? 
+                    AND (? = '2M' OR may = ?) 
+                    AND (phu_keo = ? OR ? = '' OR phu_keo IS NULL)
+                    AND tong_so_luong IS NOT NULL 
+                    ORDER BY created_at ASC`, 
+                [
+                    wsValue, 
+                    targetTuychon,
+                    currentReport.mat_sau || 0,
+                    currentReport.so_pass_in || '',
+                    currentReport.may, currentReport.may,
+                    currentReport.phu_keo || '', currentReport.phu_keo || ''
+                ], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+        
+        if (targetReports.length === 0) {
+            console.log(`❌ Không tìm thấy báo cáo nhóm ${targetTuychon} để cập nhật`);
+            return;
+        }
+        
+        // **CẬP NHẬT THÀNH PHẨM CHO TẤT CẢ BÁO CÁO NHÓM ĐÍCH**
+        for (const targetReport of targetReports) {
+            const newThanhPham = await calculateThanhPham(
+                targetReport.id, 
+                wsValue, 
+                targetTuychon, 
+                targetReport.tong_so_luong
+            );
+            
+            // Cập nhật vào database
+            await new Promise((resolve, reject) => {
+                db.run(`UPDATE bao_cao_in SET thanh_pham = ? WHERE id = ?`, 
+                    [newThanhPham.toString(), targetReport.id], (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+            
+            console.log(`✅ Cập nhật thành phẩm cho báo cáo ID ${targetReport.id}: ${newThanhPham}`);
+        }
+        
+    } catch (error) {
+        console.error('Lỗi khi cập nhật báo cáo liên quan:', error);
     }
-    
-    // Với tùy chọn 1,2,3 - tìm cặp tương ứng
-    const pairMap = { '1': '4', '2': '5', '3': '6' };
-    const targetTuychon = pairMap[tuychonValue];
-    
-    if (!targetTuychon) return tongSoLuongValue;
-    
-    // Chuyển value thành text để so sánh
-    const textMap = {
-        '4': '4. In dặm',
-        '5': '5. In dặm + Cán bóng',
-        '6': '6. Cán bóng lại'
-    };
-    const targetText = textMap[targetTuychon];
-    
-    // Tìm báo cáo có cùng WS và tùy chọn cặp tương ứng
-    const pairReport = existingReports.find(report => {
-        return report.ws === ws && report.tuy_chon === targetText;
-    });
-    
-    if (pairReport) {
-        const pairPheLieu = parseFloat(pairReport.tong_phe_lieu) || 0;
-        return tongSoLuongValue - pairPheLieu;
-    }
-    
-    return tongSoLuongValue;
 }
 
 
@@ -669,71 +877,82 @@ router.put('/update-end/:id', async (req, res) => {
             return res.status(404).json({ error: 'Không tìm thấy báo cáo In' });
         }
 
+        // Lấy danh sách báo cáo hiện có để tính số lần chạy và thành phẩm
+        const existingReports = await new Promise((resolve, reject) => {
+            db.all(`SELECT ws, tuy_chon, tong_phe_lieu FROM bao_cao_in WHERE ws IS NOT NULL AND ws != '' AND id != ?`, [id], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
 
-// Lấy danh sách báo cáo hiện có để tính số lần chạy và thành phẩm
-const existingReports = await new Promise((resolve, reject) => {
-    db.all(`SELECT ws, tuy_chon, tong_phe_lieu FROM bao_cao_in WHERE ws IS NOT NULL AND ws != '' AND id != ?`, [id], (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows || []);
-    });
-});
-
-// Tính số lần chạy
-const soLanChay = await calculateSoLanChay(currentReport.ws, currentReport.tuy_chon, existingReports);
-// Tính thành phẩm
-const tuychonValue = currentReport.tuy_chon ? currentReport.tuy_chon.split('.')[0] : '';
-const thanhPham = await calculateThanhPham(currentReport.ws, tuychonValue, ketThuc.tongSoLuong, existingReports);
+        // Tính số lần chạy
+        const soLanChay = await calculateSoLanChay(currentReport.ws, currentReport.tuy_chon, existingReports);
 
         // Tính tuần trong tháng
         const tuan = calculateWeekInMonth(currentReport.ngay);
 
         // Tính ngày phụ dựa trên thời gian kết thúc
-let ngayPhu = currentReport.ngay;
-if (ketThuc.thoiGianKetThuc) {
-    try {
-        const endTime = new Date(ketThuc.thoiGianKetThuc);
-        const hours = endTime.getHours();
-        const minutes = endTime.getMinutes();
-        
-        // Nếu kết thúc từ 0h đến 6h10 thì ngày phụ = ngày - 1
-        if (hours < 6 || (hours === 6 && minutes <= 10)) {
-            const ngayPhuDate = new Date(currentReport.ngay);
-            ngayPhuDate.setDate(ngayPhuDate.getDate() - 1);
-            ngayPhu = ngayPhuDate.toISOString().slice(0, 10);
-        } else {
-            // Còn lại ngày phụ = ngày
-            ngayPhu = currentReport.ngay;
+        let ngayPhu = currentReport.ngay;
+        if (ketThuc.thoiGianKetThuc) {
+            try {
+                const endTime = new Date(ketThuc.thoiGianKetThuc);
+                const hours = endTime.getHours();
+                const minutes = endTime.getMinutes();
+                
+                // Nếu kết thúc từ 0h đến 6h10 thì ngày phụ = ngày - 1
+                if (hours < 6 || (hours === 6 && minutes <= 10)) {
+                    const ngayPhuDate = new Date(currentReport.ngay);
+                    ngayPhuDate.setDate(ngayPhuDate.getDate() - 1);
+                    ngayPhu = ngayPhuDate.toISOString().slice(0, 10);
+                } else {
+                    // Còn lại ngày phụ = ngày
+                    ngayPhu = currentReport.ngay;
+                }
+            } catch (error) {
+                console.error('Lỗi khi tính ngày phụ:', error);
+            }
         }
-    } catch (error) {
-        console.error('Lỗi khi tính ngày phụ:', error);
-    }
-}
+
+        // ✅ PHẦN CHÍNH: TÁCH BIỆT THÀNH PHẨM IN VÀ THÀNH PHẨM
+        
+        // 1. Cột "Thành phẩm in" - CHỈ LẤY GIÁ TRỊ NHẬP VÀO, KHÔNG TÍNH TOÁN
+        const thanhPhamIn = parseFloat(ketThuc.thanhphamin || '0');
+        
+        // 2. Cột "Tổng số lượng" - CHỈ LẤY GIÁ TRỊ NHẬP VÀO, KHÔNG TÍNH TOÁN  
+        const tongSoLuong = parseFloat(ketThuc.tongSoLuong || '0');
+        
+        // 3. Cột "Thành phẩm" - TÍNH TOÁN THEO LOGIC GHÉP CẶP
+        const thanhPham = await calculateThanhPham(id, currentReport.ws, currentReport.tuy_chon, ketThuc.tongSoLuong);
 
         // Tính các chênh lệch
-        const tongSoLuong = parseFloat(ketThuc.tongSoLuong || '0');
         const tongPheLieu = parseFloat(ketThuc.tongPheLieu || '0');
         const tongPhelieuTrang = parseFloat(ketThuc.tongPhelieuTrang || '0');
         const slGiayTheoWS = parseFloat(currentReport.sl_giay_theo_ws || '0');
         
         const chenhLechTTWS = (tongSoLuong + tongPheLieu + tongPhelieuTrang) - slGiayTheoWS;
 
+        console.log(`📊 Cập nhật báo cáo ID: ${id}`);
+        console.log(`📊 Thành phẩm in (nhập vào): ${thanhPhamIn}`);
+        console.log(`📊 Tổng số lượng (nhập vào): ${tongSoLuong}`);
+        console.log(`📊 Thành phẩm (tính toán): ${thanhPham}`);
+
         // Cập nhật database
         const updateSQL = `UPDATE bao_cao_in SET 
             thoi_gian_ket_thuc = ?, thoi_gian_canh_may = ?, thanh_pham_in = ?, phe_lieu = ?, 
             phe_lieu_trang = ?, ghi_chu = ?, tong_so_luong = ?, tong_phe_lieu = ?, 
             tong_phe_lieu_trang = ?, sl_giay_ream = ?, tuan = ?, chenh_lech_tt_ws = ?,
-            sl_giay_tt_1 = ?, sl_giay_tt_2 = ?, sl_giay_tt_3 = ?, dung_may = ?, is_started_only = ?, ngay_phu = ?, so_lan_chay = ?, thanh_pham = ?
+            sl_giay_tt_1 = ?, sl_giay_tt_2 = ?, sl_giay_tt_3 = ?, dung_may = ?, is_started_only = ?, ngay_phu = ?, so_lan_chay = ?, thanh_pham = ? 
             WHERE id = ?`;
         
         await new Promise((resolve, reject) => {
             db.run(updateSQL, [
                 ketThuc.thoiGianKetThuc || new Date().toISOString(),
                 ketThuc.canhmay || '',
-                ketThuc.thanhphamin || '',
+                thanhPhamIn.toString(), // ✅ Giữ nguyên giá trị nhập vào
                 ketThuc.phelieu || '',
                 ketThuc.phelieutrang || '',
                 ketThuc.ghiChu || '',
-                ketThuc.tongSoLuong || '',
+                tongSoLuong.toString(), // ✅ Giữ nguyên giá trị nhập vào
                 ketThuc.tongPheLieu || '',
                 ketThuc.tongPhelieuTrang || '',
                 ketThuc.slGiayReam || '',
@@ -746,7 +965,7 @@ if (ketThuc.thoiGianKetThuc) {
                 0,  // Đánh dấu đã hoàn thành
                 ngayPhu,
                 soLanChay,
-                thanhPham,
+                thanhPham.toString(), // ✅ Chỉ có cột này mới tính toán theo logic ghép cặp
                 id
             ], function (err) {
                 if (err) reject(err);
@@ -809,10 +1028,18 @@ if (ketThuc.thoiGianKetThuc) {
             await Promise.all(insertPromises);
         }
 
+        // Cập nhật báo cáo liên quan nếu là tùy chọn 4, 5, 6, 7, 8, 9
+        await updateRelatedReportsThanhPham(currentReport.ws, currentReport.tuy_chon, id);
+
         res.json({
             success: true,
             id: id,
-            message: 'Đã cập nhật phần kết thúc báo cáo In thành công'
+            message: 'Đã cập nhật phần kết thúc báo cáo In thành công',
+            debug: {
+                thanhPhamIn: thanhPhamIn,
+                tongSoLuong: tongSoLuong, 
+                thanhPham: thanhPham
+            }
         });
 
     } catch (error) {

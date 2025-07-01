@@ -485,7 +485,7 @@ function calculateInQuantitiesByPass(data) {
     filteredData.forEach(record => {
         const machine = record.may || 'Không xác định';
         const pass = record.so_pass_in || 'Không xác định';
-        const quantity = parseFloat(record.tong_so_luong) || 0;
+        const quantity = parseFloat(record.thanh_pham) || 0;
         
         if (!machinePassData[machine]) {
             machinePassData[machine] = {};
@@ -514,11 +514,11 @@ function calculateInQuantitiesByPass(data) {
     // Tính tổng theo pass để hiển thị
     const pass1Total = filteredData
         .filter(record => record.so_pass_in === 'IN 1 PASS')
-        .reduce((sum, record) => sum + (parseFloat(record.tong_so_luong) || 0), 0);
+        .reduce((sum, record) => sum + (parseFloat(record.thanh_pham) || 0), 0);
     
     const pass2Total = filteredData
         .filter(record => record.so_pass_in === 'IN 2 PASS')
-        .reduce((sum, record) => sum + (parseFloat(record.tong_so_luong) || 0), 0);
+        .reduce((sum, record) => sum + (parseFloat(record.thanh_pham) || 0), 0);
     
     // Xác định pass cuối cùng và tổng SL hiển thị
     let displayQuantity = 0;

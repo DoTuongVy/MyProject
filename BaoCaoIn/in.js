@@ -646,6 +646,27 @@ function handleTuychonLogic(tuychonValue) {
             // addRequiredIndicator('phukeo', 'Bắt buộc chọn khi có cán bóng');
             break;
 
+            case '7': // In dặm (Gia công)
+    // Disable phủ keo và không bắt buộc
+    phuKeoSelect.disabled = true;
+    phuKeoSelect.selectedIndex = 0;
+    phuKeoSelect.style.backgroundColor = '#f8f9fa';
+    phuKeoSelect.style.borderColor = '';
+    phuKeoSelect.style.borderWidth = '';
+    phuKeoSelect.required = false;
+
+    // Xóa chú thích bắt buộc
+    removeRequiredIndicator('phukeo');
+    break;
+
+case '8': // In dặm + Cán bóng (Gia công)
+case '9': // Cán bóng lại (Gia công)
+    // Enable phủ keo và đánh dấu bắt buộc
+    phuKeoSelect.disabled = false;
+    phuKeoSelect.style.backgroundColor = '';
+    phuKeoSelect.required = true;
+    break;
+
         case '1': // In
         case '4': // In dặm
             // Disable phủ keo và không bắt buộc
@@ -1238,16 +1259,10 @@ const existingReports = await new Promise((resolve, reject) => {
             ghiChu: getInputValue('ghiChu'),
             dungMay: getCheckboxValue('dungMayCheckbox'),
             // Tính tổng
-            tongSoLuong: await calculateTongWithSum('thanh_pham'),
-tongPheLieu: await calculateTongWithSum('phe_lieu'),
-tongPhelieuTrang: await calculateTongWithSum('phe_lieu_trang'),
-// Tính thành phẩm
-thanhPham: await calculateThanhPham(
-    getInputValue('ws'),
-    getSelectValue('tuychon'), 
-    await calculateTongWithSum('thanh_pham'),
-    existingReports
-)
+            tongSoLuong: await calculateTongSoLuongCorrect(),
+tongPheLieu: await calculateTongPheLieuCorrect(), 
+tongPhelieuTrang: await calculateTongPheLieuTrangCorrect(),
+thanhPham: await calculateThanhPhamWithPair()
         };
 
         // Thu thập dữ liệu dừng máy nếu có
@@ -1264,7 +1279,50 @@ thanhPham: await calculateThanhPham(
     }
 }
 
-// Tính tổng số lượng với logic cộng dồn
+
+
+
+// Tính tổng số lượng đúng logic
+async function calculateTongSoLuongCorrect() {
+    const currentValue = parseFloat(getInputValue('thanhphamin')) || 0;
+    const currentTuyChonValue = getSelectValue('tuychon');
+    
+    // Tùy chọn 4,5,6,7,8,9: Tổng = Giá trị hiện tại
+    if (['4', '5', '6', '7', '8', '9'].includes(currentTuyChonValue)) {
+        return currentValue;
+    }
+    
+    // Tùy chọn 1,2,3: Cộng dồn các báo cáo cùng nhóm
+    return await calculateTongWithSum('thanh_pham');
+}
+
+// Tính tổng phế liệu đúng logic  
+async function calculateTongPheLieuCorrect() {
+    const currentValue = parseFloat(getInputValue('phelieu')) || 0;
+    const currentTuyChonValue = getSelectValue('tuychon');
+    
+    if (['4', '5', '6', '7', '8', '9'].includes(currentTuyChonValue)) {
+        return currentValue;
+    }
+    
+    return await calculateTongWithSum('phe_lieu');
+}
+
+// Tính tổng phế liệu trắng đúng logic
+async function calculateTongPheLieuTrangCorrect() {
+    const currentValue = parseFloat(getInputValue('phelieutrang')) || 0;
+    const currentTuyChonValue = getSelectValue('tuychon');
+    
+    if (['4', '5', '6', '7', '8', '9'].includes(currentTuyChonValue)) {
+        return currentValue;
+    }
+    
+    return await calculateTongWithSum('phe_lieu_trang');
+}
+
+
+
+// Tính tổng số lượng với logic thành phẩm đúng
 async function calculateTongWithSum(type = 'thanh_pham') {
     let currentValue = 0;
     let dbField = '';
@@ -1293,111 +1351,279 @@ async function calculateTongWithSum(type = 'thanh_pham') {
         const currentWS = getInputValue('ws').trim();
         const currentMatSau = getCheckboxValue('matsau');
         const currentSoPassIn = getSelectText('pass');
-        const currentTuyChon = getSelectText('tuychon');
+        const currentTuyChonText = getSelectText('tuychon');
+        const currentTuyChonValue = getSelectValue('tuychon');
         const currentMay = getCurrentMachineId();
         const currentPhuKeo = getSelectValue('phukeo');
 
-        // THÊM ĐOẠN NÀY: Kiểm tra tùy chọn có áp dụng cộng dồn không
-const currentTuyChonValue = getSelectValue('tuychon'); // Lấy value (1,2,3,4,5,6)
-const allowSummation = ['1', '2', '3'].includes(currentTuyChonValue);
+        console.log(`🔍 Tính ${type} cho tùy chọn: ${currentTuyChonText} (value: ${currentTuyChonValue})`);
 
-// Nếu tùy chọn 4,5,6 thì chỉ return thành phẩm hiện tại
-if (!allowSummation) {
-    console.log(`Tùy chọn ${currentTuyChon} - Không cộng dồn, return giá trị hiện tại: ${currentValue}`);
-    return currentValue;
-}
-        
-        // Nếu không có WS thì chỉ return thành phẩm hiện tại
+        // Nếu không có WS thì chỉ return giá trị hiện tại
         if (!currentWS) {
             return currentValue;
         }
+
+        // ====================== LOGIC MỚI - ĐÚNG ======================
         
-        // Gọi API lấy tất cả báo cáo
-        const response = await fetch('/api/bao-cao-in/list?exclude_stop_only=true');
-        if (!response.ok) {
-            console.warn('Không thể lấy danh sách báo cáo để tính tổng');
+        // **TÙY CHỌN 4,5,6,7,8,9: CỘNG DỒN TẤT CẢ**
+        if (['4', '5', '6', '7', '8', '9'].includes(currentTuyChonValue)) {
+            console.log(`✅ Tùy chọn ${currentTuyChonText} - Cộng dồn ${type}`);
+            
+            // Gọi API để lấy báo cáo cùng nhóm
+            let allReports = [];
+            try {
+                const response = await fetch('/api/bao-cao-in/list?exclude_stop_only=true');
+                if (response.ok) {
+                    allReports = await response.json();
+                }
+            } catch (error) {
+                console.warn('Không thể lấy danh sách báo cáo để tính cộng dồn');
+                return currentValue;
+            }
+            
+            // Lọc các báo cáo cùng nhóm (cùng tùy chọn, cùng WS, cùng điều kiện)
+            const sameGroupReports = allReports.filter(report => {
+                // Loại trừ báo cáo hiện tại
+                if (currentReportId && report.id === currentReportId) return false;
+                
+                // Điều kiện matching
+                if (report.ws !== currentWS) return false;
+                if (report.tuy_chon !== currentTuyChonText) return false;
+                if (Boolean(report.mat_sau) !== currentMatSau) return false;
+                if (report.so_pass_in !== currentSoPassIn) return false;
+                if (currentPhuKeo && report.phu_keo !== currentPhuKeo) return false;
+                if (currentMay !== '2M' && report.may !== currentMay) return false;
+                
+                // Chỉ tính báo cáo đã hoàn thành
+                return report[dbField] && parseFloat(report[dbField]) > 0;
+            });
+            
+            // Tính tổng từ các báo cáo trước + báo cáo hiện tại
+            const tongFromPrevious = sameGroupReports.reduce((total, report) => {
+                return total + (parseFloat(report[dbField]) || 0);
+            }, 0);
+            
+            const finalTotal = tongFromPrevious + currentValue;
+            
+            console.log(`📊 Cộng dồn ${type} cho tùy chọn ${currentTuyChonText}:`);
+            console.log(`- ${sameGroupReports.length} báo cáo trước: ${tongFromPrevious}`);
+            console.log(`- Giá trị hiện tại: ${currentValue}`);
+            console.log(`- Tổng cuối: ${finalTotal}`);
+            
+            return finalTotal;
+        }
+        
+        // **TÙY CHỌN 1,2,3: CHỈ LẤY GIÁ TRỊ HIỆN TẠI**
+        if (['1', '2', '3'].includes(currentTuyChonValue)) {
+            console.log(`✅ Tùy chọn ${currentTuyChonText} - ${type} = Giá trị hiện tại = ${currentValue}`);
             return currentValue;
         }
         
-        const allReports = await response.json();
-        
-        // Lọc các báo cáo thỏa mãn điều kiện
-        const matchingReports = allReports.filter(report => {
-            // Điều kiện cơ bản
-            if (report.ws !== currentWS) return false;
-            if (Boolean(report.mat_sau) !== currentMatSau) return false;
-            if (report.so_pass_in !== currentSoPassIn) return false;
-            if (report.tuy_chon !== currentTuyChon) return false;
-            
-            // Điều kiện phủ keo (nếu có)
-            if (currentPhuKeo && report.phu_keo !== currentPhuKeo) return false;
-            
-            // Điều kiện máy - trường hợp đặc biệt cho máy 2M
-            if (currentMay !== '2M') {
-                // Máy khác 2M: phải cùng máy
-                if (report.may !== currentMay) return false;
-            }
-            // Máy 2M: bỏ qua điều kiện máy (cộng dồn từ tất cả máy)
-            
-            // Chỉ tính báo cáo đã hoàn thành (có thành phẩm in)
-            return report.thanh_pham_in && parseFloat(report.thanh_pham_in) > 0;
-        });
-        
-        // Tính tổng thành phẩm in từ các báo cáo matching
-        const tongValue = matchingReports.reduce((total, report) => {
-            return total + (parseFloat(report[dbField]) || 0);
-        }, 0);
-        
-        // Cộng thêm thành phẩm in hiện tại
-        const finalTotal = tongValue + currentValue;
-        
-        console.log(`Tính tổng số lượng: ${matchingReports.length} báo cáo matching, tổng = ${finalTotal}`);
-        
-        return finalTotal;
+        return currentValue;
         
     } catch (error) {
-        console.error('Lỗi khi tính tổng số lượng:', error);
-        // Nếu có lỗi, return thành phẩm hiện tại
+        console.error('Lỗi khi tính tổng:', error);
         return currentValue;
     }
 }
 
 
 
+// Hàm phụ tính thành phẩm phức tạp cho tùy chọn 1,2,3
+async function calculateComplexThanhPham(currentValue, currentWS, currentTuyChonText, currentTuyChonValue, currentMatSau, currentSoPassIn, currentMay, currentPhuKeo) {
+    try {
+        // Bước 1: Lấy tổng số lượng cuối cùng của cùng WS + cùng tùy chọn
+        const response = await fetch('/api/bao-cao-in/list?exclude_stop_only=true');
+        if (!response.ok) {
+            console.warn('Không thể lấy danh sách báo cáo để tính thành phẩm');
+            return currentValue;
+        }
+        
+        const allReports = await response.json();
 
+        // Lọc các báo cáo cùng WS + cùng tùy chọn + cùng điều kiện khác
+        const sameGroupReports = allReports.filter(report => {
+            // Loại trừ báo cáo hiện tại
+            if (currentReportId && report.id === currentReportId) return false;
+            
+            // Cùng WS, cùng tùy chọn, cùng điều kiện
+            return report.ws === currentWS && 
+                   report.tuy_chon === currentTuyChonText &&
+                   Boolean(report.mat_sau) === currentMatSau &&
+                   report.so_pass_in === currentSoPassIn &&
+                   (currentMay === '2M' || report.may === currentMay) &&
+                   (!currentPhuKeo || report.phu_keo === currentPhuKeo) &&
+                   report.thanh_pham_in && parseFloat(report.thanh_pham_in) > 0;
+        });
 
-// Tính thành phẩm theo logic đặc biệt
-async function calculateThanhPham(ws, tuychon, tongSoLuong, existingReports) {
-    if (!ws || ws.trim() === '') return 0;
-    
-    const tuychonValue = tuychon; // 1,2,3,4,5,6
-    const tongSoLuongValue = parseFloat(tongSoLuong) || 0;
-    
-    // Nếu tùy chọn 4,5,6 thì thành phẩm = tổng số lượng
-    if (['4', '5', '6'].includes(tuychonValue)) {
-        return tongSoLuongValue;
+        // Lấy tổng số lượng cuối cùng của nhóm (cộng dồn)
+        let tongSoLuongCuoiCung = currentValue; // Bắt đầu với giá trị hiện tại
+        
+        if (sameGroupReports.length > 0) {
+            // Tính tổng từ các báo cáo trước + báo cáo hiện tại
+            const tongTruoc = sameGroupReports.reduce((total, report) => {
+                return total + (parseFloat(report.thanh_pham_in) || 0);
+            }, 0);
+            tongSoLuongCuoiCung = tongTruoc + currentValue;
+        }
+
+        console.log(`📊 Tổng số lượng cuối cùng của ${currentTuyChonText}: ${tongSoLuongCuoiCung}`);
+
+        // Bước 2: Tìm cặp tương ứng cùng WS
+        let pairTuyChon = '';
+        switch(currentTuyChonValue) {
+            case '1': pairTuyChon = '4. In dặm'; break;           // 1.IN ↔ 4.IN DẶM
+            case '2': pairTuyChon = '5. In dặm + Cán bóng'; break; // 2.IN+CÁN ↔ 5.IN DẶM+CÁN
+            case '3': pairTuyChon = '6. Cán bóng lại'; break;     // 3.CÁN ↔ 6.CÁN BÓNG LẠI
+        }
+
+        // Tìm tổng phế liệu của cặp tương ứng
+        let tongPheLieuCap = 0;
+        const pairReports = allReports.filter(report => {
+            // Loại trừ báo cáo hiện tại
+            if (currentReportId && report.id === currentReportId) return false;
+            
+            // Cùng WS, cùng điều kiện, nhưng là cặp tương ứng
+            return report.ws === currentWS && 
+                   report.tuy_chon === pairTuyChon &&
+                   Boolean(report.mat_sau) === currentMatSau &&
+                   report.so_pass_in === currentSoPassIn &&
+                   (currentMay === '2M' || report.may === currentMay) &&
+                   (!currentPhuKeo || report.phu_keo === currentPhuKeo) &&
+                   report.thanh_pham_in && parseFloat(report.thanh_pham_in) > 0;
+        });
+
+        if (pairReports.length > 0) {
+            // Có cặp tương ứng: Tính tổng phế liệu của cặp
+            tongPheLieuCap = pairReports.reduce((total, report) => {
+                const pheLieu = parseFloat(report.phe_lieu || 0);
+                const pheLieuTrang = parseFloat(report.phe_lieu_trang || 0);
+                return total + pheLieu + pheLieuTrang;
+            }, 0);
+
+            console.log(`📊 Có cặp ${pairTuyChon}, tổng phế liệu: ${tongPheLieuCap}`);
+            
+            // Thành phẩm = Tổng số lượng cuối cùng - Tổng phế liệu của cặp
+            const thanhPham = Math.max(0, tongSoLuongCuoiCung - tongPheLieuCap);
+            
+            console.log(`📊 Thành phẩm = ${tongSoLuongCuoiCung} - ${tongPheLieuCap} = ${thanhPham}`);
+            return thanhPham;
+        } else {
+            // Không có cặp tương ứng: Thành phẩm = Tổng số lượng cuối cùng
+            console.log(`❌ Không có cặp ${pairTuyChon} - Thành phẩm = Tổng số lượng = ${tongSoLuongCuoiCung}`);
+            return tongSoLuongCuoiCung;
+        }
+    } catch (error) {
+        console.error('Lỗi khi tính thành phẩm phức tạp:', error);
+        return currentValue;
     }
-    
-    // Với tùy chọn 1,2,3 - tìm cặp tương ứng
-    const pairMap = { '1': '4', '2': '5', '3': '6' };
-    const targetTuychon = pairMap[tuychonValue];
-    
-    if (!targetTuychon) return tongSoLuongValue;
-    
-    // Tìm báo cáo có cùng điều kiện nhưng tùy chọn là cặp tương ứng
-    const pairReport = existingReports.find(report => {
-        if (report.ws !== ws) return false;
-        if (report.tuy_chon !== getTextFromValue(targetTuychon)) return false;
-        return true;
-    });
-    
-    if (pairReport) {
-        const pairPheLieu = parseFloat(pairReport.tong_phe_lieu) || 0;
-        return tongSoLuongValue - pairPheLieu;
-    }
-    
-    return tongSoLuongValue;
 }
+
+
+
+// Tính thành phẩm dựa trên ghép cặp tùy chọn
+async function calculateThanhPhamWithPair() {
+    try {
+        const currentWS = getInputValue('ws').trim();
+        const currentTuyChonText = getSelectText('tuychon');
+        const currentTuyChonValue = getSelectValue('tuychon');
+        
+        // **TỔNG SỐ LƯỢNG = GIÁ TRỊ THÀNH PHẨM IN CHO TẤT CẢ TÙY CHỌN**
+        const tongSoLuong = parseFloat(getInputValue('thanhphamin')) || 0;
+        
+        if (!currentWS || !currentTuyChonText) {
+            return tongSoLuong;
+        }
+        
+        console.log(`🔍 Tính THÀNH PHẨM cho tùy chọn: ${currentTuyChonText} (value: ${currentTuyChonValue}), tổng SL: ${tongSoLuong}`);
+        
+        // **TÙY CHỌN 4,5,6,7,8,9: THÀNH PHẨM = TỔNG SỐ LƯỢNG**
+        if (['4', '5', '6', '7', '8', '9'].includes(currentTuyChonValue)) {
+            console.log(`✅ Tùy chọn ${currentTuyChonText} -> THÀNH PHẨM = Tổng số lượng = ${tongSoLuong}`);
+            return tongSoLuong;
+        }
+        
+        // **TÙY CHỌN 1,2,3: THÀNH PHẨM = TỔNG SỐ LƯỢNG - TỔNG PHẾ LIỆU CỦA CẶP**
+        if (['1', '2', '3'].includes(currentTuyChonValue)) {
+            // Map tùy chọn với cặp tương ứng
+            const pairMap = {
+                '1': '4. In dặm',
+                '2': '5. In dặm + Cán bóng',
+                '3': '6. Cán bóng lại'
+            };
+            
+            const pairTuyChon = pairMap[currentTuyChonValue];
+            
+            if (!pairTuyChon) {
+                console.log(`❌ Không tìm thấy cặp cho tùy chọn ${currentTuyChonValue}`);
+                return tongSoLuong;
+            }
+            
+            // Lấy danh sách báo cáo
+            const response = await fetch('/api/bao-cao-in/list?exclude_stop_only=true');
+            if (!response.ok) {
+                console.warn('Không thể lấy danh sách báo cáo để tính THÀNH PHẨM');
+                return tongSoLuong;
+            }
+            
+            const allReports = await response.json();
+            
+            // Lấy điều kiện matching hiện tại
+            const currentMatSau = getCheckboxValue('matsau');
+            const currentSoPassIn = getSelectText('pass');
+            const currentMay = getCurrentMachineId();
+            const currentPhuKeo = getSelectValue('phukeo');
+            
+            // Tìm báo cáo cặp (4,5,6) cùng WS và cùng điều kiện
+            const pairReports = allReports.filter(report => {
+                // Loại trừ báo cáo hiện tại
+                if (currentReportId && report.id === currentReportId) return false;
+                
+                // Cùng WS, cùng tùy chọn cặp
+                if (report.ws !== currentWS) return false;
+                if (report.tuy_chon !== pairTuyChon) return false;
+                
+                // Cùng điều kiện matching
+                if (Boolean(report.mat_sau) !== currentMatSau) return false;
+                if (report.so_pass_in !== currentSoPassIn) return false;
+                if (currentMay !== '2M' && report.may !== currentMay) return false;
+                if (currentPhuKeo && report.phu_keo !== currentPhuKeo) return false;
+                
+                // Chỉ tính báo cáo đã hoàn thành
+                return report.tong_phe_lieu !== null && report.tong_phe_lieu !== undefined;
+            });
+            
+            if (pairReports.length > 0) {
+                // Có cặp tương ứng: Tính tổng phế liệu của cặp
+                const tongPheLieuCap = pairReports.reduce((total, report) => {
+                    return total + (parseFloat(report.tong_phe_lieu) || 0);
+                }, 0);
+                
+                console.log(`✅ Có ${pairReports.length} báo cáo cặp ${pairTuyChon}, tổng phế liệu: ${tongPheLieuCap}`);
+                
+                // THÀNH PHẨM = Tổng số lượng - Tổng phế liệu của cặp
+                const thanhPham = Math.max(0, tongSoLuong - tongPheLieuCap);
+                
+                console.log(`📊 THÀNH PHẨM = ${tongSoLuong} - ${tongPheLieuCap} = ${thanhPham}`);
+                return thanhPham;
+            } else {
+                // Không có cặp tương ứng: THÀNH PHẨM = Tổng số lượng
+                console.log(`❌ Không có cặp ${pairTuyChon} - THÀNH PHẨM = Tổng số lượng = ${tongSoLuong}`);
+                return tongSoLuong;
+            }
+        }
+        
+        // Fallback: return tổng số lượng
+        return tongSoLuong;
+        
+    } catch (error) {
+        console.error('Lỗi khi tính THÀNH PHẨM với ghép cặp:', error);
+        return parseFloat(getInputValue('thanhphamin')) || 0;
+    }
+}
+
+
+
 
 // Helper function để chuyển value thành text
 function getTextFromValue(value) {
@@ -2952,7 +3178,7 @@ function renderReportTable() {
             <td>${report.phu_may_1 || ''}</td>
             <td>${report.phu_may_2 || ''}</td>
             <td>${report.so_pass_in || ''}</td>
-            <td =>${report.thanh_pham || ''}</td>
+            <td>${report.thanh_pham || ''}</td>
         </tr>
     `).join('');
 
@@ -3820,7 +4046,7 @@ async function calculateAndDisplaySoLuongDaIn(wsData) {
         }
 
         // Tùy chọn 4,5,6 luôn hiển thị 0
-        if (['4', '5', '6'].includes(currentTuyChonValue)) {
+        if (['4', '5', '6', '7', '8', '9'].includes(currentTuyChonValue)) {
             setInputValue('soluongdain', '0');
             return;
         }
