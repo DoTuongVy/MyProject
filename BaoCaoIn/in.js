@@ -1195,6 +1195,10 @@ async function handleConfirmReport() {
         }
 
         const result = await response.json();
+        // ✅ CẬP NHẬT CÁC BÁO CÁO LIÊN QUAN
+if (result.success) {
+    await updateRelatedReportsAfterSubmit();
+}
 
         updateInLoadingText('Hoàn tất!', 'Báo cáo đã được lưu');
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1399,28 +1403,35 @@ async function calculateThanhPhamCorrect() {
 
         console.log(`🔍 Tính thành phẩm: WS=${wsValue}, Tùy chọn=${tuychonText}`);
 
-        // Tùy chọn 4,5,6,7,8,9 (waste processes) = Tổng số lượng
+        const tongSoLuong = await calculateTongSoLuongCorrect();
+
+        // Tùy chọn 4,5,6,7,8,9 (waste processes) = Tổng số lượng (luôn luôn)
         if (['4', '5', '6', '7', '8', '9'].includes(tuychonValue)) {
-            console.log(`✅ Tùy chọn waste ${tuychonText} -> Thành phẩm = 0`);
-            return 0;
+            console.log(`✅ Tùy chọn waste ${tuychonText} -> Thành phẩm = Tổng SL = ${tongSoLuong}`);
+            return tongSoLuong;
         }
 
         // Tùy chọn 1,2,3 (production processes)
         if (['1', '2', '3'].includes(tuychonValue)) {
-            const tongSoLuong = await calculateTongSoLuongCorrect();
-            
-            // Lấy tổng phế liệu từ các tùy chọn 4,5,6 cùng WS
-            const tongPheLieuFromWaste = await getTotalWasteFromMatchingProcesses();
-            
-            // Thành phẩm = Tổng số lượng - Tổng phế liệu
-            const thanhPham = Math.max(0, tongSoLuong - tongPheLieuFromWaste);
-            
-            console.log(`✅ ${tuychonText}: ${tongSoLuong} - ${tongPheLieuFromWaste} = ${thanhPham}`);
-            return thanhPham;
+            // Kiểm tra xem có phải là lần cuối cùng của production process không
+            const isLastInCycle = await checkIfLastProductionInCycle(wsValue, tuychonText);
+
+            if (isLastInCycle) {
+                // LẦN CUỐI: Trừ phế liệu từ waste process tương ứng
+                const tongPheLieuFromWaste = await getTotalWasteFromMatchingProcesses();
+                const thanhPham = Math.max(0, tongSoLuong - tongPheLieuFromWaste);
+                
+                console.log(`✅ Lần cuối ${tuychonText}: ${tongSoLuong} - ${tongPheLieuFromWaste} = ${thanhPham}`);
+                return thanhPham;
+            } else {
+                // KHÔNG PHẢI LẦN CUỐI: Thành phẩm = Tổng số lượng
+                console.log(`✅ Không phải lần cuối ${tuychonText} -> Thành phẩm = Tổng SL = ${tongSoLuong}`);
+                return tongSoLuong;
+            }
         }
 
         // Fallback
-        return await calculateTongSoLuongCorrect();
+        return tongSoLuong;
 
     } catch (error) {
         console.error('Lỗi khi tính thành phẩm:', error);
@@ -1428,20 +1439,51 @@ async function calculateThanhPhamCorrect() {
     }
 }
 
-// Kiểm tra xem có phải lần cuối cùng của production process không
-async function checkIfLastProductionProcess() {
+
+
+// Kiểm tra xem có phải là lần cuối cùng của production process trong chu kỳ không
+async function checkIfLastProductionInCycle(wsValue, tuychonText) {
     try {
-        // Logic đơn giản: Giả sử đang nhập thì luôn là lần cuối
-        // Trong thực tế, có thể cần logic phức tạp hơn để xác định "lần cuối"
+        // Lấy tất cả báo cáo cùng WS, cùng tùy chọn production (1,2,3)
+        const response = await fetch('/api/bao-cao-in/list?exclude_stop_only=true');
+        if (!response.ok) return true; // Mặc định là lần cuối nếu không lấy được dữ liệu
+
+        const allReports = await response.json();
         
-        // Tạm thời return true để luôn trừ phế liệu (có thể điều chỉnh sau)
-        return true;
+        // Lọc các báo cáo cùng WS và cùng nhóm production (1,2,3)
+        const productionReports = allReports.filter(report => {
+            if (report.ws !== wsValue) return false;
+            
+            // Chỉ lấy tùy chọn production (1,2,3)
+            const productionOptions = ['1. In', '2. In + Cán bóng', '3. Cán bóng'];
+            return productionOptions.includes(report.tuy_chon);
+        });
+
+        // Lấy báo cáo waste tương ứng
+        const wasteMapping = {
+            '1. In': '4. In dặm',
+            '2. In + Cán bóng': '5. In dặm + Cán bóng', 
+            '3. Cán bóng': '6. Cán bóng lại'
+        };
         
+        const correspondingWaste = wasteMapping[tuychonText];
+        if (!correspondingWaste) return true;
+
+        // Kiểm tra xem đã có waste process tương ứng chưa
+        const hasCorrespondingWaste = allReports.some(report => 
+            report.ws === wsValue && report.tuy_chon === correspondingWaste
+        );
+
+        // Nếu đã có waste process tương ứng -> đây là lần cuối của production
+        console.log(`🔍 Kiểm tra lần cuối: ${tuychonText}, có waste tương ứng: ${hasCorrespondingWaste}`);
+        return hasCorrespondingWaste;
+
     } catch (error) {
         console.error('Lỗi khi kiểm tra lần cuối:', error);
-        return true;
+        return true; // Mặc định là lần cuối nếu có lỗi
     }
 }
+
 
 // Lấy tổng phế liệu từ các waste processes tương ứng
 async function getTotalWasteFromMatchingProcesses() {
@@ -1532,6 +1574,41 @@ function getTextFromValue(value) {
     };
     return map[value] || '';
 }
+
+
+// Cập nhật các báo cáo liên quan sau khi submit
+async function updateRelatedReportsAfterSubmit() {
+    try {
+        const wsValue = getInputValue('ws');
+        const tuychonValue = getSelectValue('tuychon');
+        
+        if (!wsValue || !tuychonValue) return;
+        
+        // Chỉ cập nhật khi là waste processes (4,5,6,7,8,9)
+        if (!['4', '5', '6', '7', '8', '9'].includes(tuychonValue)) return;
+        
+        console.log('🔄 Cập nhật báo cáo liên quan cho WS:', wsValue, 'Tùy chọn waste:', tuychonValue);
+        
+        // Gọi API để cập nhật
+        await fetch('/api/bao-cao-in/update-related-reports', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ws: wsValue,
+                tuychonValue: tuychonValue
+            })
+        });
+        
+    } catch (error) {
+        console.warn('Lỗi khi cập nhật báo cáo liên quan:', error);
+        // Không throw error để không ảnh hưởng đến flow chính
+    }
+}
+
+
+
 
 
 

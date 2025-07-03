@@ -114,15 +114,185 @@ async function updateRelatedReportsThanhPham(wsValue, tuychonText, currentReport
     try {
         console.log(`🔄 Backend update related reports: WS=${wsValue}, Tùy chọn=${tuychonText}`);
         
-        // ĐƠN GIẢN: Không cần cập nhật tự động, để frontend tính khi cần
-        // Logic phức tạp sẽ được xử lý ở frontend
+        // Chỉ cập nhật khi là waste processes
+        const wasteProcesses = ['4. In dặm', '5. In dặm + Cán bóng', '6. Cán bóng lại', 
+                               '7. In dặm (Gia công)', '8. In dặm + Cán bóng (Gia công)', '9. Cán bóng lại (Gia công)'];
         
-        console.log(`✅ Skipped auto-update (handled by frontend)`);
+        if (!wasteProcesses.includes(tuychonText)) {
+            console.log('Không phải waste process, bỏ qua cập nhật');
+            return;
+        }
+        
+        // Map waste -> production để tìm báo cáo cần cập nhật
+        const wasteToProductionMap = {
+            '4. In dặm': '1. In',
+            '5. In dặm + Cán bóng': '2. In + Cán bóng',
+            '6. Cán bóng lại': '3. Cán bóng',
+            '7. In dặm (Gia công)': '1. In',
+            '8. In dặm + Cán bóng (Gia công)': '2. In + Cán bóng', 
+            '9. Cán bóng lại (Gia công)': '3. Cán bóng'
+        };
+        
+        const targetProductionProcess = wasteToProductionMap[tuychonText];
+        if (!targetProductionProcess) {
+            console.log('Không tìm thấy production process tương ứng');
+            return;
+        }
+        
+        console.log(`Tìm kiếm báo cáo production: ${targetProductionProcess} để cập nhật`);
+        
+        // Tìm các báo cáo production cần cập nhật (cùng WS, cùng điều kiện)
+        const productionReports = await new Promise((resolve, reject) => {
+            db.all(`SELECT id, thanh_pham_in, tong_so_luong, mat_sau, phu_keo, so_pass_in, may FROM bao_cao_in 
+                    WHERE ws = ? AND tuy_chon = ? 
+                    AND thanh_pham_in IS NOT NULL 
+                    AND thanh_pham_in != ''
+                    AND thanh_pham_in != '0'
+                    ORDER BY created_at ASC`, 
+                [wsValue, targetProductionProcess], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+        
+        console.log(`Tìm thấy ${productionReports.length} báo cáo production cần cập nhật`);
+        
+        if (productionReports.length === 0) return;
+        
+        // Lấy tổng phế liệu mới nhất từ waste process
+        const latestWasteTotal = await new Promise((resolve, reject) => {
+            db.get(`SELECT tong_phe_lieu, tong_phe_lieu_trang FROM bao_cao_in 
+                    WHERE ws = ? AND tuy_chon = ? 
+                    AND tong_phe_lieu IS NOT NULL 
+                    ORDER BY created_at DESC LIMIT 1`,
+                [wsValue, tuychonText], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        const tongPheLieuMoiNhat = latestWasteTotal ? 
+            (parseFloat(latestWasteTotal.tong_phe_lieu) || 0) + (parseFloat(latestWasteTotal.tong_phe_lieu_trang) || 0) : 0;
+        
+        console.log(`Tổng phế liệu mới nhất từ ${tuychonText}: ${tongPheLieuMoiNhat}`);
+        
+        // Cập nhật thành phẩm cho báo cáo production cuối cùng (lần chạy cuối)
+        if (productionReports.length > 0) {
+            const lastReport = productionReports[productionReports.length - 1];
+            const tongSoLuong = parseFloat(lastReport.tong_so_luong) || 0;
+            const newThanhPham = Math.max(0, tongSoLuong - tongPheLieuMoiNhat);
+            
+            await new Promise((resolve, reject) => {
+                db.run(`UPDATE bao_cao_in SET thanh_pham = ? WHERE id = ?`,
+                    [newThanhPham.toString(), lastReport.id], (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+            
+            console.log(`✅ Đã cập nhật thành phẩm cho báo cáo ID ${lastReport.id}: ${newThanhPham}`);
+        }
         
     } catch (error) {
         console.error('Lỗi khi cập nhật báo cáo liên quan:', error);
     }
 }
+
+
+
+// // Tính thành phẩm cho một báo cáo cụ thể
+// async function calculateThanhPhamForReport(reportId, wsValue, tuychonText) {
+//     try {
+//         // Lấy thông tin báo cáo
+//         const report = await new Promise((resolve, reject) => {
+//             db.get(`SELECT * FROM bao_cao_in WHERE id = ?`, [reportId], (err, row) => {
+//                 if (err) reject(err);
+//                 else resolve(row);
+//             });
+//         });
+        
+//         if (!report) return 0;
+        
+//         const tongSoLuong = parseFloat(report.tong_so_luong) || 0;
+        
+//         // Lấy tổng phế liệu mới nhất từ waste process tương ứng
+//         const wasteMapping = {
+//             '1. In': '4. In dặm',
+//             '2. In + Cán bóng': '5. In dặm + Cán bóng',
+//             '3. Cán bóng': '6. Cán bóng lại'
+//         };
+        
+//         const correspondingWaste = wasteMapping[tuychonText];
+//         if (!correspondingWaste) return tongSoLuong;
+        
+//         // Tìm báo cáo waste mới nhất
+//         const latestWaste = await new Promise((resolve, reject) => {
+//             db.get(`SELECT tong_phe_lieu FROM bao_cao_in 
+//                     WHERE ws = ? AND tuy_chon = ? 
+//                     AND mat_sau = ? AND phu_keo = ? AND so_pass_in = ? AND may = ?
+//                     AND tong_phe_lieu IS NOT NULL 
+//                     ORDER BY created_at DESC LIMIT 1`,
+//                 [wsValue, correspondingWaste, report.mat_sau || 0, report.phu_keo || '', 
+//                  report.so_pass_in || '', report.may || ''], (err, row) => {
+//                 if (err) reject(err);
+//                 else resolve(row);
+//             });
+//         });
+        
+//         if (latestWaste && latestWaste.tong_phe_lieu) {
+//             const tongPheLieu = parseFloat(latestWaste.tong_phe_lieu) || 0;
+//             return Math.max(0, tongSoLuong - tongPheLieu);
+//         }
+        
+//         return tongSoLuong;
+        
+//     } catch (error) {
+//         console.error('Lỗi khi tính thành phẩm cho báo cáo:', error);
+//         return 0;
+//     }
+// }
+
+
+
+
+// API cập nhật các báo cáo liên quan
+router.post('/update-related-reports', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    try {
+        const { ws, tuychonValue } = req.body;
+        
+        if (!ws || !tuychonValue) {
+            return res.status(400).json({ error: 'Thiếu thông tin WS hoặc tùy chọn' });
+        }
+        
+        // Map value -> text
+        const valueToTextMap = {
+            '4': '4. In dặm',
+            '5': '5. In dặm + Cán bóng',
+            '6': '6. Cán bóng lại',
+            '7': '7. In dặm (Gia công)',
+            '8': '8. In dặm + Cán bóng (Gia công)',
+            '9': '9. Cán bóng lại (Gia công)'
+        };
+        
+        const tuychonText = valueToTextMap[tuychonValue];
+        if (!tuychonText) {
+            return res.json({ success: true, message: 'Không cần cập nhật' });
+        }
+        
+        // Gọi hàm cập nhật
+        await updateRelatedReportsThanhPham(ws, tuychonText, null);
+        
+        res.json({ success: true, message: 'Đã cập nhật báo cáo liên quan' });
+        
+    } catch (error) {
+        console.error('Lỗi API cập nhật báo cáo liên quan:', error);
+        res.status(500).json({ error: 'Lỗi khi cập nhật báo cáo liên quan' });
+    }
+});
+
+
 
 
 // Hàm tính tổng với cộng dồn theo điều kiện chung
@@ -898,8 +1068,8 @@ router.put('/update-end/:id', async (req, res) => {
             await Promise.all(insertPromises);
         }
 
-        // ✅ GIẢN LƯỢC: Không cần cập nhật báo cáo liên quan tự động
-        // await updateRelatedReportsThanhPham(currentReport.ws, currentReport.tuy_chon, id);
+        // cập nhật báo cáo liên quan tự động
+        await updateRelatedReportsThanhPham(currentReport.ws, currentReport.tuy_chon, id);
 
         res.json({
             success: true,
@@ -1112,5 +1282,10 @@ router.post('/dung-may/submit', (req, res) => {
             });
     });
 });
+
+
+
+
+
 
 module.exports = router;
