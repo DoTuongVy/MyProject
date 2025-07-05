@@ -21,6 +21,7 @@ app.use('/QLVT', express.static(path.join(__dirname, '..', 'QLVT')));
 app.use('/login', express.static(path.join(__dirname, '..', 'login')));
 app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
 app.use(express.static(path.join(__dirname, '..'))); // Thư mục gốc cho auth.js và auth.css
+app.use('/BieuDo', express.static(path.join(__dirname, '..', 'BieuDo')));
 
 // Import routes
 const sangCuonRoutes = require('./routes/sang-cuon');
@@ -38,6 +39,7 @@ const baoCaoInRoutes = require('./routes/bao-cao-in');
 const machinesRoutes = require('./routes/machines');
 const wsTongRoutes = require('./routes/ws-tong');
 const quanLynguoiDungsanXuat = require('./routes/quan-ly-nguoi-dung-sanxuat');
+const bieuDoRoutes = require('./routes/bieu-do');
 
 // Sử dụng routes
 app.use('/api/sang-cuon', sangCuonRoutes);
@@ -55,6 +57,7 @@ app.use('/api/bao-cao-in', baoCaoInRoutes);
 app.use('/api/machines', machinesRoutes);
 app.use('/api/ws-tong', wsTongRoutes);
 app.use('/api/production-users',quanLynguoiDungsanXuat);
+app.use('/api/bieu-do', bieuDoRoutes);
 
 // Route mặc định - chuyển hướng tới trang đăng nhập
 app.get('/', (req, res) => {

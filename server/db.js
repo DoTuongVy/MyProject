@@ -1397,6 +1397,10 @@ function initSystems() {
               if (system.id === 'qlvt') {
                 initQLVTModules(system.id);
               }
+
+              if (system.id === 'sanxuat-nm1') {
+                initSanXuatNM1Modules();
+            }
             }
           }
         );
@@ -1436,6 +1440,42 @@ function initQLVTModules(systemId) {
         }
       }
     );
+  });
+}
+
+
+
+// Khởi tạo modules cho sản xuất nhà máy 1
+function initSanXuatNM1Modules() {
+  const modules = [
+      {
+          id: 'innm1',
+          name: 'Báo cáo In',
+          description: 'Theo dõi sản xuất in offset',
+          path: '/BieuDo/Nhamay1/Baocaoin.html',
+          icon: 'fas fa-print'
+      },
+      {
+          id: 'gmcnm1',
+          name: 'Báo cáo GMC',
+          description: 'Theo dõi cắt giấy GMC',
+          path: '/BieuDo/Nhamay1/Baocaogmc.html',
+          icon: 'fas fa-cut'
+      }
+  ];
+  
+  modules.forEach(module => {
+      db.run(`INSERT OR IGNORE INTO modules (id, system_id, name, description, path, icon)
+        VALUES (?, ?, ?, ?, ?, ?)`,
+        [module.id, 'sanxuat-nm1', module.name, module.description, module.path, module.icon],
+        (err) => {
+            if (err) {
+                console.error(`Lỗi khi thêm module ${module.name}:`, err.message);
+            } else {
+                console.log(`Đã thêm module ${module.name} cho sản xuất NM1`);
+            }
+        }
+      );
   });
 }
 

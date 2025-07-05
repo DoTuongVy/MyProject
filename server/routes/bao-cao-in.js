@@ -2,6 +2,12 @@
 const router = express.Router();
 const { db } = require('../db');
 
+
+function parseFormattedNumber(value) {
+    if (!value) return '';
+    return value.toString().replace(/,/g, '');
+}
+
 // Hàm làm tròn theo yêu cầu
 function customRound(num, digits = 0) {
     if (isNaN(num)) return 0;
@@ -38,19 +44,21 @@ function roundUp(num) {
 // Hàm tính số tuần trong tháng
 function calculateWeekInMonth(dateString) {
     const date = new Date(dateString);
-    const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+    const year = date.getFullYear();
+    const month = date.getMonth(); // 0-11
     
-    // Lấy số tuần trong năm
-    const getWeekNumber = (d) => {
-        const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
-        const pastDaysOfYear = (d - firstDayOfYear) / 86400000;
-        return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-    };
+    // Lấy ngày đầu tháng
+    const firstDayOfMonth = new Date(year, month, 1);
     
-    const weekOfDate = getWeekNumber(date);
-    const weekOfFirstDay = getWeekNumber(firstDayOfMonth);
+    // Lấy ngày của tháng hiện tại
+    const dayOfMonth = date.getDate();
     
-    return weekOfDate - weekOfFirstDay + 1;
+    // Tính tuần thứ mấy trong tháng (1-6)
+    const weekOfMonth = Math.ceil(dayOfMonth / 7);
+    
+    console.log(`Tính tuần: Ngày ${dateString} -> Tuần ${weekOfMonth} trong tháng ${month + 1}/${year}`);
+    
+    return weekOfMonth;
 }
 
 
@@ -75,16 +83,16 @@ async function calculateSoLanChay(ws, tuychonText, existingReports) {
     
     const tuychonValue = tuychonValueMap[tuychonText];
     
-    // **BƯỚC 2: TÙY CHỌN 4,5,6,7,8,9 → SỐ LẦN CHẠY = 0**
-    if (['4', '5', '6', '7', '8', '9'].includes(tuychonValue)) {
+    // **BƯỚC 2: TÙY CHỌN 4,5,6 → SỐ LẦN CHẠY = 0**
+    if (['4', '5', '6'].includes(tuychonValue)) {
         console.log(`✅ Tùy chọn ${tuychonText} -> Số lần chạy = 0`);
         return 0;
     }
     
-    // **BƯỚC 3: TÙY CHỌN 1,2,3 → ĐẾM SỐ LẦN CHẠY**
-    const samePairs = existingReports.filter(report => 
-        report.ws === ws && report.tuy_chon === tuychonText
-    );
+    // **BƯỚC 3: TÙY CHỌN 1,2,3,7,8,9 → ĐẾM SỐ LẦN CHẠY**
+const samePairs = existingReports.filter(report => 
+    report.ws === ws && report.tuy_chon === tuychonText
+);
     
     const soLanChay = samePairs.length + 1;
     console.log(`✅ Tùy chọn ${tuychonText} -> Số lần chạy = ${soLanChay} (${samePairs.length} báo cáo trước + 1)`);
@@ -748,7 +756,7 @@ const thanhPham = 0;
                 startData.ca || '',
                 startData.truongMay || '',
                 startData.ws || '',
-                soLanChay,
+                soLanChay || 0,
                 wsData.khachHang,
                 wsData.maSP,
                 wsData.slDonHang,
@@ -935,9 +943,7 @@ router.put('/update-end/:id', async (req, res) => {
         // Tính số lần chạy
         const soLanChay = await calculateSoLanChay(currentReport.ws, currentReport.tuy_chon, existingReports);
 
-        // Tính tuần trong tháng
-        const tuan = calculateWeekInMonth(currentReport.ngay);
-
+        
         // Tính ngày phụ dựa trên thời gian kết thúc
         let ngayPhu = currentReport.ngay;
         if (ketThuc.thoiGianKetThuc) {
@@ -957,6 +963,10 @@ router.put('/update-end/:id', async (req, res) => {
                 console.error('Lỗi khi tính ngày phụ:', error);
             }
         }
+
+
+        // Tính tuần trong tháng
+        const tuan = calculateWeekInMonth(ngayPhu);
 
         // ✅ NHẬN DỮ LIỆU ĐÃ TÍNH TỪ FRONTEND
         const thanhPhamIn = parseFloat(ketThuc.thanhphamin || '0');
@@ -998,13 +1008,13 @@ router.put('/update-end/:id', async (req, res) => {
                 ketThuc.slGiayReam || '',
                 tuan,
                 chenhLechTTWS.toString(),
-                ketThuc.slGiayTT1 || '',
-                ketThuc.slGiayTT2 || '',
-                ketThuc.slGiayTT3 || '',
+                parseFormattedNumber(ketThuc.slGiayTT1) || '',
+parseFormattedNumber(ketThuc.slGiayTT2) || '',
+parseFormattedNumber(ketThuc.slGiayTT3) || '',
                 ketThuc.dungMay ? 1 : 0,
                 0,  // Đánh dấu đã hoàn thành
                 ngayPhu,
-                soLanChay,
+                soLanChay || 0,
                 thanhPham.toString(), // ✅ Từ frontend
                 id
             ], function (err) {
