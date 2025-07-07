@@ -234,6 +234,8 @@ function setDefaultDates() {
 async function handleViewInReport() {
     try {
         showLoading(true);
+        // Đảm bảo reportSection luôn có cấu trúc HTML đúng
+ensureReportSectionStructure();
 // Reset dữ liệu cũ và UI trước khi lọc mới
 currentChartData = null;
 destroyAllCharts();
@@ -449,30 +451,47 @@ if (!data || ((!data.totalPaper || data.totalPaper === 0) &&
 (!data.totalWaste || data.totalWaste === 0) && 
 (!data.shiftData || data.shiftData.length === 0))) {
 
-// Hiển thị thông báo không có dữ liệu
+// Hiển thị section báo cáo với thông báo không có dữ liệu
 const reportSection = document.getElementById('reportSection');
 if (reportSection) {
-reportSection.style.display = 'block';
-reportSection.innerHTML = `
-<div class="row">
-  <div class="col-12">
-      <div class="card">
-          <div class="card-body text-center p-5">
-              <i class="fas fa-search fa-3x text-muted mb-4"></i>
-              <h4 class="text-muted">Không có dữ liệu phù hợp</h4>
-              <p class="text-muted">Không tìm thấy báo cáo nào phù hợp với điều kiện lọc đã chọn.</p>
-              <p class="text-muted">Vui lòng thử:</p>
-              <ul class="list-unstyled text-muted">
-                  <li>• Kiểm tra lại mã ca đã chọn</li>
-                  <li>• Thay đổi khoảng thời gian</li>
-                  <li>• Bỏ bớt điều kiện lọc</li>
-              </ul>
-          </div>
-      </div>
-  </div>
-</div>
-`;
+    reportSection.style.display = 'block';
+    reportSection.classList.add('slide-up');
 }
+
+// Reset tất cả displays về 0
+displaySummaryStats({ totalPaper: 0, totalWaste: 0 }, filters);
+displayProgressBar({ totalPaper: 0, totalWaste: 0 }, filters);
+
+// Hiển thị thông báo trong phần phân tích
+const analysisContainer = document.getElementById('quantityAnalysis');
+if (analysisContainer) {
+    analysisContainer.innerHTML = `
+        <div class="text-center text-muted p-4">
+            <i class="fas fa-search fa-3x text-muted mb-4"></i>
+            <h4 class="text-muted">Không có dữ liệu phù hợp</h4>
+            <p class="text-muted">Không tìm thấy báo cáo nào phù hợp với điều kiện lọc đã chọn.</p>
+            <p class="text-muted">Vui lòng thử:</p>
+            <ul class="list-unstyled text-muted">
+                <li>• Kiểm tra lại mã ca đã chọn</li>
+                <li>• Thay đổi khoảng thời gian</li>
+                <li>• Bỏ bớt điều kiện lọc</li>
+            </ul>
+        </div>
+    `;
+}
+
+// Tạo biểu đồ trống
+const totalChartCanvas = document.getElementById('quantityChart');
+const shiftChartCanvas = document.getElementById('macaChart');
+const timeChartCanvas = document.getElementById('timeChart');
+
+if (totalChartCanvas) quantityChart = createEmptyChart(totalChartCanvas, 'Không có dữ liệu');
+if (shiftChartCanvas) macaChart = createEmptyChart(shiftChartCanvas, 'Không có dữ liệu ca');
+if (timeChartCanvas) timeChart = createEmptyChart(timeChartCanvas, 'Không có dữ liệu thời gian');
+
+// Hiển thị bảng chi tiết trống
+displayDetailTable({ totalPaper: 0, totalWaste: 0, shiftData: [] }, filters);
+
 return;
 }
 
@@ -564,15 +583,19 @@ function displaySummaryStats(data, filters) {
 
     // Nếu lọc theo mã ca cụ thể, chỉ hiển thị số liệu của ca đó
     let displayPaper = data.totalPaper || 0;
-    let displayWaste = data.totalWaste || 0;
-    
-    if (filters && filters.maca && data.shiftData) {
-        const shiftData = data.shiftData.find(shift => shift.shift === filters.maca);
-        if (shiftData) {
-            displayPaper = shiftData.paper || 0;
-            displayWaste = shiftData.waste || 0;
-        }
+let displayWaste = data.totalWaste || 0;
+
+if (filters && filters.maca && data.shiftData) {
+    const shiftData = data.shiftData.find(shift => shift.shift === filters.maca);
+    if (shiftData) {
+        displayPaper = shiftData.paper || 0;
+        displayWaste = shiftData.waste || 0;
+    } else {
+        // Không tìm thấy dữ liệu cho mã ca này - reset về 0
+        displayPaper = 0;
+        displayWaste = 0;
     }
+}
 
     const totalPaper = document.getElementById('totalPaper');
     const totalWaste = document.getElementById('totalWaste');
@@ -666,6 +689,11 @@ function displayPieChart(data) {
         data: chartData,
         options: {
             responsive: true,
+            elements: {
+                arc: {
+                    hoverOffset: 0
+                }
+            },
             maintainAspectRatio: false,
             plugins: {
                 legend: {
@@ -716,30 +744,31 @@ function displayQuantityCharts(data, filters) {
     console.log('🔍 Kiểm tra filter mã ca:', hasSpecificMacaFilter, 'Giá trị mã ca:', filters.maca);
     console.log('🔍 Số ca trong dữ liệu:', data.shiftData ? data.shiftData.length : 0);
     
-    if (hasSpecificMacaFilter) {
-        // Người dùng đã chọn mã ca cụ thể - chỉ hiển thị 1 biểu đồ
-        console.log('📊 Hiển thị biểu đồ cho mã ca cụ thể:', filters.maca);
-        
-        // Ẩn container biểu đồ ca
-        const shiftContainer = shiftChartCanvas.closest('.col-md-6');
-        if (shiftContainer) {
-            shiftContainer.style.display = 'none';
-        }
-        
-        // Hiển thị biểu đồ cho mã ca được chọn
-        const shiftData = data.shiftData ? data.shiftData.find(shift => shift.shift === filters.maca) : null;
-        
-        if (shiftData && (shiftData.paper > 0 || shiftData.waste > 0)) {
-            const singleShiftData = {
-                totalPaper: shiftData.paper,
-                totalWaste: shiftData.waste
-            };
-            quantityChart = createSingleShiftChartOnCanvas(totalChartCanvas, singleShiftData, filters.maca);
-        } else {
-            // Tạo biểu đồ trống
-            quantityChart = createEmptyChart(totalChartCanvas, `Không có dữ liệu cho mã ca ${filters.maca}`);
-        }
+    // Luôn hiển thị cả 2 container
+const totalContainer = totalChartCanvas.closest('.col-md-6');
+const shiftContainer = shiftChartCanvas.closest('.col-md-6');
+
+if (totalContainer) totalContainer.style.display = 'block';
+if (shiftContainer) shiftContainer.style.display = 'block';
+
+// Tạo biểu đồ tổng
+quantityChart = createTotalQuantityChartOnCanvas(totalChartCanvas, data);
+
+// Tạo biểu đồ từng ca
+if (data.shiftData && data.shiftData.length > 0) {
+    console.log('📊 Có', data.shiftData.length, 'ca - hiển thị biểu đồ từng ca');
+    
+    // Nếu lọc mã ca cụ thể, chỉ hiển thị ca đó
+    const displayShiftData = hasSpecificMacaFilter ? 
+        data.shiftData.filter(shift => shift.shift === filters.maca) : 
+        data.shiftData;
+    
+    if (displayShiftData.length > 0) {
+        createMultipleShiftCharts(shiftChartCanvas, displayShiftData);
     } else {
+        macaChart = createEmptyChart(shiftChartCanvas, `Không có dữ liệu ca ${filters.maca}`);
+    }
+} else {
         // Người dùng KHÔNG chọn mã ca cụ thể - hiển thị tổng + từng ca
         console.log('📊 Hiển thị biểu đồ tổng + từng ca');
         
@@ -803,18 +832,23 @@ function createTotalQuantityChartOnCanvas(canvas, data) {
                 datasets: [{
                     data: [totalPaper, totalWaste],
                     backgroundColor: [
-                        'rgba(40, 167, 69, 0.8)',
-                        'rgba(220, 53, 69, 0.8)'
+                        'rgb(174,207,188)',
+                        'rgb(248,179,181)'
                     ],
                     borderColor: [
-                        'rgba(40, 167, 69, 1)',
-                        'rgba(220, 53, 69, 1)'
+                        'rgb(148, 199, 169)',
+                        'rgb(255, 141, 152)'
                     ],
                     borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
+                elements: {
+                    arc: {
+                        hoverOffset: 0
+                    }
+                },
                 maintainAspectRatio: false,
                 plugins: {
                     title: {
@@ -883,7 +917,7 @@ function createMultipleShiftCharts(canvas, shiftData) {
     const multiContainer = document.createElement('div');
     multiContainer.className = 'multi-shift-charts';
     
-    let html = '<div class="row">';
+    let html = '<div class="row justify-content-center">';
     
     shiftData.forEach((shift, index) => {
         const canvasId = `shiftChart_${index}`;
@@ -943,18 +977,23 @@ function createSingleShiftPieChart(canvas, shiftData) {
             datasets: [{
                 data: [paper, waste],
                 backgroundColor: [
-                    'rgba(40, 167, 69, 0.8)',
-                    'rgba(220, 53, 69, 0.8)'
+                    'rgb(174,207,188)',
+                    'rgb(248,179,181)'
                 ],
                 borderColor: [
-                    'rgba(40, 167, 69, 1)',
-                    'rgba(220, 53, 69, 1)'
+                    'rgb(148, 199, 169)',
+                    'rgb(255, 141, 152)'
                 ],
                 borderWidth: 2
             }]
         },
         options: {
             responsive: true,
+            elements: {
+                arc: {
+                    hoverOffset: 0
+                }
+            },
             maintainAspectRatio: false,
             plugins: {
                 legend: {
@@ -1003,18 +1042,23 @@ function createSingleShiftChartOnCanvas(canvas, data, shiftName) {
             datasets: [{
                 data: [data.totalPaper || 0, data.totalWaste || 0],
                 backgroundColor: [
-                    'rgba(40, 167, 69, 0.8)',
-                    'rgba(220, 53, 69, 0.8)'
-                ],
-                borderColor: [
-                    'rgba(40, 167, 69, 1)',
-                    'rgba(220, 53, 69, 1)'
-                ],
+                        'rgb(174,207,188)',
+                        'rgb(248,179,181)'
+                    ],
+                    borderColor: [
+                        'rgb(148, 199, 169)',
+                        'rgb(255, 141, 152)'
+                    ],
                 borderWidth: 2
             }]
         },
         options: {
             responsive: true,
+            elements: {
+                arc: {
+                    hoverOffset: 0
+                }
+            },
             maintainAspectRatio: false,
             plugins: {
                 title: {
@@ -1111,7 +1155,7 @@ function displayQuantityAnalysis(data, filters) {
             html += `
                 <tr>
                     <td><strong>Ca ${shift.shift}</strong></td>
-                    <td><span class="badge bg-warning">${shift.may || 'N/A'}</span></td>
+                    <td><span class="badge bg-warning">${shift.may || 'Tất cả'}</span></td>
                     <td class="text-end"><strong>${formatNumber(total)}</strong></td>
                     <td class="text-end text-success"><strong>${formatNumber(paper)}</strong></td>
                     <td class="text-end text-danger"><strong>${formatNumber(waste)}</strong></td>
@@ -1188,43 +1232,48 @@ function displayQuantityAnalysis(data, filters) {
 
 
 // Thêm hàm hiển thị biểu đồ trống
-function displayEmptyChart(ctx) {
-    try {
-        pieChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Không có dữ liệu'],
-                datasets: [{
-                    data: [1],
-                    backgroundColor: ['rgba(108, 117, 125, 0.5)'],
-                    borderColor: ['rgba(108, 117, 125, 1)'],
-                    borderWidth: 1
-                }]
+// Tạo biểu đồ trống
+function createEmptyChart(canvas, message) {
+    return new Chart(canvas, {
+        type: 'pie',
+        data: {
+            labels: ['Không có dữ liệu'],
+            datasets: [{
+                data: [1],
+                backgroundColor: ['rgba(108, 117, 125, 0.5)'],
+                borderColor: ['rgba(108, 117, 125, 1)'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            elements: {
+                arc: {
+                    hoverOffset: 0
+                }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Không có dữ liệu',
-                        font: {
-                            size: 16,
-                            weight: 'bold'
-                        }
-                    },
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        enabled: false
+            plugins: {
+                title: {
+                    display: true,
+                    text: message || 'Không có dữ liệu',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
                     }
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                },
+                datalabels: {
+                    display: false
                 }
             }
-        });
-    } catch (error) {
-        console.error('❌ Lỗi khi tạo biểu đồ trống:', error);
-    }
+        }
+    });
 }
 
 
@@ -1288,6 +1337,11 @@ const runTime = Math.max(0, totalTime - setupTime - otherTime);
         },
         options: {
             responsive: true,
+            elements: {
+                arc: {
+                    hoverOffset: 0
+                }
+            },
             maintainAspectRatio: false,
             plugins: {
                 legend: {
@@ -1595,6 +1649,33 @@ function hideReportSection() {
     const reportSection = document.getElementById('reportSection');
     if (reportSection) {
         reportSection.style.display = 'none';
+    }
+}
+
+
+
+// Đảm bảo cấu trúc HTML của reportSection
+function ensureReportSectionStructure() {
+    const reportSection = document.getElementById('reportSection');
+    if (!reportSection) return;
+    
+    // Kiểm tra xem có đủ các element cần thiết không
+    const requiredElements = [
+        'totalPaper', 'totalWaste', 'totalData',
+        'quantityChart', 'macaChart', 'timeChart',
+        'quantityAnalysis', 'detailTableContainer'
+    ];
+    
+    let needsReset = false;
+    requiredElements.forEach(id => {
+        if (!document.getElementById(id)) {
+            needsReset = true;
+        }
+    });
+    
+    // Nếu thiếu element, reload lại trang
+    if (needsReset) {
+        location.reload();
     }
 }
 
