@@ -5,6 +5,9 @@
 
 console.log('🚀 Khởi tạo hệ thống biểu đồ sản xuất...');
 
+// Đăng ký plugin datalabels
+Chart.register(ChartDataLabels);
+
 // Biến toàn cục
 let currentChartData = null;
 let pieChart = null;
@@ -231,6 +234,10 @@ function setDefaultDates() {
 async function handleViewInReport() {
     try {
         showLoading(true);
+// Reset dữ liệu cũ và UI trước khi lọc mới
+currentChartData = null;
+destroyAllCharts();
+hideReportSection();
         
         // Thu thập điều kiện lọc
         const filters = collectFilters();
@@ -252,6 +259,7 @@ async function handleViewInReport() {
     } catch (error) {
         console.error('Lỗi khi xem báo cáo In:', error);
         showLoading(false);
+        hideReportSection();
         showNotification('Lỗi khi tải báo cáo: ' + error.message, 'error');
     }
 }
@@ -262,12 +270,17 @@ function collectFilters() {
         ws: document.getElementById('wsInput')?.value?.trim() || '',
         maca: (() => {
             const caSelect = document.getElementById('caSelect');
-            if (!caSelect || !caSelect.value) return '';
+            if (!caSelect) return '';
             
-            // Lấy value trực tiếp từ select (A, B, D, A1, AB+, etc.)
             const selectedValue = caSelect.value;
-            console.log('🔍 Mã ca được chọn:', selectedValue);
-            return selectedValue;
+            console.log('🔍 Giá trị mã ca từ select:', selectedValue);
+            
+            // Chỉ return giá trị nếu thực sự được chọn (không phải "Tất cả ca")
+            if (selectedValue && selectedValue !== '') {
+                return selectedValue;
+            }
+            
+            return '';
         })(),
         may: document.getElementById('maySelect')?.value || '',
         tuan: document.getElementById('tuanSelect')?.value || '',
@@ -427,36 +440,41 @@ if (may) {
 function displayInReport(data, filters) {
     console.log('📋 Hiển thị báo cáo với dữ liệu:', data);
     console.log('📋 Với filters:', filters);
+    console.log('📋 Số ca trong dữ liệu:', data.shiftData ? data.shiftData.length : 0);
+    console.log('📋 Mã ca filter:', filters.maca);
     
     
     // Kiểm tra dữ liệu có hợp lệ không
-    if (!data || (data.totalPaper === 0 && data.totalWaste === 0 && (!data.shiftData || data.shiftData.length === 0))) {
-        // Hiển thị thông báo không có dữ liệu
-        const reportSection = document.getElementById('reportSection');
-        if (reportSection) {
-            reportSection.style.display = 'block';
-            reportSection.innerHTML = `
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-body text-center p-5">
-                                <i class="fas fa-search fa-3x text-muted mb-4"></i>
-                                <h4 class="text-muted">Không có dữ liệu phù hợp</h4>
-                                <p class="text-muted">Không tìm thấy báo cáo nào phù hợp với điều kiện lọc đã chọn.</p>
-                                <p class="text-muted">Vui lòng thử:</p>
-                                <ul class="list-unstyled text-muted">
-                                    <li>• Kiểm tra lại mã ca đã chọn</li>
-                                    <li>• Thay đổi khoảng thời gian</li>
-                                    <li>• Bỏ bớt điều kiện lọc</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        return;
-    }
+if (!data || ((!data.totalPaper || data.totalPaper === 0) && 
+(!data.totalWaste || data.totalWaste === 0) && 
+(!data.shiftData || data.shiftData.length === 0))) {
+
+// Hiển thị thông báo không có dữ liệu
+const reportSection = document.getElementById('reportSection');
+if (reportSection) {
+reportSection.style.display = 'block';
+reportSection.innerHTML = `
+<div class="row">
+  <div class="col-12">
+      <div class="card">
+          <div class="card-body text-center p-5">
+              <i class="fas fa-search fa-3x text-muted mb-4"></i>
+              <h4 class="text-muted">Không có dữ liệu phù hợp</h4>
+              <p class="text-muted">Không tìm thấy báo cáo nào phù hợp với điều kiện lọc đã chọn.</p>
+              <p class="text-muted">Vui lòng thử:</p>
+              <ul class="list-unstyled text-muted">
+                  <li>• Kiểm tra lại mã ca đã chọn</li>
+                  <li>• Thay đổi khoảng thời gian</li>
+                  <li>• Bỏ bớt điều kiện lọc</li>
+              </ul>
+          </div>
+      </div>
+  </div>
+</div>
+`;
+}
+return;
+}
 
     
     // Hiển thị section báo cáo
@@ -673,7 +691,7 @@ function displayPieChart(data) {
 function displayQuantityCharts(data, filters) {
     console.log('🎯 Hiển thị biểu đồ số lượng sản xuất với filters:', filters);
     
-    // Destroy chart cũ trước khi tạo mới
+    // Destroy chart cũ
     if (quantityChart) {
         quantityChart.destroy();
         quantityChart = null;
@@ -693,137 +711,71 @@ function displayQuantityCharts(data, filters) {
     }
     
     // Xác định logic hiển thị
-    const hasSpecificFilter = (filters.maca && filters.maca.trim() !== '') || (filters.may && filters.may.trim() !== '');
+    const hasSpecificMacaFilter = (filters.maca && filters.maca.trim() !== '');
     
-    if (hasSpecificFilter) {
-        // Trường hợp có lọc ca hoặc máy cụ thể
-        displayFilteredCharts(totalChartCanvas, shiftChartCanvas, data, filters);
-    } else {
-        // Trường hợp không lọc ca/máy - hiển thị tổng + các ca
-        displayGeneralCharts(totalChartCanvas, shiftChartCanvas, data, filters);
-    }
-}
-
-
-
-function displayFilteredCharts(totalCanvas, shiftCanvas, data, filters) {
-    // Ẩn canvas thứ 2
-    shiftCanvas.parentElement.style.display = 'none';
+    console.log('🔍 Kiểm tra filter mã ca:', hasSpecificMacaFilter, 'Giá trị mã ca:', filters.maca);
+    console.log('🔍 Số ca trong dữ liệu:', data.shiftData ? data.shiftData.length : 0);
     
-    // Hiển thị biểu đồ tròn cho điều kiện lọc
-    if (filters.maca) {
-        // Lọc theo mã ca
-        const shiftData = data.shiftData ? data.shiftData.find(shift => shift.shift === filters.maca) : null;
-        if (shiftData && (shiftData.paper > 0 || shiftData.waste > 0)) {
-            quantityChart = createSingleShiftChartOnCanvas(totalCanvas, shiftData, `Ca ${filters.maca}`);
-        } else {
-            displayNoDataChart(totalCanvas, `Không có dữ liệu cho mã ca ${filters.maca}`);
-        }
-    } else if (filters.may) {
-        // Lọc theo máy - sử dụng tổng data đã được lọc
-        quantityChart = createSingleShiftChartOnCanvas(totalCanvas, data, `Máy ${filters.may}`);
-    }
-}
-
-
-
-function displayGeneralCharts(totalCanvas, shiftCanvas, data, filters) {
-    // Hiển thị biểu đồ tổng
-    quantityChart = createTotalQuantityChartOnCanvas(totalCanvas, data);
-    
-    // Hiển thị biểu đồ các ca
-    if (data.shiftData && data.shiftData.length > 0) {
-        shiftCanvas.parentElement.style.display = 'block';
-        displayMultipleShiftCharts(shiftCanvas, data.shiftData);
-    } else {
-        shiftCanvas.parentElement.style.display = 'none';
-    }
-}
-
-
-
-function displayMultipleShiftCharts(canvas, shiftData) {
-    // Thay thế canvas bằng container chứa nhiều biểu đồ tròn
-    const container = canvas.parentElement;
-    container.innerHTML = `
-        <h6 class="text-center mb-3">Phân bố theo ca</h6>
-        <div class="row" id="shiftChartsContainer"></div>
-    `;
-    
-    const chartsContainer = container.querySelector('#shiftChartsContainer');
-    
-    // Tính số cột dựa trên số ca
-    const colClass = shiftData.length <= 2 ? 'col-md-6' : 
-                    shiftData.length <= 3 ? 'col-md-4' : 
-                    shiftData.length <= 4 ? 'col-md-3' : 'col-md-2';
-    
-    shiftData.forEach((shift, index) => {
-        const chartDiv = document.createElement('div');
-        chartDiv.className = `${colClass} mb-3`;
-        chartDiv.innerHTML = `
-            <div class="text-center">
-                <h6>Ca ${shift.shift}</h6>
-                <div class="chart-container" style="height: 200px;">
-                    <canvas id="shiftChart${index}"></canvas>
-                </div>
-            </div>
-        `;
-        chartsContainer.appendChild(chartDiv);
+    if (hasSpecificMacaFilter) {
+        // Người dùng đã chọn mã ca cụ thể - chỉ hiển thị 1 biểu đồ
+        console.log('📊 Hiển thị biểu đồ cho mã ca cụ thể:', filters.maca);
         
-        // Tạo biểu đồ tròn cho ca này
-        setTimeout(() => {
-            const ctx = document.getElementById(`shiftChart${index}`);
-            if (ctx) {
-                new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: ['Thành phẩm', 'Phế liệu'],
-                        datasets: [{
-                            data: [shift.paper || 0, shift.waste || 0],
-                            backgroundColor: [
-                                'rgba(40, 167, 69, 0.8)',
-                                'rgba(220, 53, 69, 0.8)'
-                            ],
-                            borderColor: [
-                                'rgba(40, 167, 69, 1)',
-                                'rgba(220, 53, 69, 1)'
-                            ],
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    padding: 8,
-                                    usePointStyle: true,
-                                    font: { size: 10 }
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                        const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
-                                        return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        }, 100);
-    });
+        // Ẩn container biểu đồ ca
+        const shiftContainer = shiftChartCanvas.closest('.col-md-6');
+        if (shiftContainer) {
+            shiftContainer.style.display = 'none';
+        }
+        
+        // Hiển thị biểu đồ cho mã ca được chọn
+        const shiftData = data.shiftData ? data.shiftData.find(shift => shift.shift === filters.maca) : null;
+        
+        if (shiftData && (shiftData.paper > 0 || shiftData.waste > 0)) {
+            const singleShiftData = {
+                totalPaper: shiftData.paper,
+                totalWaste: shiftData.waste
+            };
+            quantityChart = createSingleShiftChartOnCanvas(totalChartCanvas, singleShiftData, filters.maca);
+        } else {
+            // Tạo biểu đồ trống
+            quantityChart = createEmptyChart(totalChartCanvas, `Không có dữ liệu cho mã ca ${filters.maca}`);
+        }
+    } else {
+        // Người dùng KHÔNG chọn mã ca cụ thể - hiển thị tổng + từng ca
+        console.log('📊 Hiển thị biểu đồ tổng + từng ca');
+        
+        // Hiển thị cả 2 container
+        const totalContainer = totalChartCanvas.closest('.col-md-6');
+        const shiftContainer = shiftChartCanvas.closest('.col-md-6');
+        
+        if (totalContainer) totalContainer.style.display = 'block';
+        if (shiftContainer) shiftContainer.style.display = 'block';
+        
+        // Tạo biểu đồ tổng
+        quantityChart = createTotalQuantityChartOnCanvas(totalChartCanvas, data);
+        
+        // Tạo biểu đồ từng ca
+        if (data.shiftData && data.shiftData.length > 0) {
+            console.log('📊 Có', data.shiftData.length, 'ca - hiển thị biểu đồ từng ca');
+            createMultipleShiftCharts(shiftChartCanvas, data.shiftData);
+        } else {
+            console.log('📊 Không có dữ liệu ca');
+            macaChart = createEmptyChart(shiftChartCanvas, 'Không có dữ liệu ca');
+        }
+    }
 }
+
+
+
 
 
 
 function displayNoDataChart(canvas, message) {
-    canvas.parentElement.innerHTML = `
+    // Tìm card-body chứa canvas
+    const cardBody = canvas.closest('.card-body');
+    if (!cardBody) return;
+    
+    // Thay thế nội dung card-body
+    cardBody.innerHTML = `
         <div class="text-center text-muted p-4">
             <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
             <h5>${message}</h5>
@@ -832,160 +784,164 @@ function displayNoDataChart(canvas, message) {
     `;
 }
 
-// // Tạo biểu đồ tổng
-// function createTotalQuantityChart(container, data) {
-//     const totalPaper = data.totalPaper || 0;
-//     const totalWaste = data.totalWaste || 0;
-    
-//     const chartWrapper = document.createElement('div');
-//     chartWrapper.className = 'mb-4';
-//     chartWrapper.innerHTML = `
-//         <h6 class="text-center mb-3">Tổng sản xuất</h6>
-//         <div class="chart-container">
-//             <canvas id="totalQuantityChart"></canvas>
-//         </div>
-//     `;
-    
-//     container.appendChild(chartWrapper);
-    
-//     // Tạo biểu đồ
-//     const ctx = document.getElementById('totalQuantityChart');
-//     if (ctx) {
-//         new Chart(ctx, {
-//             type: 'pie',
-//             data: {
-//                 labels: ['Thành phẩm', 'Phế liệu'],
-//                 datasets: [{
-//                     data: [totalPaper, totalWaste],
-//                     backgroundColor: [
-//                         'rgba(40, 167, 69, 0.8)',
-//                         'rgba(220, 53, 69, 0.8)'
-//                     ],
-//                     borderColor: [
-//                         'rgba(40, 167, 69, 1)',
-//                         'rgba(220, 53, 69, 1)'
-//                     ],
-//                     borderWidth: 2
-//                 }]
-//             },
-//             options: {
-//                 responsive: true,
-//                 maintainAspectRatio: false,
-//                 plugins: {
-//                     legend: {
-//                         position: 'bottom',
-//                         labels: {
-//                             padding: 15,
-//                             usePointStyle: true
-//                         }
-//                     },
-//                     tooltip: {
-//                         callbacks: {
-//                             label: function(context) {
-//                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-//                                 const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
-//                                 return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
-//                             }
-//                         }
-//                     }
-//                 }
-//             }
-//         });
-//     }
-// }
-
-// // Tạo biểu đồ cho từng ca
-// function createShiftQuantityCharts(container, shiftData) {
-//     const shiftsWrapper = document.createElement('div');
-//     shiftsWrapper.innerHTML = '<h6 class="text-center mb-3">Phân bố theo ca</h6>';
-    
-//     const chartsRow = document.createElement('div');
-//     chartsRow.className = 'row';
-    
-//     shiftData.forEach((shift, index) => {
-//         const chartCol = document.createElement('div');
-//         chartCol.className = `col-md-${12 / Math.min(shiftData.length, 3)} mb-3`;
-        
-//         chartCol.innerHTML = `
-//             <div class="text-center">
-//                 <h6>Ca ${shift.shift}</h6>
-//                 <div class="chart-container" style="height: 200px;">
-//                     <canvas id="shiftChart${index}"></canvas>
-//                 </div>
-//             </div>
-//         `;
-        
-//         chartsRow.appendChild(chartCol);
-//     });
-    
-//     shiftsWrapper.appendChild(chartsRow);
-//     container.appendChild(shiftsWrapper);
-    
-//     // Tạo biểu đồ cho từng ca
-//     shiftData.forEach((shift, index) => {
-//         const ctx = document.getElementById(`shiftChart${index}`);
-//         if (ctx) {
-//             new Chart(ctx, {
-//                 type: 'pie',
-//                 data: {
-//                     labels: ['Thành phẩm', 'Phế liệu'],
-//                     datasets: [{
-//                         data: [shift.paper || 0, shift.waste || 0],
-//                         backgroundColor: [
-//                             'rgba(40, 167, 69, 0.8)',
-//                             'rgba(220, 53, 69, 0.8)'
-//                         ],
-//                         borderColor: [
-//                             'rgba(40, 167, 69, 1)',
-//                             'rgba(220, 53, 69, 1)'
-//                         ],
-//                         borderWidth: 2
-//                     }]
-//                 },
-//                 options: {
-//                     responsive: true,
-//                     maintainAspectRatio: false,
-//                     plugins: {
-//                         legend: {
-//                             position: 'bottom',
-//                             labels: {
-//                                 padding: 10,
-//                                 usePointStyle: true,
-//                                 font: {
-//                                     size: 11
-//                                 }
-//                             }
-//                         },
-//                         tooltip: {
-//                             callbacks: {
-//                                 label: function(context) {
-//                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
-//                                     const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
-//                                     return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
-//                                 }
-//                             }
-//                         }
-//                     }
-//                 }
-//             });
-//         }
-//     });
-// }
-
-
-
 
 // Tạo biểu đồ tổng trên canvas có sẵn
 function createTotalQuantityChartOnCanvas(canvas, data) {
     const totalPaper = data.totalPaper || 0;
     const totalWaste = data.totalWaste || 0;
     
-    return new Chart(canvas, {
+    console.log('🎯 Tạo biểu đồ tổng với dữ liệu:', {totalPaper, totalWaste});
+    console.log('🎯 Canvas element:', canvas);
+    console.log('🎯 Canvas ID:', canvas.id);
+    console.log('🎯 Canvas parent:', canvas.parentElement);
+    
+    try {
+        return new Chart(canvas, {
+            type: 'pie',
+            data: {
+                labels: ['Thành phẩm', 'Phế liệu'],
+                datasets: [{
+                    data: [totalPaper, totalWaste],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',
+                        'rgba(220, 53, 69, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Tổng sản xuất',
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        }
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                                return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        color: 'white',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        formatter: function(value, context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return percent + '%';
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('❌ Lỗi khi tạo biểu đồ tổng:', error);
+        return null;
+    }
+}
+
+
+
+// Tạo biểu đồ đơn giản cho các ca trên canvas có sẵn
+function createMultipleShiftCharts(canvas, shiftData) {
+    // Giữ nguyên canvas gốc, chỉ thay đổi nội dung card-body chứa nó
+    const cardBody = canvas.closest('.card-body');
+    if (!cardBody) return;
+    
+    // Ẩn canvas gốc
+    canvas.style.display = 'none';
+    
+    // Tạo container mới cho multiple charts
+    const existingMultiContainer = cardBody.querySelector('.multi-shift-charts');
+    if (existingMultiContainer) {
+        existingMultiContainer.remove();
+    }
+    
+    const multiContainer = document.createElement('div');
+    multiContainer.className = 'multi-shift-charts';
+    
+    let html = '<div class="row">';
+    
+    shiftData.forEach((shift, index) => {
+        const canvasId = `shiftChart_${index}`;
+        const colClass = shiftData.length <= 2 ? 'col-md-6' : 'col-md-4';
+        
+        html += `
+            <div class="${colClass} mb-3">
+                <div class="text-center">
+                    <h6 class="mb-2">Ca ${shift.shift}</h6>
+                    <div style="height: 200px; position: relative;">
+                        <canvas id="${canvasId}"></canvas>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    multiContainer.innerHTML = html;
+    cardBody.appendChild(multiContainer);
+    
+    // Tạo biểu đồ cho từng ca
+    shiftData.forEach((shift, index) => {
+        const canvasId = `shiftChart_${index}`;
+        const canvasElement = document.getElementById(canvasId);
+        
+        if (canvasElement) {
+            createSingleShiftPieChart(canvasElement, shift);
+        }
+    });
+}
+
+
+
+function createSingleShiftPieChart(canvas, shiftData) {
+    const paper = shiftData.paper || 0;
+    const waste = shiftData.waste || 0;
+    const total = paper + waste;
+    
+    if (total === 0) {
+        // Hiển thị thông báo không có dữ liệu
+        const container = canvas.parentElement;
+        container.innerHTML = `
+            <div class="text-center text-muted p-2">
+                <i class="fas fa-exclamation-triangle"></i>
+                <small>Không có dữ liệu</small>
+            </div>
+        `;
+        return;
+    }
+    
+    new Chart(canvas, {
         type: 'pie',
         data: {
             labels: ['Thành phẩm', 'Phế liệu'],
             datasets: [{
-                data: [totalPaper, totalWaste],
+                data: [paper, waste],
                 backgroundColor: [
                     'rgba(40, 167, 69, 0.8)',
                     'rgba(220, 53, 69, 0.8)'
@@ -1001,99 +957,41 @@ function createTotalQuantityChartOnCanvas(canvas, data) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                title: {
-                    display: true,
-                    text: 'Tổng sản xuất',
-                    font: {
-                        size: 16,
-                        weight: 'bold'
-                    }
-                },
                 legend: {
                     position: 'bottom',
                     labels: {
-                        padding: 15,
-                        usePointStyle: true
+                        padding: 10,
+                        usePointStyle: true,
+                        font: {
+                            size: 11
+                        }
                     }
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
                             return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
                         }
                     }
-                }
-            }
-        }
-    });
-}
-
-
-
-// Tạo biểu đồ theo mã ca trên canvas có sẵn
-function createShiftQuantityChartOnCanvas(canvas, shiftData) {
-    // Tạo biểu đồ bar chart để hiển thị nhiều ca
-    const labels = shiftData.map(shift => `Ca ${shift.shift}`);
-    const paperData = shiftData.map(shift => shift.paper || 0);
-    const wasteData = shiftData.map(shift => shift.waste || 0);
-    
-    return new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Thành phẩm',
-                data: paperData,
-                backgroundColor: 'rgba(40, 167, 69, 0.8)',
-                borderColor: 'rgba(40, 167, 69, 1)',
-                borderWidth: 1
-            }, {
-                label: 'Phế liệu',
-                data: wasteData,
-                backgroundColor: 'rgba(220, 53, 69, 0.8)',
-                borderColor: 'rgba(220, 53, 69, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
+                },
+                datalabels: {
                     display: true,
-                    text: 'Phân bố theo mã ca',
+                    color: 'white',
                     font: {
-                        size: 16,
+                        size: 12,
                         weight: 'bold'
-                    }
-                },
-                legend: {
-                    position: 'top'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return formatNumber(value);
-                        }
+                    },
+                    formatter: function(value, context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        return percent + '%';
                     }
                 }
             }
         }
     });
 }
-
 
 
 // Tạo biểu đồ cho một ca cụ thể trên canvas có sẵn
@@ -1141,6 +1039,19 @@ function createSingleShiftChartOnCanvas(canvas, data, shiftName) {
                             const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
                             return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
                         }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    color: 'white',
+                    font: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    formatter: function(value, context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        return percent + '%';
                     }
                 }
             }
@@ -1253,7 +1164,7 @@ function displayQuantityAnalysis(data, filters) {
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h6>Tỷ lệ phế liệu</h6>
-                            <h4 class="text-${totalWasteRate <= 5 ? 'success' : totalWasteRate <= 10 ? 'warning' : 'danger'}">${totalWasteRate}%</h4>
+                            <h4 class="text-${totalWasteRate <= 5 ? 'danger' : totalWasteRate <= 10 ? 'warning' : 'danger'}">${totalWasteRate}%</h4>
                         </div>
                     </div>
                 </div>
@@ -1639,6 +1550,8 @@ console.log('✅ Hệ thống biểu đồ đã được khởi tạo hoàn tấ
 
 // Hàm helper để destroy tất cả chart
 function destroyAllCharts() {
+    console.log('🗑️ Destroy tất cả biểu đồ');
+    
     if (pieChart) {
         pieChart.destroy();
         pieChart = null;
@@ -1654,6 +1567,34 @@ function destroyAllCharts() {
     if (timeChart) {
         timeChart.destroy();
         timeChart = null;
+    }
+    
+    // Destroy tất cả chart con được tạo động
+    Chart.helpers.each(Chart.instances, function(instance) {
+        if (instance.canvas && instance.canvas.id && instance.canvas.id.startsWith('shiftChart_')) {
+            instance.destroy();
+        }
+    });
+
+
+    // Xóa container multiple charts
+document.querySelectorAll('.multi-shift-charts').forEach(container => {
+    container.remove();
+});
+
+// Hiển thị lại canvas gốc
+document.querySelectorAll('#macaChart').forEach(canvas => {
+    canvas.style.display = 'block';
+});
+}
+
+
+
+// Ẩn section báo cáo
+function hideReportSection() {
+    const reportSection = document.getElementById('reportSection');
+    if (reportSection) {
+        reportSection.style.display = 'none';
     }
 }
 
