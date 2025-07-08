@@ -115,53 +115,115 @@
         <!-- Report Section -->
         <div id="reportSection" style="display: none;">
             <!-- Summary Stats -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="card bg-primary text-white h-100">
-                        <div class="card-body text-center">
-                            <h5><i class="fas fa-calculator me-2"></i>Tổng Số Lượng Giấy</h5>
-                            <h2 id="totalData">0</h2>
+<div class="row mb-4">
+    <!-- Cột Thời gian -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-clock me-2"></i>Thống kê thời gian</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="card bg-primary text-white h-100">
+                            <div class="card-body text-center">
+                                <h6><i class="fas fa-clock me-2"></i>Tổng Thời Gian</h6>
+                                <h4 id="totalTimeDisplay">0 phút</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white h-100">
+                            <div class="card-body text-center">
+                                <h6><i class="fas fa-play me-2"></i>Thời Gian Làm Việc</h6>
+                                <h4 id="workTimeDisplay">0 phút</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white h-100">
+                            <div class="card-body text-center">
+                                <h6><i class="fas fa-pause me-2"></i>Thời Gian Dừng Máy</h6>
+                                <h4 id="stopTimeDisplay">0 phút</h4>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card bg-success text-white h-100">
-                        <div class="card-body text-center">
-                            <h5><i class="fas fa-boxes me-2"></i>Tổng Thành Phẩm In</h5>
-                            <h2 id="totalPaper">0</h2>
-                        </div>
+                <!-- Progress Bar Thời gian -->
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar bg-success" role="progressbar" id="workTimeProgress" 
+                         style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                    <div class="progress-bar bg-danger" role="progressbar" id="stopTimeProgress"
+                         style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card bg-danger text-white h-100">
-                        <div class="card-body text-center">
-                            <h5><i class="fas fa-trash me-2"></i>Tổng Phế Liệu</h5>
-                            <h2 id="totalWaste">0</h2>
-                        </div>
+                <div class="row mt-2">
+                    <div class="col-6 text-start">
+                        <small><i class="fas fa-square text-success me-1"></i>Làm việc: <span id="workTimePercent">0%</span></small>
+                    </div>
+                    <div class="col-6 text-end">
+                        <small><i class="fas fa-square text-danger me-1"></i>Dừng máy: <span id="stopTimePercent">0%</span></small>
                     </div>
                 </div>
             </div>
-
-            <!-- Progress Bar -->
-                <div class=" m-5">
-
-                    <div class="progress" style="height: 30px;">
-                        <div class="progress-bar bg-success" role="progressbar" id="paperProgress" 
-                             style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                        </div>
-                        <div class="progress-bar bg-danger" role="progressbar" id="wasteProgress"
-                             style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+        </div>
+    </div>
+    
+    <!-- Cột Số lượng -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5><i class="fas fa-chart-bar me-2"></i>Thống kê số lượng</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="card bg-primary text-white h-100">
+                            <div class="card-body text-center">
+                                <h6><i class="fas fa-calculator me-2"></i>Tổng Số Lượng</h6>
+                                <h4 id="totalData">0</h4>
+                            </div>
                         </div>
                     </div>
-                    <div class="row mt-2">
-                        <div class="col-6 text-start">
-                            <small><i class="fas fa-square text-success me-1"></i>Thành phẩm: <span id="paperPercent">0%</span></small>
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white h-100">
+                            <div class="card-body text-center">
+                                <h6><i class="fas fa-boxes me-2"></i>Thành Phẩm In</h6>
+                                <h4 id="totalPaper">0</h4>
+                            </div>
                         </div>
-                        <div class="col-6 text-end">
-                            <small><i class="fas fa-square text-danger me-1"></i>Phế liệu: <span id="wastePercent">0%</span></small>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white h-100">
+                            <div class="card-body text-center">
+                                <h6><i class="fas fa-trash me-2"></i>Phế Liệu</h6>
+                                <h4 id="totalWaste">0</h4>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <!-- Progress Bar Số lượng -->
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar bg-success" role="progressbar" id="paperProgress" 
+                         style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                    <div class="progress-bar bg-danger" role="progressbar" id="wasteProgress"
+                         style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-6 text-start">
+                        <small><i class="fas fa-square text-success me-1"></i>Thành phẩm: <span id="paperPercent">0%</span></small>
+                    </div>
+                    <div class="col-6 text-end">
+                        <small><i class="fas fa-square text-danger me-1"></i>Phế liệu: <span id="wastePercent">0%</span></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
             <!-- Charts Section Row 1: Số lượng sản xuất -->
             <div class="row mb-4">
@@ -201,19 +263,36 @@
 
             <!-- Charts Section Row 2: Thời gian sản xuất -->
             <div class="row">
-                <!-- Biểu đồ thời gian sản xuất -->
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <h6><i class="fas fa-chart-pie me-2"></i>Thời gian sản xuất</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="chart-container">
-                                <canvas id="timeChart"></canvas>
-                            </div>
+<!-- Biểu đồ thời gian sản xuất -->
+<div class="col-md-6">
+    <div class="card h-100">
+        <div class="card-header">
+            <h6><i class="fas fa-chart-pie me-2"></i>Thời gian sản xuất</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Biểu đồ tổng thời gian -->
+                <div class="col-6">
+                    <div class="text-center">
+                        <h6 class="mb-2">Tổng thời gian</h6>
+                        <div class="chart-container" style="height: 250px;">
+                            <canvas id="timeChart"></canvas>
                         </div>
                     </div>
                 </div>
+                <!-- Biểu đồ lý do dừng máy -->
+                <div class="col-6">
+                    <div class="text-center">
+                        <h6 class="">Lý do dừng máy</h6>
+                        <div class="chart-container" style="height: 250px;">
+                            <canvas id="stopReasonChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <!-- Phân tích thời gian -->
                 <div class="col-md-6">
