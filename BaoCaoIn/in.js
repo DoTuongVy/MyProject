@@ -1802,7 +1802,7 @@ function createNewStopReasonBox(selectedReason) {
                 <div class="col-md-6">
                     <label class="fw-bold mb-1">Thời gian dừng máy</label>
                     <div class="position-relative">
-                        <input type="datetime-local" class="form-control stop-time-input" id="${boxId}_stopTime" step="1">
+                        <input type="datetime-local" class="form-control stop-time-input" id="${boxId}_stopTime">
                         <button class="btn btn-primary position-absolute top-0 end-0 h-100" 
                                 onclick="setCurrentTime('${boxId}_stopTime', '${boxId}_stopDisplay')" 
                                 style="z-index: 10;">
@@ -1815,7 +1815,7 @@ function createNewStopReasonBox(selectedReason) {
                 <div class="col-md-6">
                     <label class="fw-bold mb-1">Thời gian chạy lại</label>
                     <div class="position-relative">
-                        <input type="datetime-local" class="form-control resume-time-input" id="${boxId}_resumeTime" step="1">
+                        <input type="datetime-local" class="form-control resume-time-input" id="${boxId}_resumeTime" >
                         <button class="btn btn-success position-absolute top-0 end-0 h-100" 
                                 onclick="setCurrentTime('${boxId}_resumeTime', '${boxId}_resumeDisplay')" 
                                 style="z-index: 10;">
@@ -1930,33 +1930,30 @@ function calculateStopDuration(boxId) {
             if (resumeTime > stopTime) {
                 const diff = resumeTime - stopTime;
                 
-                // SỬA: Tính chi tiết giờ, phút, giây
+                // GIỮ NGUYÊN việc tính chi tiết giờ, phút, giây để lưu vào DB
                 const totalSeconds = Math.floor(diff / 1000);
                 const hours = Math.floor(totalSeconds / 3600);
                 const minutes = Math.floor((totalSeconds % 3600) / 60);
                 const seconds = totalSeconds % 60;
                 
-                // THAY ĐỔI: Format hiển thị giờ:phút:giây
+                // SỬA PHẦN HIỂN THỊ: Chỉ hiển thị giờ và phút
                 let durationText = '';
                 if (hours > 0) {
-                    durationText += `${hours} giờ `;
-                }
-                if (minutes > 0) {
-                    durationText += `${minutes} phút `;
-                }
-                if (seconds > 0) {
-                    durationText += `${seconds} giây`;
-                }
-                
-                if (durationText === '') {
-                    durationText = '0 giây';
+                    durationText += `${hours} giờ`;
+                    if (minutes > 0) {
+                        durationText += ` ${minutes} phút`;
+                    }
+                } else if (minutes > 0) {
+                    durationText += `${minutes} phút`;
+                } else {
+                    durationText = '0 phút'; // Thay vì '0 giây'
                 }
                 
                 durationDisplay.value = durationText.trim();
                 
                 console.log(`Đã tính thời gian: ${durationText.trim()}`);
             } else {
-                durationDisplay.value = '0 giây';
+                durationDisplay.value = '0 phút'; // Thay vì '0 giây'
                 console.log('Thời gian chạy lại không lớn hơn thời gian dừng');
             }
         }
@@ -1970,10 +1967,10 @@ function formatDisplayTime(date) {
     const year = date.getFullYear();
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
+    // const seconds = String(date.getSeconds()).padStart(2, '0');
 
     // THAY ĐỔI: Thêm giây vào hiển thị
-    return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+    return `${day}/${month}/${year}, ${hours}:${minutes}`;
 }
 
 
@@ -4102,6 +4099,38 @@ function showLoadingInStopTable(show) {
     }
 }
 
+
+function formatStopDuration(durationText) {
+    if (!durationText) return '';
+    
+    // Nếu có "giây" thì xử lý để chỉ hiển thị giờ và phút
+    if (durationText.includes('giây')) {
+        // Tách ra các phần
+        const parts = durationText.split(' ');
+        let hours = 0, minutes = 0;
+        
+        for (let i = 0; i < parts.length; i++) {
+            if (parts[i].includes('giờ')) {
+                hours = parseInt(parts[i-1]) || 0;
+            } else if (parts[i].includes('phút')) {
+                minutes = parseInt(parts[i-1]) || 0;
+            }
+        }
+        
+        // Format lại chỉ với giờ và phút
+        if (hours > 0) {
+            return minutes > 0 ? `${hours} giờ ${minutes} phút` : `${hours} giờ`;
+        } else if (minutes > 0) {
+            return `${minutes} phút`;
+        } else {
+            return '0 phút';
+        }
+    }
+    
+    return durationText; // Giữ nguyên nếu đã đúng format
+}
+
+
 // Render bảng báo cáo dừng máy
 function renderStopReportTable() {
     const tbody = document.getElementById('stopReportTableBody');
@@ -4131,7 +4160,7 @@ function renderStopReportTable() {
             <td>${report.truong_may || ''}</td>
             <td><strong class="text-primary">${report.ws || ''}</strong></td>
             <td><strong>${report.may || ''}</strong></td>
-            <td>${report.thoi_gian_dung_may || ''}</td>
+            <td>${formatStopDuration(report.thoi_gian_dung_may) || ''}</td>
             <td>${formatDateTime(report.thoi_gian_dung) || ''}</td>
             <td>${formatDateTime(report.thoi_gian_chay_lai) || ''}</td>
             <td><span class="badge bg-danger">${report.ly_do || ''}</span></td>
