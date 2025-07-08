@@ -1160,12 +1160,12 @@ function displayQuantityAnalysis(data, filters) {
                     <td class="text-end text-success"><strong>${formatNumber(paper)}</strong></td>
                     <td class="text-end text-danger"><strong>${formatNumber(waste)}</strong></td>
                     <td class="text-end">
-                        <span class="badge bg-${paperRate >= 95 ? 'success' : paperRate >= 90 ? 'warning' : 'danger'}">
+                        <span class="badge bg-warning">
                             ${paperRate}%
                         </span>
                     </td>
                     <td class="text-end">
-                        <span class="badge bg-${wasteRate <= 5 ? 'success' : wasteRate <= 10 ? 'warning' : 'danger'}">
+                        <span class="badge bg-warning">
                             ${wasteRate}%
                         </span>
                     </td>
@@ -1200,7 +1200,7 @@ function displayQuantityAnalysis(data, filters) {
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h6>Tỷ lệ thành phẩm</h6>
-                            <h4 class="text-${totalPaperRate >= 95 ? 'success' : totalPaperRate >= 90 ? 'warning' : 'danger'}">${totalPaperRate}%</h4>
+                            <h4 class="text-success">${totalPaperRate}%</h4>
                         </div>
                     </div>
                 </div>
@@ -1208,7 +1208,7 @@ function displayQuantityAnalysis(data, filters) {
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h6>Tỷ lệ phế liệu</h6>
-                            <h4 class="text-${totalWasteRate <= 5 ? 'danger' : totalWasteRate <= 10 ? 'warning' : 'danger'}">${totalWasteRate}%</h4>
+                            <h4 class="text-danger">${totalWasteRate}%</h4>
                         </div>
                     </div>
                 </div>
@@ -1312,6 +1312,7 @@ if (filters && filters.maca && data.shiftData) {
     }
 }
 
+// Thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
 const runTime = Math.max(0, totalTime - setupTime - otherTime);
     
     console.log('⏰ Dữ liệu thời gian:', { runTime, setupTime, otherTime, totalTime });

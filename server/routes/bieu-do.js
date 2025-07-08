@@ -76,22 +76,26 @@ router.get('/in/chart-data', async (req, res) => {
             });
         }
         
-        // Lấy dữ liệu dừng máy
-        const stopReports = await new Promise((resolve, reject) => {
-            const reportIds = reports.map(r => r.id);
-            if (reportIds.length === 0) {
-                resolve([]);
-                return;
-            }
-            
-            const placeholders = reportIds.map(() => '?').join(',');
-            db.all(`SELECT thoi_gian_dung_may FROM bao_cao_in_dung_may 
-                    WHERE bao_cao_id IN (${placeholders})`, 
-                    reportIds, (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows || []);
-            });
-        });
+// Lấy dữ liệu dừng máy với lý do cụ thể
+const stopReports = await new Promise((resolve, reject) => {
+    const reportIds = reports.map(r => r.id);
+    if (reportIds.length === 0) {
+        resolve([]);
+        return;
+    }
+    
+    const placeholders = reportIds.map(() => '?').join(',');
+    db.all(`SELECT ly_do, thoi_gian_dung_may FROM bao_cao_in_dung_may 
+            WHERE bao_cao_id IN (${placeholders})`, 
+            reportIds, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+    });
+});
+
+// Thêm debug này
+console.log('📊 Report IDs:', reports.map(r => r.id));
+console.log('📊 Stop reports từ database:', stopReports);
         
         // Tính toán dữ liệu
         const totalPaper = reports.reduce((sum, r) => sum + (parseFloat(r.thanh_pham_in) || 0), 0);
@@ -114,36 +118,57 @@ router.get('/in/chart-data', async (req, res) => {
 
 
 
-        // Tạo mảng stopReasons từ dữ liệu dừng máy
-const stopReasons = [];
+// Tạo mảng stopReasons từ dữ liệu dừng máy với lý do cụ thể
+const stopReasonsRaw = [];
 stopReports.forEach(stop => {
     const duration = stop.thoi_gian_dung_may || '';
+    const reason = stop.ly_do || 'Không rõ lý do';
+    
     if (duration.includes('giờ') || duration.includes('phút')) {
         const hours = (duration.match(/(\d+)\s*giờ/) || [0, 0])[1];
         const minutes = (duration.match(/(\d+)\s*phút/) || [0, 0])[1];
         const totalMinutes = parseInt(hours) * 60 + parseInt(minutes);
         if (totalMinutes > 0) {
-            stopReasons.push({
-                reason: 'Dừng máy',
+            stopReasonsRaw.push({
+                reason: reason,
                 duration: totalMinutes
             });
         }
     }
 });
 
+// Hợp nhất các lý do giống nhau
+const stopReasonsMap = {};
+stopReasonsRaw.forEach(item => {
+    if (stopReasonsMap[item.reason]) {
+        stopReasonsMap[item.reason] += item.duration;
+    } else {
+        stopReasonsMap[item.reason] = item.duration;
+    }
+});
+
+// Chuyển đổi thành mảng
+const stopReasons = Object.keys(stopReasonsMap).map(reason => ({
+    reason: reason,
+    duration: stopReasonsMap[reason]
+}));
+
+console.log('📊 Final stopReasons:', stopReasons);
+
         
-        // Tính thời gian chạy máy
-        let totalWorkTime = 0;
-        reports.forEach(r => {
-            if (r.thoi_gian_bat_dau && r.thoi_gian_ket_thuc) {
-                const start = new Date(r.thoi_gian_bat_dau);
-                const end = new Date(r.thoi_gian_ket_thuc);
-                const diff = (end - start) / (1000 * 60); // phút
-                totalWorkTime += diff;
-            }
-        });
-        
-        const runTime = Math.max(0, totalWorkTime - setupTime - stopTime);
+        // Tính tổng thời gian làm việc (kết thúc - bắt đầu)
+let totalWorkTime = 0;
+reports.forEach(r => {
+    if (r.thoi_gian_bat_dau && r.thoi_gian_ket_thuc) {
+        const start = new Date(r.thoi_gian_bat_dau);
+        const end = new Date(r.thoi_gian_ket_thuc);
+        const diff = (end - start) / (1000 * 60); // phút
+        totalWorkTime += diff;
+    }
+});
+
+// Tính thời gian chạy máy = (Tg kết thúc - thời gian bắt đầu - tg canh máy - thời gian dừng máy)
+const runTime = Math.max(0, totalWorkTime - setupTime - stopTime);
         
         // Lấy thông tin khách hàng và sản phẩm (ưu tiên từ WS được tìm kiếm)
         let customer = '';
@@ -183,7 +208,7 @@ const chartData = {
         setupTime: setupTime,
         otherTime: stopTime
     },
-    stopReasons: stopReasons, // Sẽ xử lý sau
+    stopReasons: stopReasons,
     customer: customer,
     product: product,
     reportCount: reports.length
