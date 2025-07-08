@@ -1257,8 +1257,10 @@ async function collectEndReportData() {
         if (!value) return '';
         return value.toString().replace(/,/g, '');
     }
+    
     try {
         const ketThuc = {
+            // ⚠️ THỜI GIAN KẾT THÚC GIỮ NGUYÊN (có giây đầy đủ)
             thoiGianKetThuc: new Date().toISOString(),
             canhmay: getInputValue('canhmay'),
             thanhphamin: getInputValue('thanhphamin'),
@@ -1271,39 +1273,38 @@ async function collectEndReportData() {
             ghiChu: getInputValue('ghiChu'),
             dungMay: getCheckboxValue('dungMayCheckbox'),
             
-            // ✅ TÍNH THEO TƯ DUY MỚI
             tongSoLuong: await calculateTongSoLuongCorrect(),
             tongPheLieu: await calculateTongPheLieuCorrect(), 
             tongPhelieuTrang: await calculateTongPheLieuTrangCorrect(),
             thanhPham: await calculateThanhPhamCorrect()
         };
 
-        // Thu thập dữ liệu dừng máy nếu có
+        // 🔧 CHỈ FORMAT THỜI GIAN DỪNG MÁY, THÊM :00
         const dungMay = [];
-const stopBoxes = document.querySelectorAll('.stop-reason-box');
-stopBoxes.forEach(box => {
-    const reasonValue = box.querySelector('.reason-value')?.value || '';
-    const otherReason = box.querySelector('.other-reason-input')?.value || '';
-    const stopTime = box.querySelector('.stop-time-input')?.value || '';
-    const resumeTime = box.querySelector('.resume-time-input')?.value || '';
-    const duration = box.querySelector('.duration-display')?.value || '';
-    
-    if (reasonValue && stopTime && resumeTime) {
-        dungMay.push({
-            lyDo: reasonValue === 'Khác' ? otherReason : reasonValue,
-            thoiGianDung: stopTime,
-            thoiGianChayLai: resumeTime,
-            thoiGianDungMay: duration,
-            ghiChu: otherReason
+        const stopBoxes = document.querySelectorAll('.stop-reason-box');
+        stopBoxes.forEach(box => {
+            const reasonValue = box.querySelector('.reason-value')?.value || '';
+            const otherReason = box.querySelector('.other-reason-input')?.value || '';
+            const stopTime = box.querySelector('.stop-time-input')?.value || '';
+            const resumeTime = box.querySelector('.resume-time-input')?.value || '';
+            const duration = box.querySelector('.duration-display')?.value || '';
+            
+            if (reasonValue && stopTime && resumeTime) {
+                dungMay.push({
+                    lyDo: reasonValue === 'Khác' ? otherReason : reasonValue,
+                    thoiGianDung: formatStopMachineTime(stopTime),      // 🔧 Thêm :00
+                    thoiGianChayLai: formatStopMachineTime(resumeTime), // 🔧 Thêm :00
+                    thoiGianDungMay: duration,
+                    ghiChu: otherReason
+                });
+            }
         });
-    }
-});
 
-        console.log('✅ Dữ liệu kết thúc đã tính:', {
+        console.log('✅ Dữ liệu kết thúc (dừng máy có :00):', {
             tongSoLuong: ketThuc.tongSoLuong,
             tongPheLieu: ketThuc.tongPheLieu,
-            tongPhelieuTrang: ketThuc.tongPhelieuTrang,
-            thanhPham: ketThuc.thanhPham
+            thanhPham: ketThuc.thanhPham,
+            dungMayCount: dungMay.length
         });
 
         return { ketThuc, dungMay };
@@ -4228,60 +4229,104 @@ async function deleteStopReport(reportId) {
 // BÁO CÁO DỪNG MÁY ĐỘC LẬP
 // ====================================================================================================================================
 
+
+// 🔧 HÀM CHUYỂN ĐỔI THỜI GIAN CHỈ CHO DỪNG MÁY: HH:mm → HH:mm:ss
+function formatStopMachineTime(datetimeLocalValue) {
+    if (!datetimeLocalValue) return '';
+    
+    try {
+        // Input từ datetime-local: "2024-12-10T14:30"
+        // Output cần: "2024-12-10 14:30:00" (thêm :00 giây)
+        
+        const date = new Date(datetimeLocalValue);
+        
+        if (isNaN(date.getTime())) {
+            console.warn('Invalid datetime value:', datetimeLocalValue);
+            return '';
+        }
+        
+        // Format: YYYY-MM-DD HH:mm:00 (cố định 00 giây)
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        const formatted = `${year}-${month}-${day} ${hours}:${minutes}:00`;
+        console.log(`🕐 Format dừng máy: ${datetimeLocalValue} → ${formatted}`);
+        
+        return formatted;
+        
+    } catch (error) {
+        console.error('Lỗi khi format thời gian dừng máy:', error);
+        return '';
+    }
+}
+
+
 // Gửi báo cáo dừng máy độc lập
 async function submitStopReportOnly() {
     try {
         console.log('Gửi báo cáo dừng máy độc lập...');
 
-        
-const stopBoxes = document.querySelectorAll('.stop-reason-box');
-if (stopBoxes.length === 0) {
-    showNotification('Vui lòng chọn lý do dừng máy', 'error');
-    return;
-}
+        const stopBoxes = document.querySelectorAll('.stop-reason-box');
+        if (stopBoxes.length === 0) {
+            showNotification('Vui lòng chọn lý do dừng máy', 'error');
+            return;
+        }
 
-// Kiểm tra ít nhất một khung có đầy đủ thông tin
-let hasValidStopData = false;
-let stopData = null;
+        // Kiểm tra ít nhất một khung có đầy đủ thông tin
+        let hasValidStopData = false;
+        let stopData = null;
 
-for (let box of stopBoxes) {
-    const reasonValue = box.querySelector('.reason-value')?.value || '';
-    const stopTime = box.querySelector('.stop-time-input')?.value || '';
-    const resumeTime = box.querySelector('.resume-time-input')?.value || '';
-    const otherReason = box.querySelector('.other-reason-input')?.value || '';
-    const duration = box.querySelector('.duration-display')?.value || '';
-    
-    if (reasonValue && stopTime && resumeTime) {
-        hasValidStopData = true;
-        stopData = {
-            ly_do: reasonValue === 'Khác' ? otherReason : reasonValue,
-            thoi_gian_dung: stopTime,
-            thoi_gian_chay_lai: resumeTime,
-            thoi_gian_dung_may: duration
-        };
-        break; // Lấy khung đầu tiên có đầy đủ dữ liệu
-    }
-}
+        for (let box of stopBoxes) {
+            const reasonValue = box.querySelector('.reason-value')?.value || '';
+            const stopTime = box.querySelector('.stop-time-input')?.value || '';
+            const resumeTime = box.querySelector('.resume-time-input')?.value || '';
+            const otherReason = box.querySelector('.other-reason-input')?.value || '';
+            const duration = box.querySelector('.duration-display')?.value || '';
+            
+            if (reasonValue && stopTime && resumeTime) {
+                hasValidStopData = true;
+                
+                // 🔧 CHỈ FORMAT THỜI GIAN DỪNG MÁY, THÊM :00 GIÂY
+                stopData = {
+                    ly_do: reasonValue === 'Khác' ? (otherReason || reasonValue) : reasonValue,
+                    thoi_gian_dung: formatStopMachineTime(stopTime),      // 🔧 Thêm :00
+                    thoi_gian_chay_lai: formatStopMachineTime(resumeTime), // 🔧 Thêm :00
+                    thoi_gian_dung_may: duration || '0 phút'
+                };
+                break;
+            }
+        }
 
-if (!hasValidStopData) {
-    showNotification('Vui lòng nhập đầy đủ thời gian dừng và chạy lại', 'error');
-    return;
-}
+        if (!hasValidStopData) {
+            showNotification('Vui lòng nhập đầy đủ thời gian dừng và chạy lại', 'error');
+            return;
+        }
 
         // Thu thập dữ liệu
         const reportData = {
-            ca: getInputValue('ca') || '',  // Đổi từ getSelectText thành getInputValue
-    gio_lam_viec: getSelectText('gioLamViec') || '',
-    ma_ca: getInputValue('maCa') || '',
-    truong_may: getInputValue('truongmay') || '',
-    may: getCurrentMachineId(),
-    ws: '',
-    ly_do: stopData.ly_do,
-    thoi_gian_dung: stopData.thoi_gian_dung,
-    thoi_gian_chay_lai: stopData.thoi_gian_chay_lai,
-    thoi_gian_dung_may: stopData.thoi_gian_dung_may,
-    ghi_chu: getInputValue('ghiChu') || ''
+            ca: String(getInputValue('ca') || ''),
+            gio_lam_viec: String(getSelectText('gioLamViec') || ''),
+            ma_ca: String(getInputValue('maCa') || ''),
+            truong_may: String(getInputValue('truongmay') || ''),
+            may: String(getCurrentMachineId() || ''),
+            ws: '', // String rỗng
+            ly_do: String(stopData.ly_do || ''),
+            thoi_gian_dung: stopData.thoi_gian_dung,      // 🔧 Đã có :00
+            thoi_gian_chay_lai: stopData.thoi_gian_chay_lai, // 🔧 Đã có :00
+            thoi_gian_dung_may: String(stopData.thoi_gian_dung_may || '0 phút'),
+            ghi_chu: String(getInputValue('ghiChu') || '')
         };
+
+        console.log('📤 Dữ liệu gửi (thời gian có :00):', reportData);
+
+        // Kiểm tra thời gian đã được format
+        if (!stopData.thoi_gian_dung || !stopData.thoi_gian_chay_lai) {
+            showNotification('Lỗi định dạng thời gian dừng máy', 'error');
+            return;
+        }
 
         showInLoading('Đang gửi báo cáo dừng máy...', 'Lưu thông tin');
 
@@ -4295,8 +4340,17 @@ if (!hasValidStopData) {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
+            const errorData = await response.text();
+            let errorMessage = `HTTP ${response.status}`;
+            
+            try {
+                const parsedError = JSON.parse(errorData);
+                errorMessage = parsedError.error || errorMessage;
+            } catch (e) {
+                errorMessage = errorData || errorMessage;
+            }
+            
+            throw new Error(errorMessage);
         }
 
         const result = await response.json();
@@ -4304,23 +4358,20 @@ if (!hasValidStopData) {
         hideInLoading();
         showNotification('Đã lưu báo cáo dừng máy thành công!', 'success');
 
+        // Reset UI
         stopBoxes.forEach(box => box.remove());
 
-        // Reset select lý do về trạng thái ban đầu
         const stopReasonSelect = document.getElementById('stopReason');
         if (stopReasonSelect) {
             stopReasonSelect.selectedIndex = 0;
         }
         
-        // Ẩn và reset phần báo cáo dừng máy
         const machineReport = document.getElementById('machineReport');
         if (machineReport) {
             machineReport.style.display = 'none';
-            // THÊM: Xóa attribute đánh dấu đã setup để có thể setup lại từ đầu
             machineReport.removeAttribute('data-setup-done');
         }
         
-        // Reset trạng thái nút Có/Không về ban đầu (không chọn nút nào)
         const btnYes = document.getElementById('btnYes');
         const btnNo = document.getElementById('btnNo');
         if (btnYes) {
@@ -4332,13 +4383,11 @@ if (!hasValidStopData) {
             btnNo.style.color = '';
         }
         
-        // Ẩn nút "Dừng máy không có WS"
         const submitStopOnlyButton = document.getElementById('submitStopOnlyButton');
         if (submitStopOnlyButton) {
             submitStopOnlyButton.style.display = 'none';
         }
         
-        // THÊM: Cập nhật lại tiến độ
         updateInProgress(); 
 
         console.log('✅ Đã gửi báo cáo dừng máy độc lập thành công');

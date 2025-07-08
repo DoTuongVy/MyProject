@@ -621,18 +621,21 @@ if (filters && filters.maca && data.shiftData) {
 
 
 // Hiển thị thống kê thời gian
+// Hiển thị thống kê thời gian
 function displayTimeStats(data, filters) {
     // Tính thời gian dừng máy
     const stopTime = data.stopReasons ? 
         data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
     
-    // Tính thời gian làm việc = Tg kết thúc - tg bắt đầu - tg dừng máy
-const totalWorkTime = data.timeData?.totalTime || 0;
-const setupTime = data.timeData?.setupTime || 0;
-const workTime = Math.max(0, totalWorkTime - setupTime - stopTime);
-
-// Tổng thời gian = thời gian làm việc + thời gian dừng máy + thời gian canh máy
-const totalTime = workTime + stopTime + setupTime;
+    // Tổng thời gian = thời gian bắt đầu - thời gian kết thúc (từ database)
+    const totalTime = data.timeData?.totalTime || 0;
+    const setupTime = data.timeData?.setupTime || 0;
+    
+    // Thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
+    const runTime = Math.max(0, totalTime - setupTime - stopTime);
+    
+    // Thời gian làm việc = thời gian chạy máy + thời gian canh máy
+    const workTime = runTime + setupTime;
     
     // Lọc theo mã ca nếu có
     let displayWorkTime = workTime;
@@ -649,10 +652,11 @@ const totalTime = workTime + stopTime + setupTime;
             
             if (grandTotal > 0) {
                 const ratio = shiftTotal / grandTotal;
-                displayWorkTime = Math.round(workTime * ratio);
-                displayStopTime = Math.round(stopTime * ratio);
+                displayTotalTime = Math.round(totalTime * ratio);
                 const displaySetupTime = Math.round(setupTime * ratio);
-                displayTotalTime = displayWorkTime + displayStopTime + displaySetupTime;
+                displayStopTime = Math.round(stopTime * ratio);
+                const displayRunTime = Math.max(0, displayTotalTime - displaySetupTime - displayStopTime);
+                displayWorkTime = displayRunTime + displaySetupTime;
             }
         }
     }
@@ -669,6 +673,7 @@ const totalTime = workTime + stopTime + setupTime;
     // Cập nhật progress bar thời gian
     displayTimeProgressBar(displayWorkTime, displayStopTime, displayTotalTime);
 }
+
 
 // Hiển thị progress bar thời gian
 // Hiển thị progress bar thời gian
