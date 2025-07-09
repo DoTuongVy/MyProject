@@ -229,13 +229,19 @@ function setupTabEvents() {
         });
     }
 
-    // Tab dừng máy
-    const stopReportTab = document.getElementById('nav-dungmayinoffset-tab');
-    if (stopReportTab) {
-        stopReportTab.addEventListener('click', function () {
+// Tab dừng máy
+const stopReportTab = document.getElementById('nav-dungmayinoffset-tab');
+if (stopReportTab) {
+    stopReportTab.addEventListener('click', function () {
+        console.log('🔍 Clicked stop report tab');
+        console.log('🔍 Current stopReportList:', stopReportList);
+        
+        // Delay nhỏ để đảm bảo tab đã active
+        setTimeout(() => {
             loadMachineStopReportList();
-        });
-    }
+        }, 100);
+    });
+}
 }
 
 // ====================================================================================================================================
@@ -2072,7 +2078,7 @@ function debounce(func, wait) {
 
 // Format số theo dạng US (1,000)
 function formatNumberUS(num) {
-    if (!num || isNaN(num)) return '';
+    if (!num || isNaN(num)) return '0';
     return parseFloat(num).toLocaleString('en-US');
 }
 
@@ -3265,6 +3271,19 @@ function setupSearchAndFilterEvents() {
         btnExportExcel.addEventListener('click', exportToExcel);
     }
 
+
+    // Items per page cho dừng máy
+const itemsPerStopPageSelect = document.getElementById('itemsPerStopPage');
+if (itemsPerStopPageSelect) {
+    itemsPerStopPageSelect.addEventListener('change', function () {
+        stopReportList.itemsPerPage = parseInt(this.value);
+        stopReportList.currentPage = 1;
+        renderStopReportTable();
+        updateStopPagination();
+    });
+}
+
+
     // Pagination
     setupPaginationEvents();
 
@@ -3292,6 +3311,15 @@ async function loadReportList() {
 
         reportList.data = data;
         reportList.filteredData = data;
+
+
+        // Sắp xếp theo STT giảm dần (mới nhất lên đầu)
+reportList.data.sort((a, b) => {
+    return (b.stt || 0) - (a.stt || 0);
+});
+
+// Cập nhật lại filteredData sau khi sắp xếp
+reportList.filteredData = [...reportList.data];
 
         renderReportTable();
         updatePagination();
@@ -3416,7 +3444,6 @@ function renderReportTable() {
             <td>${report.thanh_pham ? formatNumberUS(report.thanh_pham) :  ''}</td>
         </tr>
     `).join('');
-
     // Cập nhật thông tin trang
     updatePageInfo();
 
@@ -3445,24 +3472,73 @@ function formatDate(dateString) {
     if (!dateString) return '';
 
     try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN');
+        let date;
+        
+        // Xử lý nhiều định dạng ngày
+        if (dateString.includes('-')) {
+            // Format yyyy-mm-dd từ database
+            const parts = dateString.split('-');
+            if (parts.length === 3) {
+                const year = parseInt(parts[0]);
+                const month = parseInt(parts[1]) - 1; // Month is 0-indexed
+                const day = parseInt(parts[2]);
+                date = new Date(year, month, day);
+            } else {
+                date = new Date(dateString);
+            }
+        } else {
+            date = new Date(dateString);
+        }
+        
+        // Kiểm tra ngày hợp lệ
+        if (isNaN(date.getTime())) {
+            return dateString; // Trả về giá trị gốc nếu không parse được
+        }
+        
+        return date.toLocaleDateString('vi-VN'); // Hiển thị dạng dd/mm/yyyy
     } catch (error) {
-        return dateString;
+        console.warn('Lỗi format ngày:', error, 'Input:', dateString);
+        return dateString; // Trả về giá trị gốc nếu có lỗi
     }
 }
 
-// Format datetime
+
+// Format datetime với định dạng yyyy-mm-dd hh:mm:ss
 function formatDateTime(dateTimeString) {
     if (!dateTimeString) return '';
 
     try {
-        const date = new Date(dateTimeString);
-        return date.toLocaleString('vi-VN');
+        let date;
+        
+        // Xử lý cả ISO string và format từ database
+        if (dateTimeString.includes('T')) {
+            // ISO format: 2024-01-15T10:30:00.000Z
+            date = new Date(dateTimeString);
+        } else if (dateTimeString.includes('-') && dateTimeString.includes(':')) {
+            // Format từ database: 2024-01-15 10:30:00
+            date = new Date(dateTimeString);
+        } else {
+            date = new Date(dateTimeString);
+        }
+        
+        if (isNaN(date.getTime())) {
+            return dateTimeString; // Trả về giá trị gốc nếu không parse được
+        }
+        
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     } catch (error) {
-        return dateTimeString;
+        console.warn('Lỗi format datetime:', error, 'Input:', dateTimeString);
+        return dateTimeString; // Trả về giá trị gốc nếu có lỗi
     }
 }
+
 
 // ====================================================================================================================================
 // PAGINATION
@@ -3518,6 +3594,48 @@ function setupPaginationEvents() {
             goToPage(reportList.totalPages);
         });
     }
+
+
+    // Pagination cho dừng máy
+const firstStopPageBtn = document.getElementById('firstStopPage');
+const prevStopPageBtn = document.getElementById('prevStopPage');
+const nextStopPageBtn = document.getElementById('nextStopPage');
+const lastStopPageBtn = document.getElementById('lastStopPage');
+
+if (firstStopPageBtn) {
+    firstStopPageBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        goToStopPage(1);
+    });
+}
+
+if (prevStopPageBtn) {
+    prevStopPageBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (stopReportList.currentPage > 1) {
+            goToStopPage(stopReportList.currentPage - 1);
+        }
+    });
+}
+
+if (nextStopPageBtn) {
+    nextStopPageBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (stopReportList.currentPage < stopReportList.totalPages) {
+            goToStopPage(stopReportList.currentPage + 1);
+        }
+    });
+}
+
+if (lastStopPageBtn) {
+    lastStopPageBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        goToStopPage(stopReportList.totalPages);
+    });
+}
+
+
+
 }
 
 // Chuyển đến trang
@@ -4047,7 +4165,7 @@ async function deleteReport(reportId) {
 // Tải danh sách báo cáo dừng máy
 async function loadMachineStopReportList() {
     try {
-        console.log('Đang tải danh sách báo cáo dừng máy In...');
+        console.log('🔍 Bắt đầu tải danh sách báo cáo dừng máy...');
 
         showLoadingInStopTable(true);
 
@@ -4063,23 +4181,49 @@ async function loadMachineStopReportList() {
         }
 
         const data = await response.json();
+        console.log('🔍 Raw API response:', data);
+        console.log('🔍 Data length:', data.length);
+        console.log('🔍 Sample data:', data.slice(0, 2));
 
-        stopReportList.data = data;
-        stopReportList.filteredData = data;
+        // Khởi tạo lại stopReportList
+        stopReportList = {
+            data: data,
+            filteredData: [...data], // Tạo copy
+            currentPage: 1,
+            itemsPerPage: 10,
+            totalPages: Math.ceil(data.length / 10)
+        };
+
+        // Sắp xếp theo STT giảm dần (mới nhất lên đầu)
+stopReportList.data.sort((a, b) => {
+    return (b.stt || 0) - (a.stt || 0);
+});
+
+// Cập nhật lại filteredData sau khi sắp xếp
+stopReportList.filteredData = [...stopReportList.data];
+
+        console.log('🔍 After assignment:', {
+            dataLength: stopReportList.data.length,
+            filteredDataLength: stopReportList.filteredData.length,
+            currentPage: stopReportList.currentPage,
+            itemsPerPage: stopReportList.itemsPerPage,
+            totalPages: stopReportList.totalPages
+        });
 
         renderStopReportTable();
         updateStopPagination();
 
         showLoadingInStopTable(false);
 
-        console.log(`Đã tải ${data.length} báo cáo dừng máy In`);
+        console.log(`✅ Đã tải ${data.length} báo cáo dừng máy In`);
 
     } catch (error) {
-        console.error('Lỗi khi tải danh sách báo cáo dừng máy:', error);
+        console.error('❌ Lỗi khi tải danh sách báo cáo dừng máy:', error);
         showLoadingInStopTable(false);
         showNotification('Lỗi khi tải danh sách báo cáo dừng máy', 'error');
     }
 }
+
 
 // Hiển thị loading trong bảng dừng máy
 function showLoadingInStopTable(show) {
@@ -4135,20 +4279,54 @@ function formatStopDuration(durationText) {
 // Render bảng báo cáo dừng máy
 function renderStopReportTable() {
     const tbody = document.getElementById('stopReportTableBody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error('❌ Không tìm thấy stopReportTableBody');
+        return;
+    }
+
+    console.log('🔍 renderStopReportTable called');
+    console.log('🔍 stopReportList state:', {
+        exists: !!stopReportList,
+        dataLength: stopReportList?.data?.length || 0,
+        filteredDataLength: stopReportList?.filteredData?.length || 0,
+        currentPage: stopReportList?.currentPage || 0,
+        itemsPerPage: stopReportList?.itemsPerPage || 0
+    });
+
+    // Kiểm tra stopReportList tồn tại
+    if (!stopReportList || !stopReportList.filteredData) {
+        console.error('❌ stopReportList không tồn tại hoặc không có filteredData');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="16" class="text-center py-4">
+                    <div class="text-muted">Lỗi: Dữ liệu chưa được khởi tạo</div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
 
     const startIndex = (stopReportList.currentPage - 1) * stopReportList.itemsPerPage;
     const endIndex = startIndex + stopReportList.itemsPerPage;
     const pageData = stopReportList.filteredData.slice(startIndex, endIndex);
 
+    console.log('🔍 Pagination calculation:', {
+        startIndex,
+        endIndex,
+        pageDataLength: pageData.length,
+        totalFiltered: stopReportList.filteredData.length
+    });
+
     if (pageData.length === 0) {
+        console.log('⚠️ pageData rỗng - hiển thị "Không có dữ liệu"');
         tbody.innerHTML = `
             <tr>
-                <td colspan="100%" class="text-center py-4">
+                <td colspan="16" class="text-center py-4">
                     <div class="text-muted">Không có dữ liệu</div>
                 </td>
             </tr>
         `;
+        updateStopPageInfo();
         return;
     }
 
@@ -4159,14 +4337,14 @@ function renderStopReportTable() {
             <td>${report.gio_lam_viec || ''}</td>
             <td>${report.ma_ca || ''}</td>
             <td>${report.truong_may || ''}</td>
-            <td><strong class="text-primary">${report.ws || ''}</strong></td>
+            <td><strong class="text-primary">${report.ws || 'Không có WS'}</strong></td>
             <td><strong>${report.may || ''}</strong></td>
             <td>${formatStopDuration(report.thoi_gian_dung_may) || ''}</td>
             <td>${formatDateTime(report.thoi_gian_dung) || ''}</td>
             <td>${formatDateTime(report.thoi_gian_chay_lai) || ''}</td>
             <td><span class="badge bg-danger">${report.ly_do || ''}</span></td>
-            <td>${report.ghi_chu || ''}</td>
-            <td>${formatDate(report.ngay_thang_nam) || ''}</td>
+            <td style="max-width: 200px; word-wrap: break-word;">${report.ghi_chu || ''}</td>
+            <td>${formatDateTime(report.ngay_thang_nam) || ''}</td>
             <td>${report.tuan || ''}</td>
             <td>${formatDate(report.ngay) || ''}</td>
             <td>
@@ -4177,32 +4355,109 @@ function renderStopReportTable() {
         </tr>
     `).join('');
 
+    // Kiểm tra xem tab có active không
+const stopReportTab = document.getElementById('nav-dungmayinoffset');
+if (stopReportTab && !stopReportTab.classList.contains('active')) {
+    console.log('⚠️ Tab dừng máy chưa active');
+}
+
     // Cập nhật thông tin trang
     updateStopPageInfo();
 }
+
+
 
 // Cập nhật pagination cho dừng máy
 function updateStopPagination() {
     stopReportList.totalPages = Math.ceil(stopReportList.filteredData.length / stopReportList.itemsPerPage);
 
-    // Cập nhật thông tin pagination (tương tự như báo cáo chính)
-    const stopPageInfo = document.getElementById('stopPageInfo');
-    const totalStopItems = document.getElementById('totalStopItems');
+    // Tìm các nút phân trang cho dừng máy
+    const firstStopPageBtn = document.getElementById('firstStopPage');
+    const prevStopPageBtn = document.getElementById('prevStopPage');
+    const nextStopPageBtn = document.getElementById('nextStopPage');
+    const lastStopPageBtn = document.getElementById('lastStopPage');
 
-    if (totalStopItems) {
-        totalStopItems.textContent = `Tổng số: ${stopReportList.filteredData.length} bản ghi`;
+    const canGoPrev = stopReportList.currentPage > 1;
+    const canGoNext = stopReportList.currentPage < stopReportList.totalPages;
+
+    if (firstStopPageBtn) firstStopPageBtn.parentElement.classList.toggle('disabled', !canGoPrev);
+    if (prevStopPageBtn) prevStopPageBtn.parentElement.classList.toggle('disabled', !canGoPrev);
+    if (nextStopPageBtn) nextStopPageBtn.parentElement.classList.toggle('disabled', !canGoNext);
+    if (lastStopPageBtn) lastStopPageBtn.parentElement.classList.toggle('disabled', !canGoNext);
+
+    // Cập nhật số trang
+    updateStopPageNumbers();
+}
+
+
+// Cập nhật số trang cho dừng máy
+function updateStopPageNumbers() {
+    const stopPagination = document.getElementById('stopPagination');
+    if (!stopPagination) return;
+
+    // Xóa các nút số trang cũ
+    const pageNumbers = stopPagination.querySelectorAll('.page-number');
+    pageNumbers.forEach(btn => btn.remove());
+
+    // Thêm các nút số trang mới
+    const nextStopPageBtn = document.getElementById('nextStopPage');
+    if (!nextStopPageBtn) return;
+
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, stopReportList.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(stopReportList.totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        const pageItem = document.createElement('li');
+        pageItem.className = `page-item page-number ${i === stopReportList.currentPage ? 'active' : ''}`;
+
+        const pageLink = document.createElement('a');
+        pageLink.className = 'page-link';
+        pageLink.href = '#';
+        pageLink.textContent = i;
+        pageLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            goToStopPage(i);
+        });
+
+        pageItem.appendChild(pageLink);
+        nextStopPageBtn.parentElement.before(pageItem);
     }
 }
 
+
+// Chuyển đến trang cho dừng máy
+function goToStopPage(page) {
+    if (page < 1 || page > stopReportList.totalPages) return;
+
+    stopReportList.currentPage = page;
+    renderStopReportTable();
+    updateStopPagination();
+}
+
+
 // Cập nhật thông tin trang dừng máy
 function updateStopPageInfo() {
-    const pageInfo = document.getElementById('stopPageInfo');
+    const stopPageInfo = document.getElementById('stopPageInfo');
+    const totalStopItems = document.getElementById('totalStopItems');
 
-    if (pageInfo) {
+    if (stopPageInfo) {
         const startIndex = (stopReportList.currentPage - 1) * stopReportList.itemsPerPage + 1;
         const endIndex = Math.min(startIndex + stopReportList.itemsPerPage - 1, stopReportList.filteredData.length);
+        
+        if (stopReportList.filteredData.length > 0) {
+            stopPageInfo.textContent = `Hiển thị ${startIndex}-${endIndex} của ${stopReportList.filteredData.length}`;
+        } else {
+            stopPageInfo.textContent = 'Hiển thị 0-0 của 0';
+        }
+    }
 
-        pageInfo.textContent = `Hiển thị ${startIndex}-${endIndex} của ${stopReportList.filteredData.length}`;
+    if (totalStopItems) {
+        totalStopItems.textContent = `Tổng số: ${stopReportList.filteredData.length} bản ghi`;
     }
 }
 

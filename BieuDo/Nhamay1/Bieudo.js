@@ -16,6 +16,12 @@ let macaChart = null;      // Thêm dòng này
 let timeChart = null;
 let stopReasonChart = null; 
 
+// Biến phân trang
+let currentPageData = [];
+let currentPage = 1;
+let itemsPerPage = 10;
+let totalItems = 0;
+
 // ====================================================================================================================================
 // KHỞI TẠO HỆ THỐNG
 // ====================================================================================================================================
@@ -324,7 +330,7 @@ async function fetchInReportData(filters) {
         if (filters.may) params.append('may', filters.may);
         if (filters.tuan) params.append('tuan', filters.tuan);
         
-        const response = await fetch(`/api/bieu-do/in/chart-data?${params.toString()}`);
+        const response = await fetch(`/api/bieu-do/in/chart-data?${params.toString()}&detail=true`);
         
         if (!response.ok) {
             throw new Error('Không thể tải dữ liệu báo cáo');
@@ -339,10 +345,24 @@ async function fetchInReportData(filters) {
         
         return processedData;
         
-    } catch (error) {
-        console.error('Lỗi khi gọi API:', error);
-        throw error;
+    // Sửa phần catch error:
+} catch (error) {
+    console.error('Lỗi khi gọi API:', error);
+    
+    // Thử gọi lại không có detail=true
+    try {
+        const fallbackResponse = await fetch(`/api/bieu-do/in/chart-data?${params.toString()}`);
+        if (fallbackResponse.ok) {
+            const fallbackData = await fallbackResponse.json();
+            console.warn('Sử dụng dữ liệu fallback (không có detail)');
+            return fallbackData;
+        }
+    } catch (fallbackError) {
+        console.error('Fallback cũng thất bại:', fallbackError);
     }
+    
+    throw error;
+}
 }
 
 
@@ -621,21 +641,42 @@ if (filters && filters.maca && data.shiftData) {
 
 
 // Hiển thị thống kê thời gian
-// Hiển thị thống kê thời gian
 function displayTimeStats(data, filters) {
-    // Tính thời gian dừng máy
-    const stopTime = data.stopReasons ? 
-        data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
-    
-    // Tổng thời gian = thời gian bắt đầu - thời gian kết thúc (từ database)
-    const totalTime = data.timeData?.totalTime || 0;
-    const setupTime = data.timeData?.setupTime || 0;
-    
-    // Thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
-    const runTime = Math.max(0, totalTime - setupTime - stopTime);
-    
-    // Thời gian làm việc = thời gian chạy máy + thời gian canh máy
-    const workTime = runTime + setupTime;
+    // Tính thời gian dừng máy (thời gian khác)
+const stopTime = data.stopReasons ? 
+data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
+
+// Tính tổng thời gian từ dữ liệu thực tế (thời gian kết thúc - thời gian bắt đầu)
+let totalTime = 0;
+if (data.reports && data.reports.length > 0) {
+    totalTime = data.reports.reduce((sum, report) => {
+        if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+            const start = new Date(report.thoi_gian_bat_dau);
+            const end = new Date(report.thoi_gian_ket_thuc);
+            
+            // Với định dạng ISO, ca đêm sẽ có ngày khác nhau
+            // Nếu end < start, có nghĩa là ca đêm qua ngày hôm sau
+            let diff = (end - start) / (1000 * 60); // phút
+            
+            // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
+            if (diff < 0) {
+                diff += 24 * 60; // cộng 24 giờ = 1440 phút
+            }
+            
+            return sum + diff;
+        }
+        return sum;
+    }, 0);
+} else {
+    totalTime = data.timeData?.totalTime || 0;
+}
+const setupTime = data.timeData?.setupTime || 0;
+
+// Thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
+const runTime = Math.max(0, totalTime - setupTime - stopTime);
+
+// Thời gian làm việc = tổng thời gian - thời gian dừng máy
+const workTime = Math.max(0, totalTime - stopTime);
     
     // Lọc theo mã ca nếu có
     let displayWorkTime = workTime;
@@ -1400,9 +1441,31 @@ function displayTimeCharts(data, filters) {
     if (!timeCtx) return;
     
 // Tính toán thời gian - nếu lọc theo mã ca thì tính theo tỷ lệ
-let totalTime = data.timeData?.totalTime || 0;
+// Tính tổng thời gian từ dữ liệu thực tế
+let totalTime = 0;
+if (data.reports && data.reports.length > 0) {
+    totalTime = data.reports.reduce((sum, report) => {
+        if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+            const start = new Date(report.thoi_gian_bat_dau);
+            const end = new Date(report.thoi_gian_ket_thuc);
+            
+            let diff = (end - start) / (1000 * 60); // phút
+            
+            // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
+            if (diff < 0) {
+                diff += 24 * 60; // cộng 24 giờ = 1440 phút
+            }
+            
+            return sum + diff;
+        }
+        return sum;
+    }, 0);
+} else {
+    totalTime = data.timeData?.totalTime || 0;
+}
 let setupTime = data.timeData?.setupTime || 0;
-let otherTime = data.timeData?.otherTime || 0;
+let otherTime = data.stopReasons ? 
+    data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
 
 if (filters && filters.maca && data.shiftData) {
     const shiftData = data.shiftData.find(shift => shift.shift === filters.maca);
@@ -1424,6 +1487,14 @@ if (filters && filters.maca && data.shiftData) {
 
 // Thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
 const runTime = Math.max(0, totalTime - setupTime - otherTime);
+
+
+console.log('🔍 DEBUG thời gian trong displayTimeCharts:');
+console.log('- Total time:', totalTime, 'phút');
+console.log('- Setup time:', setupTime, 'phút');
+console.log('- Other time (dừng máy):', otherTime, 'phút');
+console.log('- Run time (tính toán):', totalTime - setupTime - otherTime);
+console.log('- Run time (sau Math.max):', runTime);
     
     console.log('⏰ Dữ liệu thời gian:', { runTime, setupTime, otherTime, totalTime });
     
@@ -1623,9 +1694,44 @@ function updateTimeAnalysisInfo(timeData) {
     
     if (timeData) {
         const setupTime = timeData.setupTime || 0;
-        const otherTime = timeData.otherTime || 0;
-        const totalTime = timeData.totalTime || 0;
+        const otherTime = currentChartData && currentChartData.stopReasons ? 
+    currentChartData.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
+        // Tính tổng thời gian từ dữ liệu báo cáo thực tế
+let totalTime = 0;
+if (currentChartData && currentChartData.reports) {
+
+    console.log('🔍 DEBUG currentChartData.reports:', currentChartData.reports.length, 'báo cáo');
+    console.log('🔍 DEBUG timeData:', timeData);
+
+
+    totalTime = currentChartData.reports.reduce((sum, report) => {
+        if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+            const start = new Date(report.thoi_gian_bat_dau);
+            const end = new Date(report.thoi_gian_ket_thuc);
+            
+            let diff = (end - start) / (1000 * 60); // phút
+            
+            // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
+            if (diff < 0) {
+                diff += 24 * 60; // cộng 24 giờ = 1440 phút
+            }
+            
+            return sum + diff;
+        }
+        return sum;
+    }, 0);
+} else {
+    totalTime = timeData?.totalTime || 0;
+}
         const runTime = Math.max(0, totalTime - setupTime - otherTime);
+
+        // Debug thời gian
+console.log('🔍 DEBUG thời gian trong updateTimeAnalysisInfo:');
+console.log('- Total time:', totalTime, 'phút');
+console.log('- Setup time:', setupTime, 'phút');
+console.log('- Other time (dừng máy):', otherTime, 'phút');
+console.log('- Run time (tính toán):', totalTime - setupTime - otherTime);
+console.log('- Run time (sau Math.max):', runTime);
         
         if (runTimeEl) runTimeEl.textContent = formatDuration(runTime);
         if (setupTimeEl) setupTimeEl.textContent = formatDuration(setupTime);
@@ -1743,7 +1849,13 @@ if (maySelect) maySelect.selectedIndex = 0;
         timeChart = null;
     }
     
+
+    // Reset phân trang
+resetPagination();
+
+
     showNotification('Đã reset bộ lọc', 'info');
+
 }
 
 // ====================================================================================================================================
@@ -1810,7 +1922,7 @@ function getBootstrapClass(type) {
 // Format số
 function formatNumber(num) {
     if (!num || isNaN(num)) return '0';
-    return parseFloat(num).toLocaleString('vi-VN');
+    return parseFloat(num).toLocaleString('en-US');
 }
 
 // Format ngày
@@ -1933,6 +2045,9 @@ function ensureReportSectionStructure() {
 function displayDetailTable(data, filters) {
     const container = document.getElementById('detailTableContainer');
     if (!container) return;
+
+    // Reset phân trang khi load dữ liệu mới
+resetPagination();
     
     // Gọi API lấy dữ liệu báo cáo In theo filters
 fetchInReportList(filters)
@@ -2034,8 +2149,40 @@ function renderDetailTable(container, data, filters) {
         `;
         return;
     }
+
+    // Lưu dữ liệu gốc
+currentPageData = data;
+totalItems = data.length;
+
+// Tính toán phân trang
+const totalPages = Math.ceil(totalItems / itemsPerPage);
+const startIndex = (currentPage - 1) * itemsPerPage;
+const endIndex = startIndex + itemsPerPage;
+const paginatedData = data.slice(startIndex, endIndex);
+
     
     let html = `
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="d-flex align-items-center">
+                <label class="me-2">Hiển thị:</label>
+                <select class="form-select form-select-sm w-auto" id="itemsPerPageSelect">
+                    <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10</option>
+                    <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20</option>
+                    <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
+                    <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100</option>
+                </select>
+                <span class="ms-2 text-muted">mục</span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="text-end">
+                <small class="text-muted">
+                    Hiển thị ${startIndex + 1} - ${Math.min(endIndex, totalItems)} trong tổng số ${totalItems} mục
+                </small>
+            </div>
+        </div>
+    </div>
         <div class="table-responsive">
             <table class="table table-striped table-hover text-center">
                 <thead class="table-dark">
@@ -2050,12 +2197,13 @@ function renderDetailTable(container, data, filters) {
                         <th class="text-end">Phế liệu</th>
                         <th>Thời gian</th>
                         <th class="text-end">Thời gian canh máy</th>
+                        <th class="text-end">Thời gian dừng máy</th>
                     </tr>
                 </thead>
                 <tbody>
     `;
     
-    data.forEach((record, index) => {
+    paginatedData.forEach((record, index) => {
         const ws = record.ws || '-';
         const maca = record.ma_ca || '-';
         const may = record.may || '-';
@@ -2063,11 +2211,28 @@ function renderDetailTable(container, data, filters) {
         const product = record.ma_sp || '-';
         const paper = formatNumber(record.thanh_pham_in || 0);
         const waste = formatNumber((parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0));
-        const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
+        // const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
         
         // Format thời gian
         const timeRange = formatTimeRange(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
         
+
+// Trong vòng lặp paginatedData.forEach(), sau dòng tính setupTime:
+const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
+
+// Thêm:
+// Tính thời gian dừng máy cho record này từ dữ liệu stopReasons
+const stopTimeForRecord = record.stopTime || 0;
+if (currentChartData && currentChartData.reports) {
+    // Tìm record trong dữ liệu chi tiết
+    const detailRecord = currentChartData.reports.find(r => r.id === record.id);
+    if (detailRecord && detailRecord.stopReasons) {
+        stopTimeForRecord = detailRecord.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0);
+    }
+}
+const stopTimeDisplay = formatDuration(stopTimeForRecord);
+
+
         html += `
             <tr>
                 <td><strong>${index + 1}</strong></td>
@@ -2102,6 +2267,44 @@ const uniqueWS = new Set(data.map(record => record.ws).filter(ws => ws && ws !==
 // Tính tổng thời gian dừng máy từ currentChartData
 const totalStopTime = currentChartData && currentChartData.stopReasons ? 
     currentChartData.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
+
+
+
+    // Phân trang
+if (totalPages > 1) {
+    html += `
+        <div class="row mt-3">
+            <div class="col-12">
+                <nav aria-label="Phân trang bảng chi tiết">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                            <a class="page-link" href="#" onclick="changeTablePage(${currentPage - 1})">Trước</a>
+                        </li>
+    `;
+    
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+            html += `
+                <li class="page-item ${currentPage === i ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="changeTablePage(${i})">${i}</a>
+                </li>
+            `;
+        } else if (i === currentPage - 3 || i === currentPage + 3) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+    
+    html += `
+                        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                            <a class="page-link" href="#" onclick="changeTablePage(${currentPage + 1})">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    `;
+}
+
 
     
 html += `
@@ -2142,7 +2345,7 @@ html += `
         <div class="card bg-light">
             <div class="card-body text-center">
                 <h6>Tổng thời gian dừng máy</h6>
-                <h4 class="text-info">${formatDuration(totalStopTime)}</h4>
+                <td class="text-end text-warning"><strong>${stopTimeDisplay}</strong></td>
             </div>
         </div>
     </div>
@@ -2150,6 +2353,16 @@ html += `
 `;
     
     container.innerHTML = html;
+
+    // Gắn sự kiện cho select
+const itemsSelect = document.getElementById('itemsPerPageSelect');
+if (itemsSelect) {
+    itemsSelect.addEventListener('change', function() {
+        itemsPerPage = parseInt(this.value);
+        currentPage = 1; // Reset về trang đầu
+        renderDetailTable(container, currentPageData, filters);
+    });
+}
 }
 
 // Format khoảng thời gian
@@ -2180,4 +2393,28 @@ function formatDateTime(date) {
     const seconds = date.getSeconds().toString().padStart(2, '0');
     
     return `${day}/${month} ${hours}:${minutes}:${seconds}`;
+}
+
+
+
+
+// Hàm thay đổi trang
+function changeTablePage(page) {
+    if (page < 1 || page > Math.ceil(totalItems / itemsPerPage)) return;
+    
+    currentPage = page;
+    const container = document.getElementById('detailTableContainer');
+    const filters = collectFilters(); // Lấy filters hiện tại
+    
+    if (container && currentPageData.length > 0) {
+        renderDetailTable(container, currentPageData, filters);
+    }
+}
+
+// Hàm reset phân trang
+function resetPagination() {
+    currentPage = 1;
+    itemsPerPage = 10;
+    currentPageData = [];
+    totalItems = 0;
 }

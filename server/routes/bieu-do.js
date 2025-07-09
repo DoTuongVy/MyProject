@@ -76,18 +76,84 @@ router.get('/in/chart-data', async (req, res) => {
             });
         }
         
+
+        
+
+
+        // Lấy thông tin dừng máy cho từng báo cáo
+for (let report of reports) {
+    const stopData = await new Promise((resolve, reject) => {
+        db.all(`SELECT ly_do, thoi_gian_dung_may 
+                FROM bao_cao_in_dung_may 
+                WHERE bao_cao_id = ?`, [report.id], (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows || []);
+        });
+    });
+    
+    // Tính tổng thời gian dừng máy cho báo cáo này
+    let totalStopTime = 0;
+    stopData.forEach(stop => {
+        const duration = stop.thoi_gian_dung_may || '';
+        if (duration.includes('giờ') || duration.includes('phút')) {
+            const hours = (duration.match(/(\d+)\s*giờ/) || [0, 0])[1];
+            const minutes = (duration.match(/(\d+)\s*phút/) || [0, 0])[1];
+            totalStopTime += parseInt(hours) * 60 + parseInt(minutes);
+        }
+    });
+    
+    report.stopTime = totalStopTime;
+}
+
+
+        
 // Lấy dữ liệu dừng máy với lý do cụ thể
 const stopReports = await new Promise((resolve, reject) => {
-    const reportIds = reports.map(r => r.id);
-    if (reportIds.length === 0) {
+    if (reports.length === 0) {
         resolve([]);
         return;
     }
     
-    const placeholders = reportIds.map(() => '?').join(',');
-    db.all(`SELECT ly_do, thoi_gian_dung_may FROM bao_cao_in_dung_may 
-            WHERE bao_cao_id IN (${placeholders})`, 
-            reportIds, (err, rows) => {
+    // Xây dựng điều kiện WHERE tương tự như query chính
+    let stopWhereConditions = [];
+    let stopParams = [];
+    
+    if (fromDate && toDate) {
+        stopWhereConditions.push(`DATE(b.created_at) BETWEEN ? AND ?`);
+        stopParams.push(fromDate, toDate);
+    }
+    
+    if (ws) {
+        stopWhereConditions.push(`b.ws = ?`);
+        stopParams.push(ws);
+    }
+    
+    if (maca) {
+        stopWhereConditions.push(`b.ma_ca = ?`);
+        stopParams.push(maca);
+    }
+    
+    if (may) {
+        stopWhereConditions.push(`b.may = ?`);
+        stopParams.push(may);
+    }
+    
+    if (tuan) {
+        stopWhereConditions.push(`b.tuan = ?`);
+        stopParams.push(parseInt(tuan));
+    }
+    
+    stopWhereConditions.push(`b.is_started_only = 0`);
+    stopWhereConditions.push(`b.thanh_pham_in IS NOT NULL AND b.thanh_pham_in != ''`);
+    
+    const stopWhereClause = stopWhereConditions.length > 0 ? 
+        'WHERE ' + stopWhereConditions.join(' AND ') : '';
+    
+    db.all(`SELECT s.ly_do, s.thoi_gian_dung_may, s.thoi_gian_dung, s.thoi_gian_chay_lai
+            FROM bao_cao_in_dung_may s
+            JOIN bao_cao_in b ON s.bao_cao_id = b.id
+            ${stopWhereClause}`, 
+            stopParams, (err, rows) => {
         if (err) reject(err);
         else resolve(rows || []);
     });
@@ -105,16 +171,32 @@ console.log('📊 Stop reports từ database:', stopReports);
         // Tính thời gian setup (canh máy)
         let setupTime = reports.reduce((sum, r) => sum + (parseFloat(r.thoi_gian_canh_may) || 0), 0);
         
-        // Tính tổng thời gian dừng máy
-        let stopTime = 0;
-        stopReports.forEach(stop => {
-            const duration = stop.thoi_gian_dung_may || '';
-            if (duration.includes('giờ') || duration.includes('phút')) {
-                const hours = (duration.match(/(\d+)\s*giờ/) || [0, 0])[1];
-                const minutes = (duration.match(/(\d+)\s*phút/) || [0, 0])[1];
-                stopTime += parseInt(hours) * 60 + parseInt(minutes);
+// Tính tổng thời gian dừng máy
+let stopTime = 0;
+
+// Cách 1: Lấy từ cột thoi_gian_dung_may (text)
+stopReports.forEach(stop => {
+    const duration = stop.thoi_gian_dung_may || '';
+    if (duration.includes('giờ') || duration.includes('phút')) {
+        const hours = (duration.match(/(\d+)\s*giờ/) || [0, 0])[1];
+        const minutes = (duration.match(/(\d+)\s*phút/) || [0, 0])[1];
+        stopTime += parseInt(hours) * 60 + parseInt(minutes);
+    }
+});
+
+// Cách 2: Nếu không có dữ liệu text thì tính theo công thức
+if (stopTime === 0 && stopReports.length > 0) {
+    stopReports.forEach(stop => {
+        if (stop.thoi_gian_chay_lai && stop.thoi_gian_dung) {
+            const chayLai = new Date(stop.thoi_gian_chay_lai);
+            const dung = new Date(stop.thoi_gian_dung);
+            const diffMinutes = (chayLai - dung) / (1000 * 60);
+            if (diffMinutes > 0) {
+                stopTime += diffMinutes;
             }
-        });
+        }
+    });
+}
 
 
 
@@ -162,7 +244,14 @@ reports.forEach(r => {
     if (r.thoi_gian_bat_dau && r.thoi_gian_ket_thuc) {
         const start = new Date(r.thoi_gian_bat_dau);
         const end = new Date(r.thoi_gian_ket_thuc);
-        const diff = (end - start) / (1000 * 60); // phút
+        
+        let diff = (end - start) / (1000 * 60); // phút
+        
+        // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
+        if (diff < 0) {
+            diff += 24 * 60; // cộng 24 giờ = 1440 phút
+        }
+        
         totalWorkTime += diff;
     }
 });
@@ -215,9 +304,53 @@ const chartData = {
 };
 
 
-// Nếu yêu cầu chi tiết, trả về cả dữ liệu reports
+// Trong phần xử lý detail=true, wrap code trong try-catch:
 if (req.query.detail === 'true') {
-    chartData.reports = reports;
+    try {
+        // Lấy thông tin dừng máy cho từng báo cáo
+        for (let report of reports) {
+            try {
+                const stopData = await new Promise((resolve, reject) => {
+                    db.all(`SELECT thoi_gian_dung_may 
+                            FROM bao_cao_in_dung_may 
+                            WHERE bao_cao_id = ?`, [report.id], (err, rows) => {
+                        if (err) {
+                            console.error('Lỗi query dừng máy:', err);
+                            reject(err);
+                        } else {
+                            resolve(rows || []);
+                        }
+                    });
+                });
+                
+                // Cộng tất cả thời gian dừng máy của báo cáo này
+                let totalStopTime = 0;
+                stopData.forEach(stop => {
+                    const duration = stop.thoi_gian_dung_may || '';
+                    if (duration.includes('giờ') || duration.includes('phút')) {
+                        const hours = (duration.match(/(\d+)\s*giờ/) || [0, 0])[1];
+                        const minutes = (duration.match(/(\d+)\s*phút/) || [0, 0])[1];
+                        totalStopTime += parseInt(hours) * 60 + parseInt(minutes);
+                    }
+                });
+                
+                // Gán thời gian dừng máy vào báo cáo
+                report.stopTime = totalStopTime;
+                
+            } catch (stopError) {
+                console.error('Lỗi khi lấy dữ liệu dừng máy cho báo cáo', report.id, ':', stopError);
+                // Nếu lỗi, gán stopTime = 0
+                report.stopTime = 0;
+            }
+        }
+        
+        chartData.reports = reports;
+        
+    } catch (detailError) {
+        console.error('Lỗi khi xử lý detail data:', detailError);
+        // Nếu lỗi, vẫn trả về dữ liệu cơ bản
+        chartData.reports = reports.map(r => ({...r, stopTime: 0}));
+    }
 }
         
         console.log('Dữ liệu biểu đồ In:', chartData);
@@ -498,7 +631,14 @@ router.get('/scl/chart-data', async (req, res) => {
             if (r.thoi_gian_bat_dau && r.thoi_gian_ket_thuc) {
                 const start = new Date(r.thoi_gian_bat_dau);
                 const end = new Date(r.thoi_gian_ket_thuc);
-                const diff = (end - start) / (1000 * 60); // phút
+                
+                let diff = (end - start) / (1000 * 60); // phút
+                
+                // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
+                if (diff < 0) {
+                    diff += 24 * 60; // cộng 24 giờ = 1440 phút
+                }
+                
                 totalWorkTime += diff;
             }
         });

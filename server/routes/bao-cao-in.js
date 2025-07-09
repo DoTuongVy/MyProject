@@ -1185,11 +1185,43 @@ router.delete('/:id', (req, res) => {
     });
 });
 
+
+router.delete('/dung-may/:id', (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+    const { id } = req.params;
+
+    if (!id) {
+        return res.status(400).json({ error: 'ID báo cáo dừng máy không hợp lệ' });
+    }
+
+    db.run(`DELETE FROM bao_cao_in_dung_may WHERE id = ?`, [id], function (err) {
+        if (err) {
+            console.error('Lỗi khi xóa báo cáo dừng máy:', err.message);
+            return res.status(500).json({ error: 'Lỗi khi xóa báo cáo dừng máy' });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy báo cáo dừng máy để xóa' });
+        }
+
+        res.json({
+            success: true,
+            message: 'Đã xóa báo cáo dừng máy thành công'
+        });
+    });
+});
+
+
+
 // API lấy danh sách báo cáo dừng máy In
 router.get('/dung-may/list', (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-
-    db.all(`
+    
+    const dateFilter = req.query.date;
+    const machineFilter = req.query.machine;
+    
+    let query = `
         SELECT 
             dm.*,
             COALESCE(dm.ca, bci.ca) as ca,
@@ -1201,14 +1233,49 @@ router.get('/dung-may/list', (req, res) => {
             bci.so_lan_chay
         FROM bao_cao_in_dung_may dm
         LEFT JOIN bao_cao_in bci ON dm.bao_cao_id = bci.id
-        ORDER BY dm.created_at DESC
-    `, [], (err, rows) => {
-        if (err) {
-            console.error('Lỗi khi lấy danh sách báo cáo dừng máy In:', err.message);
-            return res.status(500).json({ error: 'Lỗi khi lấy danh sách báo cáo dừng máy In' });
-        }
+    `;
+    
+    let params = [];
+    let conditions = [];
+    
+    if (dateFilter) {
+        conditions.push(`DATE(dm.ngay) = ?`);
+        params.push(dateFilter);
+    }
+    
+    if (machineFilter) {
+        conditions.push(`COALESCE(dm.may, bci.may) = ?`);
+        params.push(machineFilter);
+    }
+    
+    if (conditions.length > 0) {
+        query += ` WHERE ` + conditions.join(' AND ');
+    }
+    
+    query += ` ORDER BY dm.created_at DESC, dm.stt DESC`;
 
-        res.json(rows || []);
+    db.all(query, params, (err, rows) => {
+        if (err) {
+            console.error('Lỗi khi lấy danh sách báo cáo dừng máy:', err.message);
+            return res.status(500).json({ error: 'Lỗi khi lấy danh sách báo cáo dừng máy' });
+        }
+        
+        // Xử lý dữ liệu trước khi trả về
+        const processedRows = (rows || []).map(row => ({
+            ...row,
+            // Đảm bảo các trường quan trọng không null
+            ca: row.ca || '',
+            gio_lam_viec: row.gio_lam_viec || '',
+            ma_ca: row.ma_ca || '',
+            truong_may: row.truong_may || '',
+            may: row.may || '',
+            ws: row.ws || '',
+            ly_do: row.ly_do || '',
+            thoi_gian_dung_may: row.thoi_gian_dung_may || '0 phút',
+            ghi_chu: row.ghi_chu || ''
+        }));
+        
+        res.json(processedRows);
     });
 });
 
@@ -1221,6 +1288,15 @@ router.post('/dung-may/submit', (req, res) => {
         return res.status(400).json({ error: 'Dữ liệu báo cáo không hợp lệ' });
     }
 
+    console.log('📥 Nhận dữ liệu báo cáo dừng máy:', reportData);
+
+    // Validate dữ liệu bắt buộc
+    if (!reportData.ly_do || !reportData.thoi_gian_dung || !reportData.thoi_gian_chay_lai) {
+        return res.status(400).json({ 
+            error: 'Thiếu thông tin bắt buộc: lý do, thời gian dừng, thời gian chạy lại' 
+        });
+    }
+
     // Lấy STT mới nhất cho báo cáo dừng máy
     db.get(`SELECT MAX(stt) as max_stt FROM bao_cao_in_dung_may`, [], (err, sttRow) => {
         if (err) {
@@ -1231,44 +1307,52 @@ router.post('/dung-may/submit', (req, res) => {
         const reportId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         const stt = (sttRow?.max_stt || 0) + 1;
         const date = new Date().toISOString().slice(0, 10);
+        
+        // Tính tuần trong tháng
         const tuan = calculateWeekInMonth(date);
 
-        // ❌ XÓA PHẦN TẠO BÁO CÁO TRỐNG TRONG bao_cao_in
-        // CHỈ LƯU TRỰC TIẾP VÀO bao_cao_in_dung_may
+        console.log('💾 Chuẩn bị lưu với STT:', stt, 'Tuần:', tuan);
 
+        // Lưu vào database
         db.run(`INSERT INTO bao_cao_in_dung_may (
             id, bao_cao_id, stt, ca, gio_lam_viec, ma_ca, truong_may, may, ws,
             ly_do, thoi_gian_dung, thoi_gian_chay_lai, thoi_gian_dung_may, ghi_chu,
-            ngay_thang_nam, tuan, ngay
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ngay_thang_nam, tuan, ngay, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-            reportId, 
-            null, // ✅ KHÔNG CÓ BÁO CÁO CHA -> null
-            parseInt(stt),
-            String(reportData.ca || ''),
-            String(reportData.gio_lam_viec || ''),
-            String(reportData.ma_ca || ''),
-            String(reportData.truong_may || ''),
-            String(reportData.may || ''),
-            String(reportData.ws || ''), // Có thể là string rỗng
-            String(reportData.ly_do || ''),
-            String(reportData.thoi_gian_dung || ''),
-            String(reportData.thoi_gian_chay_lai || ''),
-            String(reportData.thoi_gian_dung_may || ''),
-            String(reportData.ghi_chu || ''),
+            reportId,
+            null, // Không có báo cáo cha
+            stt,
+            reportData.ca || '',
+            reportData.gio_lam_viec || '',
+            reportData.ma_ca || '',
+            reportData.truong_may || '',
+            reportData.may || '',
+            reportData.ws || '', // Có thể rỗng
+            reportData.ly_do || '',
+            reportData.thoi_gian_dung || '',
+            reportData.thoi_gian_chay_lai || '',
+            reportData.thoi_gian_dung_may || '0 phút',
+            reportData.ghi_chu || '',
             date,
-            parseInt(tuan),
-            date
+            tuan,
+            date,
+            new Date().toISOString()
         ], function (err) {
             if (err) {
-                console.error('Lỗi khi lưu báo cáo dừng máy In:', err.message);
-                return res.status(500).json({ error: 'Lỗi khi lưu báo cáo dừng máy In: ' + err.message });
+                console.error('Lỗi khi lưu báo cáo dừng máy:', err.message);
+                return res.status(500).json({ 
+                    error: 'Lỗi khi lưu báo cáo dừng máy: ' + err.message 
+                });
             }
+
+            console.log('✅ Đã lưu báo cáo dừng máy thành công với ID:', reportId);
 
             res.json({
                 success: true,
                 id: reportId,
-                message: 'Đã lưu báo cáo dừng máy In thành công'
+                stt: stt,
+                message: 'Đã lưu báo cáo dừng máy thành công'
             });
         });
     });
