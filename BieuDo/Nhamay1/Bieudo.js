@@ -7,6 +7,8 @@ console.log('🚀 Khởi tạo hệ thống biểu đồ sản xuất...');
 
 // Đăng ký plugin datalabels
 Chart.register(ChartDataLabels);
+// Thiết lập font mặc định cho Chart.js
+Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 // Biến toàn cục
 let currentChartData = null;
@@ -21,6 +23,10 @@ let currentPageData = [];
 let currentPage = 1;
 let itemsPerPage = 10;
 let totalItems = 0;
+
+
+let topCustomersChart = null;
+let topProductsChart = null;
 
 // ====================================================================================================================================
 // KHỞI TẠO HỆ THỐNG
@@ -341,7 +347,8 @@ async function fetchInReportData(filters) {
 
         // Xử lý dữ liệu thành format đúng
         const processedData = processApiData(rawData);
-        console.log('🔄 Processed data:', processedData);
+console.log('🔄 Processed data:', processedData);
+
 
         return processedData;
 
@@ -474,10 +481,12 @@ function displayInReport(data, filters) {
 
         // Hiển thị section báo cáo với thông báo không có dữ liệu
         const reportSection = document.getElementById('reportSection');
-        if (reportSection) {
-            reportSection.style.display = 'block';
-            reportSection.classList.add('slide-up');
-        }
+if (reportSection) {
+    reportSection.style.display = 'block';
+    reportSection.classList.add('slide-up');
+}
+
+
 
         // Reset tất cả displays về 0
         displaySummaryStats({ totalPaper: 0, totalWaste: 0 }, filters);
@@ -544,6 +553,21 @@ function displayInReport(data, filters) {
 
     // Hiển thị phân tích thời gian (lý do dừng máy)
     displayTimeAnalysis(data, filters);
+
+
+    // Hiển thị Top 10 Analytics
+displayTopAnalytics(data, filters);
+
+
+// Hiển thị section Top Analytics - ĐẢM BẢO LUÔN HIỂN THỊ
+const topAnalyticsSection = document.getElementById('topAnalyticsSection');
+if (topAnalyticsSection) {
+    topAnalyticsSection.style.display = 'block';
+    console.log('✅ Đã hiển thị topAnalyticsSection');
+} else {
+    console.log('❌ Không tìm thấy topAnalyticsSection');
+}
+
 
     // Hiển thị bảng chi tiết
     displayDetailTable(data, filters);
@@ -895,53 +919,78 @@ function displayQuantityCharts(data, filters) {
     console.log('🔍 Kiểm tra filter mã ca:', hasSpecificMacaFilter, 'Giá trị mã ca:', filters.maca);
     console.log('🔍 Số ca trong dữ liệu:', data.shiftData ? data.shiftData.length : 0);
 
+
+    // Xác định dữ liệu hiển thị
+let displayShiftData = [];
+if (data.shiftData && data.shiftData.length > 0) {
+    displayShiftData = hasSpecificMacaFilter ?
+        data.shiftData.filter(shift => shift.shift === filters.maca) :
+        data.shiftData;
+}
+
     // Luôn hiển thị cả 2 container
     const totalContainer = totalChartCanvas.closest('.col-md-6');
     const shiftContainer = shiftChartCanvas.closest('.col-md-6');
 
-    if (totalContainer) totalContainer.style.display = 'block';
+    if (totalContainer) totalContainer.style.display = 'none';
     if (shiftContainer) shiftContainer.style.display = 'block';
 
-    // Tạo biểu đồ tổng
-    quantityChart = createTotalQuantityChartOnCanvas(totalChartCanvas, data);
+    // // Tạo biểu đồ tổng
+    // quantityChart = createTotalQuantityChartOnCanvas(totalChartCanvas, data);
 
-    // Tạo biểu đồ từng ca
-    if (data.shiftData && data.shiftData.length > 0) {
-        console.log('📊 Có', data.shiftData.length, 'ca - hiển thị biểu đồ từng ca');
+    // // Tạo biểu đồ từng ca
+    // if (data.shiftData && data.shiftData.length > 0) {
+    //     console.log('📊 Có', data.shiftData.length, 'ca - hiển thị biểu đồ từng ca');
 
-        // Nếu lọc mã ca cụ thể, chỉ hiển thị ca đó
-        const displayShiftData = hasSpecificMacaFilter ?
-            data.shiftData.filter(shift => shift.shift === filters.maca) :
-            data.shiftData;
+    //     // Nếu lọc mã ca cụ thể, chỉ hiển thị ca đó
+    //     const displayShiftData = hasSpecificMacaFilter ?
+    //         data.shiftData.filter(shift => shift.shift === filters.maca) :
+    //         data.shiftData;
 
-        if (displayShiftData.length > 0) {
-            createMultipleShiftCharts(shiftChartCanvas, displayShiftData);
-        } else {
-            macaChart = createEmptyChart(shiftChartCanvas, `Không có dữ liệu ca ${filters.maca}`);
-        }
-    } else {
-        // Người dùng KHÔNG chọn mã ca cụ thể - hiển thị tổng + từng ca
-        console.log('📊 Hiển thị biểu đồ tổng + từng ca');
+    //     if (displayShiftData.length > 0) {
+    //         createMultipleShiftCharts(shiftChartCanvas, displayShiftData);
+    //     } else {
+    //         macaChart = createEmptyChart(shiftChartCanvas, `Không có dữ liệu ca ${filters.maca}`);
+    //     }
+    // } else {
+    //     // Người dùng KHÔNG chọn mã ca cụ thể - hiển thị tổng + từng ca
+    //     console.log('📊 Hiển thị biểu đồ tổng + từng ca');
 
-        // Hiển thị cả 2 container
-        const totalContainer = totalChartCanvas.closest('.col-md-6');
-        const shiftContainer = shiftChartCanvas.closest('.col-md-6');
+    //     // Hiển thị cả 2 container
+    //     const totalContainer = totalChartCanvas.closest('.col-md-6');
+    //     const shiftContainer = shiftChartCanvas.closest('.col-md-6');
 
-        if (totalContainer) totalContainer.style.display = 'block';
-        if (shiftContainer) shiftContainer.style.display = 'block';
+    //     if (totalContainer) totalContainer.style.display = 'block';
+    //     if (shiftContainer) shiftContainer.style.display = 'block';
 
-        // Tạo biểu đồ tổng
-        quantityChart = createTotalQuantityChartOnCanvas(totalChartCanvas, data);
+    //     // Tạo biểu đồ tổng
+    //     quantityChart = createTotalQuantityChartOnCanvas(totalChartCanvas, data);
 
-        // Tạo biểu đồ từng ca
-        if (data.shiftData && data.shiftData.length > 0) {
-            console.log('📊 Có', data.shiftData.length, 'ca - hiển thị biểu đồ từng ca');
-            createMultipleShiftCharts(shiftChartCanvas, data.shiftData);
-        } else {
-            console.log('📊 Không có dữ liệu ca');
-            macaChart = createEmptyChart(shiftChartCanvas, 'Không có dữ liệu ca');
-        }
-    }
+    //     // Tạo biểu đồ từng ca
+    //     if (data.shiftData && data.shiftData.length > 0) {
+    //         console.log('📊 Có', data.shiftData.length, 'ca - hiển thị biểu đồ từng ca');
+    //         createMultipleShiftCharts(shiftChartCanvas, data.shiftData);
+    //     } else {
+    //         console.log('📊 Không có dữ liệu ca');
+    //         macaChart = createEmptyChart(shiftChartCanvas, 'Không có dữ liệu ca');
+    //     }
+    // }
+
+    // Tạo tất cả biểu đồ dạng multiple charts (bao gồm cả tổng)
+const allChartsData = [{
+    shift: 'Tổng',
+    paper: data.totalPaper || 0,
+    waste: data.totalWaste || 0,
+    isTotal: true
+}];
+
+if (displayShiftData.length > 0) {
+    allChartsData.push(...displayShiftData);
+}
+
+createMultipleShiftCharts(shiftChartCanvas, allChartsData);
+
+
 }
 
 
@@ -1072,7 +1121,7 @@ function createMultipleShiftCharts(canvas, shiftData) {
 
     shiftData.forEach((shift, index) => {
         const canvasId = `shiftChart_${index}`;
-        const colClass = shiftData.length <= 2 ? 'col-md-6' : 'col-md-4';
+        const colClass = 'col-md-4';
 
         html += `
             <div class="${colClass} mb-3">
@@ -1148,14 +1197,7 @@ function createSingleShiftPieChart(canvas, shiftData) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 10,
-                        usePointStyle: true,
-                        font: {
-                            size: 11
-                        }
-                    }
+                    display: false // Ẩn legend
                 },
                 tooltip: {
                     callbacks: {
@@ -1387,6 +1429,9 @@ function displayQuantityAnalysis(data, filters) {
                     </div>
                 </div>
             </div>
+
+
+
         `;
         }
     } else {
@@ -1400,6 +1445,30 @@ function displayQuantityAnalysis(data, filters) {
     }
 
     analysisContainer.innerHTML = html;
+
+     // Debug và tạo biểu đồ cột cho máy
+     console.log('🔍 Kiểm tra dữ liệu cho biểu đồ máy:', data);
+        
+     if (data.reports && data.reports.length > 0) {
+         let reportData = data.reports;
+         
+         // Lọc theo mã ca nếu có
+         if (filters && filters.maca) {
+             reportData = data.reports.filter(report => report.ma_ca === filters.maca);
+             console.log('🔍 Dữ liệu sau khi lọc theo mã ca:', reportData.length);
+         }
+         
+         console.log('🔍 Report data for chart:', reportData);
+         
+         if (reportData.length > 0) {
+             setTimeout(() => {
+                 createMachineProductionChart(reportData);
+             }, 200);
+         }
+     } else {
+         console.log('⚠️ Không có data.reports để tạo biểu đồ máy');
+     }
+
 }
 
 
@@ -1646,21 +1715,20 @@ function displayStopReasonChart(data, filters) {
 
     // Tạo màu sắc cho từng lý do
     const colors = [
-        'rgb(137, 192, 217)',  // xanh baby blue đậm hơn
-        'rgb(240, 143, 160)',  // hồng pastel đậm
-        'rgb(138, 209, 158)',  // xanh lá mint đậm
-        'rgb(189, 139, 197)',  // tím pastel đậm
-        'rgb(236, 229, 125)',  // vàng mỡ gà pastel
-        'rgb(212, 177, 134)',  // nâu sáng đậm pastel
-        'rgb(112, 194, 194)',  // xanh teal dịu đậm
-        'rgb(255, 170, 102)',  // cam đào đậm pastel
-        'rgb(184, 184, 184)',  // xám trung tính pastel
-        'rgb(129, 144, 190)',  // xanh tím pastel đậm
-        'rgb(226, 135, 161)',  // hồng dâu pastel đậm
-        'rgb(193, 176, 226)',  // lavender đậm pastel
-        'rgb(228, 200, 168)',  // be đậm pastel
+        'rgb(166, 219, 211)',  // Xanh mint nhạt
+        'rgb(255, 186, 156)',  // Cam đào nhạt
+        'rgb(181, 234, 215)',  // Xanh ngọc nhạt
+        'rgb(203, 170, 203)',  // Tím pastel nhẹ
+        'rgb(255, 218, 193)',  // Be sáng
+        'rgb(226, 240, 203)',  // Xanh lá nhạt
+        'rgb(255, 154, 162)',  // Hồng nhạt nổi bật
+        'rgb(212, 165, 165)',  // Hồng đất nhẹ
+        'rgb(213, 170, 255)',  // Tím oải hương
+        'rgb(185, 251, 192)',  // Xanh bạc hà
+        'rgb(255, 218, 170)',  // Vàng pastel nhạt
+        'rgb(174, 198, 207)',  // Xanh baby blue pastel
+        'rgb(210, 210, 210)',  // Xám nhạt trung tính
     ];
-
     stopReasonChart = new Chart(stopReasonCtx, {
         type: 'pie',
         data: {
@@ -2039,6 +2107,26 @@ function destroyAllCharts() {
         stopReasonChart = null;
     }
 
+
+    if (topCustomersChart) {
+        topCustomersChart.destroy();
+        topCustomersChart = null;
+    }
+    if (topProductsChart) {
+        topProductsChart.destroy();
+        topProductsChart = null;
+    }
+
+    if (window.machinePaperChart && typeof window.machinePaperChart.destroy === 'function') {
+        window.machinePaperChart.destroy();
+    }
+    window.machinePaperChart = null;
+    
+    if (window.machineWasteChart && typeof window.machineWasteChart.destroy === 'function') {
+        window.machineWasteChart.destroy();
+    }
+    window.machineWasteChart = null;
+
     // Destroy tất cả chart con được tạo động
     Chart.helpers.each(Chart.instances, function (instance) {
         if (instance.canvas && instance.canvas.id && instance.canvas.id.startsWith('shiftChart_')) {
@@ -2249,6 +2337,7 @@ function renderDetailTable(container, data, filters) {
                         <th>Máy</th>
                         <th>Khách hàng</th>
                         <th>Mã sản phẩm</th>
+                        <th style="">SL Đơn hàng</th>
                         <th class="text-end">Thành phẩm in</th>
                         <th class="text-end">Phế liệu</th>
                         <th>Thời gian</th>
@@ -2312,6 +2401,7 @@ const runTimeDisplay = formatDuration(runTimeForRecord);
                 <td><span class="badge " style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
                 <td>${customer}</td>
                 <td>${product}</td>
+                <td style="">${record.sl_don_hang || 0}</td>
                 <td class="text-end text-success"><strong>${paper}</strong></td>
                 <td class="text-end text-danger"><strong>${waste}</strong></td>
                 <td>${timeRange}</td>
@@ -2594,4 +2684,687 @@ function resetPagination() {
     itemsPerPage = 10;
     currentPageData = [];
     totalItems = 0;
+}
+
+
+
+
+
+
+
+// Tính toán top 10 khách hàng từ dữ liệu bảng chi tiết
+function calculateTopCustomersFromTable(reports) {
+    console.log('🔍 calculateTopCustomersFromTable với', reports.length, 'báo cáo');
+    
+    if (!reports || reports.length === 0) {
+        console.log('❌ Không có báo cáo để tính toán');
+        return [];
+    }
+    
+    const customerStats = {};
+    const customerWsSet = {}; // Theo dõi các WS đã tính cho mỗi khách hàng
+    
+    // Lặp qua từng báo cáo
+    reports.forEach((report, index) => {
+        const customer = report.khach_hang || 'Không xác định';
+        const ws = report.ws || '';
+        const orderQuantity = parseFloat(report.sl_don_hang) || 0;
+        
+        console.log(`📋 Báo cáo ${index}: KH=${customer}, WS=${ws}, SL=${orderQuantity}`);
+        
+        if (!customerStats[customer]) {
+            customerStats[customer] = {
+                customer: customer,
+                totalQuantity: 0,
+                orderCount: 0,
+                wsCount: 0
+            };
+            customerWsSet[customer] = new Set();
+        }
+        
+        // Chỉ cộng số lượng đơn hàng nếu WS chưa được tính cho khách hàng này
+        if (ws && !customerWsSet[customer].has(ws)) {
+            customerWsSet[customer].add(ws);
+            customerStats[customer].totalQuantity += orderQuantity;
+            customerStats[customer].wsCount++;
+        }
+        
+        customerStats[customer].orderCount++; // Tổng số báo cáo
+    });
+    
+    console.log('📊 Customer stats:', customerStats);
+    
+    // Chuyển đổi và sắp xếp theo số lượng đơn hàng
+    const result = Object.values(customerStats)
+        .filter(stat => stat.totalQuantity > 0)
+        .sort((a, b) => b.totalQuantity - a.totalQuantity)
+        .slice(0, 10);
+    
+    console.log('📊 Top 10 customers result:', result);
+    return result;
+}
+
+// Tính toán top 10 mã sản phẩm từ dữ liệu bảng chi tiết
+function calculateTopProductsFromTable(reports) {
+    console.log('🔍 calculateTopProductsFromTable với', reports.length, 'báo cáo');
+    
+    if (!reports || reports.length === 0) {
+        console.log('❌ Không có báo cáo để tính toán');
+        return [];
+    }
+    
+    const productStats = {};
+    const productWsSet = {}; // Theo dõi các WS đã tính cho mỗi sản phẩm
+    
+    // Lặp qua từng báo cáo
+    reports.forEach((report, index) => {
+        const product = report.ma_sp || 'Không xác định';
+        const ws = report.ws || '';
+        const orderQuantity = parseFloat(report.sl_don_hang) || 0;
+        
+        console.log(`📋 Báo cáo ${index}: MSP=${product}, WS=${ws}, SL=${orderQuantity}`);
+        
+        if (!productStats[product]) {
+            productStats[product] = {
+                product: product,
+                totalQuantity: 0,
+                orderCount: 0,
+                wsCount: 0
+            };
+            productWsSet[product] = new Set();
+        }
+        
+        // Chỉ cộng số lượng đơn hàng nếu WS chưa được tính cho sản phẩm này
+        if (ws && !productWsSet[product].has(ws)) {
+            productWsSet[product].add(ws);
+            productStats[product].totalQuantity += orderQuantity;
+            productStats[product].wsCount++;
+        }
+        
+        productStats[product].orderCount++; // Tổng số báo cáo
+    });
+    
+    console.log('📊 Product stats:', productStats);
+    
+    // Chuyển đổi và sắp xếp theo số lượng đơn hàng
+    const result = Object.values(productStats)
+        .filter(stat => stat.totalQuantity > 0)
+        .sort((a, b) => b.totalQuantity - a.totalQuantity)
+        .slice(0, 10);
+    
+    console.log('📊 Top 10 products result:', result);
+    return result;
+}
+
+
+
+
+// Hiển thị Top 10 Analytics
+function displayTopAnalytics(data, filters) {
+    console.log('🎯 displayTopAnalytics được gọi với data:', data);
+    console.log('🎯 currentPageData:', currentPageData);
+    
+    // Lấy dữ liệu từ data.reports thay vì currentPageData
+    let reportsData = [];
+    if (data && data.reports && data.reports.length > 0) {
+        reportsData = data.reports;
+        console.log('📊 Sử dụng dữ liệu từ data.reports:', reportsData.length, 'báo cáo');
+    } else if (currentPageData && currentPageData.length > 0) {
+        reportsData = currentPageData;
+        console.log('📊 Sử dụng dữ liệu từ currentPageData:', reportsData.length, 'báo cáo');
+    } else {
+        console.log('⚠️ Không có dữ liệu để hiển thị top analytics');
+        
+        // Vẫn hiển thị biểu đồ trống
+        displayTopCustomersChart({ topCustomers: [] }, filters);
+        displayTopProductsChart({ topProducts: [] }, filters);
+        return;
+    }
+    
+    // Lọc dữ liệu theo điều kiện filter nếu có
+    let filteredData = reportsData;
+    if (filters && filters.maca) {
+        filteredData = reportsData.filter(report => report.ma_ca === filters.maca);
+        console.log('📊 Sau khi lọc theo mã ca:', filteredData.length, 'báo cáo');
+    }
+    
+    // Tính toán top 10 từ dữ liệu đã lọc
+    const topCustomers = calculateTopCustomersFromTable(filteredData);
+    const topProducts = calculateTopProductsFromTable(filteredData);
+    
+    // Hiển thị biểu đồ
+    displayTopCustomersChart({ topCustomers }, filters);
+    displayTopProductsChart({ topProducts }, filters);
+}
+
+
+// Hiển thị biểu đồ Top 10 khách hàng
+function displayTopCustomersChart(data, filters) {
+    console.log('📊 displayTopCustomersChart với data.topCustomers:', data.topCustomers);
+    
+    // Destroy chart cũ
+    if (topCustomersChart) {
+        topCustomersChart.destroy();
+        topCustomersChart = null;
+    }
+    
+    let ctx = document.getElementById('topCustomersChart');
+    console.log('🔍 Canvas found:', ctx);
+    
+    if (!ctx) {
+        console.error('❌ Không tìm thấy canvas topCustomersChart');
+        return;
+    }
+    
+    // RECREATE CANVAS
+    const container = ctx.parentElement;
+    if (container) {
+        // Xóa canvas cũ
+        ctx.remove();
+        
+        // Tạo canvas mới
+        const newCanvas = document.createElement('canvas');
+        newCanvas.id = 'topCustomersChart';
+        newCanvas.width = 400;
+        newCanvas.height = 400;
+        newCanvas.style.width = '100%';
+        newCanvas.style.height = '400px';
+        
+        container.appendChild(newCanvas);
+        ctx = newCanvas;
+        
+        console.log('✅ Đã tạo lại canvas:', ctx);
+    }
+    
+    // Kiểm tra dữ liệu
+    if (!data.topCustomers || data.topCustomers.length === 0) {
+        console.log('⚠️ Không có dữ liệu khách hàng, hiển thị biểu đồ trống');
+        topCustomersChart = createEmptyChart(ctx, 'Không có dữ liệu khách hàng');
+        return;
+    }
+    
+    const labels = data.topCustomers.map(item => item.customer);
+    const quantities = data.topCustomers.map(item => item.totalQuantity);
+    
+    console.log('📊 Labels:', labels);
+    console.log('📊 Quantities:', quantities);
+    
+    try {
+        topCustomersChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Số lượng đơn hàng',
+                    data: quantities,
+                    backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 30 // Để chỗ cho số liệu trên đầu
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Top 10 khách hàng theo số lượng đơn hàng',
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        color: 'black',
+                        padding: {
+                            bottom: 20 // Tạo khoảng cách phía dưới title
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: 'top',
+                        color: 'black',
+                        font: {
+                            weight: 'bold',
+                            size: 12
+                        },
+                        formatter: function(value, context) {
+                            return formatNumber(value);
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng đơn hàng',
+                            font: {
+                            size: 14,
+                            weight: 'bold',
+                            family: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                        },
+                        color: 'black'
+                        },
+                        
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            // text: 'Khách hàng'
+                        },
+                        ticks: {
+                            display: true,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            callback: function(value, index, values) {
+                                const label = this.getLabelForValue(value);
+                                const maxLength = 12; // Độ dài tối đa mỗi dòng
+                                
+                                // Wrap text nếu quá dài
+                                if (label.length > maxLength) {
+                                    const words = label.split(' ');
+                                    const lines = [];
+                                    let currentLine = '';
+                                    
+                                    words.forEach(word => {
+                                        if ((currentLine + ' ' + word).length > maxLength && currentLine !== '') {
+                                            lines.push(currentLine);
+                                            currentLine = word;
+                                        } else {
+                                            currentLine += (currentLine ? ' ' : '') + word;
+                                        }
+                                    });
+                                    if (currentLine) lines.push(currentLine);
+                                    
+                                    return lines;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        console.log('✅ Biểu đồ khách hàng được tạo thành công');
+        
+    } catch (error) {
+        console.error('❌ Lỗi khi tạo biểu đồ khách hàng:', error);
+    }
+}
+
+
+
+// Hiển thị biểu đồ Top 10 mã sản phẩm
+function displayTopProductsChart(data, filters) {
+    console.log('📊 displayTopProductsChart với data.topProducts:', data.topProducts);
+    
+    // Destroy chart cũ
+    if (topProductsChart) {
+        topProductsChart.destroy();
+        topProductsChart = null;
+    }
+    
+    let ctx = document.getElementById('topProductsChart');
+    console.log('🔍 Canvas found:', ctx);
+    
+    if (!ctx) {
+        console.error('❌ Không tìm thấy canvas topProductsChart');
+        return;
+    }
+    
+    // RECREATE CANVAS
+    const container = ctx.parentElement;
+    if (container) {
+        // Xóa canvas cũ
+        ctx.remove();
+        
+        // Tạo canvas mới
+        const newCanvas = document.createElement('canvas');
+        newCanvas.id = 'topProductsChart';
+        newCanvas.width = 400;
+        newCanvas.height = 400;
+        newCanvas.style.width = '100%';
+        newCanvas.style.height = '400px';
+        
+        container.appendChild(newCanvas);
+        ctx = newCanvas;
+        
+        console.log('✅ Đã tạo lại canvas:', ctx);
+    }
+    
+    // Kiểm tra dữ liệu
+    if (!data.topProducts || data.topProducts.length === 0) {
+        console.log('⚠️ Không có dữ liệu sản phẩm, hiển thị biểu đồ trống');
+        topProductsChart = createEmptyChart(ctx, 'Không có dữ liệu sản phẩm');
+        return;
+    }
+    
+    const labels = data.topProducts.map(item => item.product);
+    const quantities = data.topProducts.map(item => item.totalQuantity);
+    
+    console.log('📊 Labels:', labels);
+    console.log('📊 Quantities:', quantities);
+    
+    try {
+        topProductsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Số lượng đơn hàng',
+                    data: quantities,
+                    backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 30 // Để chỗ cho số liệu trên đầu
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Top 10 mã sản phẩm theo số lượng đơn hàng',
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        color: 'black',
+                        padding: {
+                            bottom: 20 // Tạo khoảng cách phía dưới title
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: 'top',
+                        color: 'black',
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        },
+                        formatter: function(value, context) {
+                            return formatNumber(value); // Hiển thị số lượng trên đầu cột
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng đơn hàng',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            color: 'black'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            // text: 'Mã sản phẩm'
+                        },
+                        ticks: {
+                            display: true,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            callback: function(value, index, values) {
+                                const label = this.getLabelForValue(value);
+                                const maxLength = 10; // Mã sản phẩm ngắn hơn
+                                if (label.length > maxLength) {
+                                    // Chia theo ký tự cho mã sản phẩm
+                                    const result = [];
+                                    for (let i = 0; i < label.length; i += maxLength) {
+                                        result.push(label.substring(i, i + maxLength));
+                                    }
+                                    return result;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        console.log('✅ Biểu đồ sản phẩm được tạo thành công');
+        
+    } catch (error) {
+        console.error('❌ Lỗi khi tạo biểu đồ sản phẩm:', error);
+    }
+}
+
+
+
+// Tạo biểu đồ cột sản xuất theo máy từ dữ liệu báo cáo thực tế
+function createMachineProductionChart(reportData) {
+    console.log('🎯 createMachineProductionChart được gọi với:', reportData.length, 'báo cáo');
+    
+    const paperCanvas = document.getElementById('machinePaperChart');
+    const wasteCanvas = document.getElementById('machineWasteChart');
+    
+    console.log('🔍 Canvas elements:', { paperCanvas, wasteCanvas });
+    
+    if (!paperCanvas || !wasteCanvas) {
+        console.error('❌ Không tìm thấy canvas elements');
+        return;
+    }
+    
+    // Destroy chart cũ nếu có
+    if (window.machinePaperChart && typeof window.machinePaperChart.destroy === 'function') {
+        window.machinePaperChart.destroy();
+    }
+    window.machinePaperChart = null;
+    
+    if (window.machineWasteChart && typeof window.machineWasteChart.destroy === 'function') {
+        window.machineWasteChart.destroy();
+    }
+    window.machineWasteChart = null;
+    
+    // Group dữ liệu theo máy từ báo cáo thực tế
+    const machineGroups = {};
+    reportData.forEach(report => {
+        const machine = report.may || 'Không xác định';
+        if (!machineGroups[machine]) {
+            machineGroups[machine] = { paper: 0, waste: 0 };
+        }
+        machineGroups[machine].paper += parseFloat(report.thanh_pham_in) || 0;
+        machineGroups[machine].waste += (parseFloat(report.phe_lieu) || 0) + (parseFloat(report.phe_lieu_trang) || 0);
+    });
+    
+    console.log('📊 Machine groups:', machineGroups);
+    
+    const machines = Object.keys(machineGroups);
+    const paperData = machines.map(machine => machineGroups[machine].paper);
+    const wasteData = machines.map(machine => machineGroups[machine].waste);
+    
+    console.log('📊 Chart data:', { machines, paperData, wasteData });
+    
+    if (machines.length === 0) {
+        console.log('⚠️ Không có dữ liệu máy để hiển thị');
+        return;
+    }
+    
+    // Tạo biểu đồ thành phẩm
+    try {
+        window.machinePaperChart = new Chart(paperCanvas, {
+            type: 'bar',
+            data: {
+                labels: machines,
+                datasets: [{
+                    label: 'Thành phẩm in',
+                    data: paperData,
+                    backgroundColor: 'rgba(174, 207, 188, 0.8)',
+                    borderColor: 'rgba(148, 199, 169, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 40 // Thêm khoảng cách cho số liệu trên đầu
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Thành phẩm: ${formatNumber(context.parsed.y)}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: 'top',
+                        color: 'black',
+                        font: {
+                            size: 11,
+                            weight: 'bold'
+                        },
+                        formatter: function(value) {
+                            return value > 0 ? formatNumber(value) : '';
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng thành phẩm',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            color: 'black'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Máy'
+                        }
+                    }
+                }
+            }
+        });
+        
+        console.log('✅ Biểu đồ thành phẩm đã tạo thành công');
+    } catch (error) {
+        console.error('❌ Lỗi khi tạo biểu đồ thành phẩm:', error);
+    }
+    
+    // Tạo biểu đồ phế liệu
+    try {
+        window.machineWasteChart = new Chart(wasteCanvas, {
+            type: 'bar',
+            data: {
+                labels: machines,
+                datasets: [{
+                    label: 'Phế liệu',
+                    data: wasteData,
+                    backgroundColor: 'rgba(248, 179, 181, 0.8)',
+                    borderColor: 'rgba(255, 141, 152, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 40 // Thêm khoảng cách cho số liệu trên đầu
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Phế liệu: ${formatNumber(context.parsed.y)}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: 'top',
+                        color: 'black',
+                        font: {
+                            size: 11,
+                            weight: 'bold'
+                        },
+                        formatter: function(value) {
+                            return value > 0 ? formatNumber(value) : '';
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng phế liệu',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            color: 'black'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Máy'
+                        }
+                    }
+                }
+            }
+        });
+        
+        console.log('✅ Biểu đồ phế liệu đã tạo thành công');
+    } catch (error) {
+        console.error('❌ Lỗi khi tạo biểu đồ phế liệu:', error);
+    }
 }

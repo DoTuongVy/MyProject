@@ -70,15 +70,15 @@ async function calculateSoLanChay(ws, tuychonText, existingReports) {
     
     // **BƯỚC 1: THÊM ĐẦY ĐỦ MAP TÙY CHỌN**
     const tuychonValueMap = {
-        '1. In': '1',
-        '2. In + Cán bóng': '2', 
-        '3. Cán bóng': '3',
-        '4. In dặm': '4',
-        '5. In dặm + Cán bóng': '5',
-        '6. Cán bóng lại': '6',
-        '7. In dặm (Gia công)': '7',
-        '8. In dặm + Cán bóng (Gia công)': '8',
-        '9. Cán bóng lại (Gia công)': '9'
+        '1. IN': '1',
+        '2. IN + CÁN BÓNG': '2', 
+        '3. CÁN BÓNG': '3',
+        '4. IN DẶM': '4',
+        '5. IN DẶM + CÁN BÓNG': '5',
+        '6. CÁN BÓNG LẠI': '6',
+        '7. IN DẶM (GIA CÔNG)': '7',
+        '8. IN DẶM + CÁN BÓNG (GIA CÔNG)': '8',
+        '9. CÁN BÓNG LẠI (GIA CÔNG)': '9'
     };
     
     const tuychonValue = tuychonValueMap[tuychonText];
@@ -123,8 +123,8 @@ async function updateRelatedReportsThanhPham(wsValue, tuychonText, currentReport
         console.log(`🔄 Backend update related reports: WS=${wsValue}, Tùy chọn=${tuychonText}`);
         
         // Chỉ cập nhật khi là waste processes
-        const wasteProcesses = ['4. In dặm', '5. In dặm + Cán bóng', '6. Cán bóng lại', 
-                               '7. In dặm (Gia công)', '8. In dặm + Cán bóng (Gia công)', '9. Cán bóng lại (Gia công)'];
+        const wasteProcesses = ['4. IN DẶM', '5. IN DẶM + CÁN BÓNG', '6. CÁN BÓNG LẠI', 
+                               '7. IN DẶM (GIA CÔNG)', '8. IN DẶM + CÁN BÓNG (GIA CÔNG)', '9. CÁN BÓNG LẠI (GIA CÔNG)'];
         
         if (!wasteProcesses.includes(tuychonText)) {
             console.log('Không phải waste process, bỏ qua cập nhật');
@@ -133,12 +133,12 @@ async function updateRelatedReportsThanhPham(wsValue, tuychonText, currentReport
         
         // Map waste -> production để tìm báo cáo cần cập nhật
         const wasteToProductionMap = {
-            '4. In dặm': '1. In',
-            '5. In dặm + Cán bóng': '2. In + Cán bóng',
-            '6. Cán bóng lại': '3. Cán bóng',
-            '7. In dặm (Gia công)': '1. In',
-            '8. In dặm + Cán bóng (Gia công)': '2. In + Cán bóng', 
-            '9. Cán bóng lại (Gia công)': '3. Cán bóng'
+            '4. IN DẶM': '1. IN',
+            '5. IN DẶM + CÁN BÓNG': '2. In + CÁN BÓNG',
+            '6. CÁN BÓNG LẠI': '3. CÁN BÓNG',
+            '7. IN DẶM (GIA CÔNG)': '1. IN',
+            '8. IN DẶM + CÁN BÓNG (GIA CÔNG)': '2. IN + CÁN BÓNG', 
+            '9. CÁN BÓNG LẠI (GIA CÔNG)': '3. CÁN BÓNG'
         };
         
         const targetProductionProcess = wasteToProductionMap[tuychonText];
@@ -225,9 +225,9 @@ async function updateRelatedReportsThanhPham(wsValue, tuychonText, currentReport
         
 //         // Lấy tổng phế liệu mới nhất từ waste process tương ứng
 //         const wasteMapping = {
-//             '1. In': '4. In dặm',
-//             '2. In + Cán bóng': '5. In dặm + Cán bóng',
-//             '3. Cán bóng': '6. Cán bóng lại'
+//             '1. In': '4. IN DẶM',
+//             '2. In + CÁN BÓNG': '5. IN DẶM + CÁN BÓNG',
+//             '3. CÁN BÓNG': '6. CÁN BÓNG LẠI'
 //         };
         
 //         const correspondingWaste = wasteMapping[tuychonText];
@@ -276,12 +276,12 @@ router.post('/update-related-reports', async (req, res) => {
         
         // Map value -> text
         const valueToTextMap = {
-            '4': '4. In dặm',
-            '5': '5. In dặm + Cán bóng',
-            '6': '6. Cán bóng lại',
-            '7': '7. In dặm (Gia công)',
-            '8': '8. In dặm + Cán bóng (Gia công)',
-            '9': '9. Cán bóng lại (Gia công)'
+            '4': '4. IN DẶM',
+            '5': '5. IN DẶM + CÁN BÓNG',
+            '6': '6. CÁN BÓNG LẠI',
+            '7': '7. IN DẶM (GIA CÔNG)',
+            '8': '8. IN DẶM + CÁN BÓNG (GIA CÔNG)',
+            '9': '9. CÁN BÓNG LẠI (GIA CÔNG)'
         };
         
         const tuychonText = valueToTextMap[tuychonValue];

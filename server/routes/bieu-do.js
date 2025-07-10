@@ -52,10 +52,11 @@ router.get('/in/chart-data', async (req, res) => {
         // Lấy dữ liệu báo cáo In
         const reports = await new Promise((resolve, reject) => {
             db.all(`SELECT 
-                thanh_pham_in, phe_lieu, phe_lieu_trang, thoi_gian_canh_may,
-                thoi_gian_bat_dau, thoi_gian_ket_thuc, khach_hang, ma_sp, id, ws, ma_ca, may
-                FROM bao_cao_in ${whereClause}
-                ORDER BY created_at DESC`,
+    thanh_pham_in, phe_lieu, phe_lieu_trang, thoi_gian_canh_may,
+    thoi_gian_bat_dau, thoi_gian_ket_thuc, khach_hang, ma_sp, id, ws, ma_ca, may,
+    sl_don_hang
+FROM bao_cao_in ${whereClause}
+ORDER BY created_at DESC`,
                 params, (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows || []);
@@ -766,6 +767,7 @@ function getModuleUrl(moduleId) {
             return '#';
     }
 }
+
 
 
 

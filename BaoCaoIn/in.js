@@ -1351,8 +1351,8 @@ async function calculateTongWithSumComplete(fieldName) {
             
             // Điều kiện 2: Cùng tùy chọn HOẶC cặp đặc biệt (như code Google Sheets)
             const reportTuychon = report.tuy_chon;
-            const isSpecialPair = (reportTuychon === "3. Cán bóng" && tuychonText === "5. In dặm + Cán bóng") ||
-                                (reportTuychon === "5. In dặm + Cán bóng" && tuychonText === "3. Cán bóng");
+            const isSpecialPair = (reportTuychon === "3. CÁN BÓNG" && tuychonText === "5. IN DẶM + CÁN BÓNG") ||
+                                (reportTuychon === "5. IN DẶM + CÁN BÓNG" && tuychonText === "3. CÁN BÓNG");
             
             if (reportTuychon !== tuychonText && !isSpecialPair) return false;
             
@@ -1495,15 +1495,15 @@ async function checkIfLastProductionInCycle(wsValue, tuychonText) {
             if (report.ws !== wsValue) return false;
             
             // Chỉ lấy tùy chọn production (1,2,3)
-            const productionOptions = ['1. In', '2. In + Cán bóng', '3. Cán bóng'];
+            const productionOptions = ['1. IN', '2. IN + CÁN BÓNG', '3. CÁN BÓNG'];
             return productionOptions.includes(report.tuy_chon);
         });
 
         // Lấy báo cáo waste tương ứng
         const wasteMapping = {
-            '1. In': '4. In dặm',
-            '2. In + Cán bóng': '5. In dặm + Cán bóng', 
-            '3. Cán bóng': '6. Cán bóng lại'
+            '1. IN': '4. IN DẶM',
+            '2. IN + CÁN BÓNG': '5. IN DẶM + CÁN BÓNG', 
+            '3. CÁN BÓNG': '6. CÁN BÓNG LẠI'
         };
         
         const correspondingWaste = wasteMapping[tuychonText];
@@ -1537,9 +1537,9 @@ async function getTotalWasteFromMatchingProcesses() {
 
         // Map production -> waste processes
         const productionToWasteMap = {
-            '1. In': '4. In dặm',
-            '2. In + Cán bóng': '5. In dặm + Cán bóng',
-            '3. Cán bóng': '6. Cán bóng lại'
+            '1. IN': '4. IN DẶM',
+            '2. IN + CÁN BÓNG': '5. IN DẶM + CÁN BÓNG', 
+            '3. CÁN BÓNG': '6. CÁN BÓNG LẠI'
         };
 
         const wasteProcess = productionToWasteMap[tuychonText];
@@ -1605,12 +1605,12 @@ async function getTotalWasteFromMatchingProcesses() {
 // Helper function để chuyển value thành text
 function getTextFromValue(value) {
     const map = {
-        '1': '1. In',
-        '2': '2. In + Cán bóng', 
-        '3': '3. Cán bóng',
-        '4': '4. In dặm',
-        '5': '5. In dặm + Cán bóng',
-        '6': '6. Cán bóng lại'
+        '1': '1. IN',
+        '2': '2. IN + CÁN BÓNG', 
+        '3': '3. CÁN BÓNG',
+        '4': '4. IN DẶM',
+        '5': '5. IN DẶM + CÁN BÓNG',
+        '6': '6. CÁN BÓNG LẠI'
     };
     return map[value] || '';
 }
