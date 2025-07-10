@@ -218,3 +218,47 @@
         color: #e2e8f0;
     }
 }
+
+
+/* Sticky header cho bảng chi tiết */
+.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: #212529 !important;
+}
+
+/* Đảm bảo header không bị che khuất */
+#detailTableHeader th {
+    background-color: #212529 !important;
+    border-color: #32383e !important;
+}
+
+
+
+/* Styling cho bảng chi tiết */
+#detailTableContainer .table-responsive {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+#detailTableContainer .table td,
+#detailTableContainer .table th {
+    white-space: nowrap;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+
+#detailTableContainer .table td:nth-child(9) {
+    min-width: 200px; /* Cột thời gian rộng hơn */
+    /* font-family: monospace; Font monospace cho thời gian */
+}
+
+/* Responsive cho bảng */
+@media (max-width: 768px) {
+    #detailTableContainer .table td,
+    #detailTableContainer .table th {
+        font-size: 0.8rem;
+        padding: 6px 8px;
+    }
+}

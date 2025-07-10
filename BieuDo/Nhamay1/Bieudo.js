@@ -14,7 +14,7 @@ let pieChart = null;
 let quantityChart = null;  // Thêm dòng này
 let macaChart = null;      // Thêm dòng này
 let timeChart = null;
-let stopReasonChart = null; 
+let stopReasonChart = null;
 
 // Biến phân trang
 let currentPageData = [];
@@ -28,12 +28,12 @@ let totalItems = 0;
 
 document.addEventListener('DOMContentLoaded', function () {
     console.log('🎯 DOM Content Loaded - Bắt đầu khởi tạo');
-    
+
     // Kiểm tra trang hiện tại
     const currentPage = window.location.pathname.split('/').pop().toLowerCase();
     console.log('📄 Current page detected:', currentPage);
     console.log('📍 Full pathname:', window.location.pathname);
-    
+
     if (currentPage === 'dashboard.html' || currentPage === '') {
         console.log('✅ Vào Dashboard branch');
         initDashboard();
@@ -68,19 +68,19 @@ async function initDashboard() {
 async function loadModules() {
     try {
         console.log('🔍 Bắt đầu gọi API modules...');
-        
+
         // Đảm bảo có await
         const response = await fetch('/api/bieu-do/modules/nhamay1');
-        
+
         if (!response.ok) {
             throw new Error('Không thể tải danh sách modules');
         }
-        
+
         const modules = await response.json();
         console.log('📦 Dữ liệu nhận được:', modules);
-        
+
         renderModules(modules);
-        
+
     } catch (error) {
         console.error('Lỗi khi tải modules:', error);
         // Fallback data như cũ
@@ -110,7 +110,7 @@ async function loadModules() {
 function renderModules(modules) {
     const container = document.getElementById('moduleContainer');
     if (!container) return;
-    
+
     container.innerHTML = modules.map(module => `
         <div class="col-lg-4 col-md-6 mb-4">
             <div class="card module-card ${module.color}" onclick="navigateToModule('${module.url}')">
@@ -124,7 +124,7 @@ function renderModules(modules) {
             </div>
         </div>
     `).join('');
-    
+
     // Thêm animation
     setTimeout(() => {
         container.querySelectorAll('.module-card').forEach((card, index) => {
@@ -135,8 +135,8 @@ function renderModules(modules) {
     }, 100);
 
     // Ngay đầu hàm renderModules()
-console.log('🖼️ Render modules:', modules);
-console.log('🎯 Container element:', container);
+    console.log('🖼️ Render modules:', modules);
+    console.log('🎯 Container element:', container);
 
 }
 
@@ -165,36 +165,36 @@ function setupInFilters() {
 function setupInEvents() {
     const btnViewReport = document.getElementById('btnViewReport');
     const btnReset = document.getElementById('btnReset');
-    
+
     if (btnViewReport) {
         btnViewReport.addEventListener('click', handleViewInReport);
     }
-    
+
     if (btnReset) {
         btnReset.addEventListener('click', handleResetFilters);
     }
 
 
     const fromDate = document.getElementById('fromDate');
-const toDate = document.getElementById('toDate');
+    const toDate = document.getElementById('toDate');
 
-if (fromDate) {
-    fromDate.addEventListener('focus', function() {
-        if (!this.value) {
-            const today = new Date().toISOString().split('T')[0];
-            this.value = today;
-        }
-    });
-}
+    if (fromDate) {
+        fromDate.addEventListener('focus', function () {
+            if (!this.value) {
+                const today = new Date().toISOString().split('T')[0];
+                this.value = today;
+            }
+        });
+    }
 
-if (toDate) {
-    toDate.addEventListener('focus', function() {
-        if (!this.value) {
-            const today = new Date().toISOString().split('T')[0];
-            this.value = today;
-        }
-    });
-}
+    if (toDate) {
+        toDate.addEventListener('focus', function () {
+            if (!this.value) {
+                const today = new Date().toISOString().split('T')[0];
+                this.value = today;
+            }
+        });
+    }
 
 
 }
@@ -224,14 +224,14 @@ async function loadMachineList() {
 function setDefaultDates() {
     const today = new Date();
     const todayString = today.toISOString().split('T')[0];
-    
+
     const fromDate = document.getElementById('fromDate');
     const toDate = document.getElementById('toDate');
-    
+
     if (fromDate) {
         fromDate.value = todayString;
     }
-    
+
     if (toDate) {
         toDate.value = todayString;
     }
@@ -242,29 +242,29 @@ async function handleViewInReport() {
     try {
         showLoading(true);
         // Đảm bảo reportSection luôn có cấu trúc HTML đúng
-ensureReportSectionStructure();
-// Reset dữ liệu cũ và UI trước khi lọc mới
-currentChartData = null;
-destroyAllCharts();
-hideReportSection();
-        
+        ensureReportSectionStructure();
+        // Reset dữ liệu cũ và UI trước khi lọc mới
+        currentChartData = null;
+        destroyAllCharts();
+        hideReportSection();
+
         // Thu thập điều kiện lọc
         const filters = collectFilters();
-        
+
         // Validate filters
         if (!validateFilters(filters)) {
             showLoading(false);
             return;
         }
-        
+
         // Gọi API lấy dữ liệu
         const reportData = await fetchInReportData(filters);
-        
+
         // Hiển thị báo cáo
         displayInReport(reportData, filters);
-        
+
         showLoading(false);
-        
+
     } catch (error) {
         console.error('Lỗi khi xem báo cáo In:', error);
         showLoading(false);
@@ -280,15 +280,15 @@ function collectFilters() {
         maca: (() => {
             const caSelect = document.getElementById('caSelect');
             if (!caSelect) return '';
-            
+
             const selectedValue = caSelect.value;
             console.log('🔍 Giá trị mã ca từ select:', selectedValue);
-            
+
             // Chỉ return giá trị nếu thực sự được chọn (không phải "Tất cả ca")
             if (selectedValue && selectedValue !== '') {
                 return selectedValue;
             }
-            
+
             return '';
         })(),
         may: document.getElementById('maySelect')?.value || '',
@@ -305,16 +305,16 @@ function validateFilters(filters) {
         showNotification('Vui lòng chọn từ ngày và đến ngày', 'warning');
         return false;
     }
-    
+
     // Kiểm tra khoảng thời gian hợp lệ
     const from = new Date(filters.fromDate);
     const to = new Date(filters.toDate);
-    
+
     if (from > to) {
         showNotification('Ngày bắt đầu không được lớn hơn ngày kết thúc', 'warning');
         return false;
     }
-    
+
     return true;
 }
 
@@ -322,47 +322,47 @@ function validateFilters(filters) {
 async function fetchInReportData(filters) {
     try {
         const params = new URLSearchParams();
-        
+
         if (filters.fromDate) params.append('fromDate', filters.fromDate);
         if (filters.toDate) params.append('toDate', filters.toDate);
         if (filters.ws) params.append('ws', filters.ws);
         if (filters.maca) params.append('ca', filters.maca);
         if (filters.may) params.append('may', filters.may);
         if (filters.tuan) params.append('tuan', filters.tuan);
-        
+
         const response = await fetch(`/api/bieu-do/in/chart-data?${params.toString()}&detail=true`);
-        
+
         if (!response.ok) {
             throw new Error('Không thể tải dữ liệu báo cáo');
         }
-        
+
         const rawData = await response.json();
         console.log('📥 Raw data từ API:', rawData);
-        
+
         // Xử lý dữ liệu thành format đúng
         const processedData = processApiData(rawData);
         console.log('🔄 Processed data:', processedData);
-        
+
         return processedData;
-        
-    // Sửa phần catch error:
-} catch (error) {
-    console.error('Lỗi khi gọi API:', error);
-    
-    // Thử gọi lại không có detail=true
-    try {
-        const fallbackResponse = await fetch(`/api/bieu-do/in/chart-data?${params.toString()}`);
-        if (fallbackResponse.ok) {
-            const fallbackData = await fallbackResponse.json();
-            console.warn('Sử dụng dữ liệu fallback (không có detail)');
-            return fallbackData;
+
+        // Sửa phần catch error:
+    } catch (error) {
+        console.error('Lỗi khi gọi API:', error);
+
+        // Thử gọi lại không có detail=true
+        try {
+            const fallbackResponse = await fetch(`/api/bieu-do/in/chart-data?${params.toString()}`);
+            if (fallbackResponse.ok) {
+                const fallbackData = await fallbackResponse.json();
+                console.warn('Sử dụng dữ liệu fallback (không có detail)');
+                return fallbackData;
+            }
+        } catch (fallbackError) {
+            console.error('Fallback cũng thất bại:', fallbackError);
         }
-    } catch (fallbackError) {
-        console.error('Fallback cũng thất bại:', fallbackError);
+
+        throw error;
     }
-    
-    throw error;
-}
 }
 
 
@@ -370,22 +370,22 @@ async function fetchInReportData(filters) {
 // Hàm xử lý dữ liệu từ API thành format mong muốn
 function processApiData(apiData) {
     console.log('🔄 Bắt đầu xử lý dữ liệu API:', apiData);
-    
+
     // Trường hợp 1: Dữ liệu là mảng các record (như bảng bạn gửi)
     if (Array.isArray(apiData)) {
         return processArrayData(apiData);
     }
-    
+
     // Trường hợp 2: Dữ liệu đã được group sẵn
     if (apiData.totalPaper !== undefined || apiData.shiftData !== undefined) {
         return apiData;
     }
-    
+
     // Trường hợp 3: Dữ liệu có cấu trúc khác
     if (apiData.data && Array.isArray(apiData.data)) {
         return processArrayData(apiData.data);
     }
-    
+
     console.warn('⚠️ Không nhận diện được cấu trúc dữ liệu, sử dụng dữ liệu gốc');
     return apiData;
 }
@@ -395,54 +395,54 @@ function processApiData(apiData) {
 // Xử lý dữ liệu dạng mảng (mỗi phần tử là 1 record)
 function processArrayData(records) {
     console.log('📊 Xử lý mảng dữ liệu:', records);
-    
+
     // Group theo ca
     const shiftGroups = {};
     let totalPaper = 0;
     let totalWaste = 0;
-    
+
     records.forEach(record => {
         // Lấy thông tin ca - có thể là "Mã ca", "ca", "shift", etc.
         const shift = record['Mã ca'] || record['ca'] || record['shift'] || record.shift || 'Unknown';
-        
+
         // Lấy số lượng - có thể là "Tổng số lượng", "totalPaper", "so_luong", etc.
         const paper = parseFloat(record['Tổng số lượng'] || record['totalPaper'] || record['so_luong'] || record.paper || 0);
-        
+
         // Lấy phế liệu - có thể là "Tổng phế liệu", "totalWaste", "phe_lieu", etc.
         const waste = parseFloat(record['Tổng phế liệu'] || record['totalWaste'] || record['phe_lieu'] || record.waste || 0);
-        
+
         console.log(`📋 Record: Ca=${shift}, Paper=${paper}, Waste=${waste}`);
-        
+
         // Lấy thông tin máy
-const may = record['Máy'] || record['may'] || record['machine'] || record.may || '';
+        const may = record['Máy'] || record['may'] || record['machine'] || record.may || '';
 
-// Tổng hợp theo ca
-if (!shiftGroups[shift]) {
-    shiftGroups[shift] = { shift, paper: 0, waste: 0, may: may };
-}
+        // Tổng hợp theo ca
+        if (!shiftGroups[shift]) {
+            shiftGroups[shift] = { shift, paper: 0, waste: 0, may: may };
+        }
 
-shiftGroups[shift].paper += paper;
-shiftGroups[shift].waste += waste;
-// Cập nhật thông tin máy (nếu có nhiều máy trong cùng ca, lấy máy cuối)
-if (may) {
-    shiftGroups[shift].may = may;
-}
-        
+        shiftGroups[shift].paper += paper;
+        shiftGroups[shift].waste += waste;
+        // Cập nhật thông tin máy (nếu có nhiều máy trong cùng ca, lấy máy cuối)
+        if (may) {
+            shiftGroups[shift].may = may;
+        }
+
         // Tổng cộng
         totalPaper += paper;
         totalWaste += waste;
     });
-    
+
     // Chuyển đổi thành mảng
     const shiftData = Object.values(shiftGroups);
-    
+
     console.log('📈 Kết quả xử lý:', {
         totalPaper,
         totalWaste,
         shiftData,
         shiftCount: shiftData.length
     });
-    
+
     return {
         totalPaper,
         totalWaste,
@@ -465,28 +465,28 @@ function displayInReport(data, filters) {
     console.log('📋 Với filters:', filters);
     console.log('📋 Số ca trong dữ liệu:', data.shiftData ? data.shiftData.length : 0);
     console.log('📋 Mã ca filter:', filters.maca);
-    
-    
+
+
     // Kiểm tra dữ liệu có hợp lệ không
-if (!data || ((!data.totalPaper || data.totalPaper === 0) && 
-(!data.totalWaste || data.totalWaste === 0) && 
-(!data.shiftData || data.shiftData.length === 0))) {
+    if (!data || ((!data.totalPaper || data.totalPaper === 0) &&
+        (!data.totalWaste || data.totalWaste === 0) &&
+        (!data.shiftData || data.shiftData.length === 0))) {
 
-// Hiển thị section báo cáo với thông báo không có dữ liệu
-const reportSection = document.getElementById('reportSection');
-if (reportSection) {
-    reportSection.style.display = 'block';
-    reportSection.classList.add('slide-up');
-}
+        // Hiển thị section báo cáo với thông báo không có dữ liệu
+        const reportSection = document.getElementById('reportSection');
+        if (reportSection) {
+            reportSection.style.display = 'block';
+            reportSection.classList.add('slide-up');
+        }
 
-// Reset tất cả displays về 0
-displaySummaryStats({ totalPaper: 0, totalWaste: 0 }, filters);
-displayProgressBar({ totalPaper: 0, totalWaste: 0 }, filters);
+        // Reset tất cả displays về 0
+        displaySummaryStats({ totalPaper: 0, totalWaste: 0 }, filters);
+        displayProgressBar({ totalPaper: 0, totalWaste: 0 }, filters);
 
-// Hiển thị thông báo trong phần phân tích
-const analysisContainer = document.getElementById('quantityAnalysis');
-if (analysisContainer) {
-    analysisContainer.innerHTML = `
+        // Hiển thị thông báo trong phần phân tích
+        const analysisContainer = document.getElementById('quantityAnalysis');
+        if (analysisContainer) {
+            analysisContainer.innerHTML = `
         <div class="text-center text-muted p-4">
             <i class="fas fa-search fa-3x text-muted mb-4"></i>
             <h4 class="text-muted">Không có dữ liệu phù hợp</h4>
@@ -499,55 +499,55 @@ if (analysisContainer) {
             </ul>
         </div>
     `;
-}
+        }
 
-// Tạo biểu đồ trống
-const totalChartCanvas = document.getElementById('quantityChart');
-const shiftChartCanvas = document.getElementById('macaChart');
-const timeChartCanvas = document.getElementById('timeChart');
+        // Tạo biểu đồ trống
+        const totalChartCanvas = document.getElementById('quantityChart');
+        const shiftChartCanvas = document.getElementById('macaChart');
+        const timeChartCanvas = document.getElementById('timeChart');
 
-if (totalChartCanvas) quantityChart = createEmptyChart(totalChartCanvas, 'Không có dữ liệu');
-if (shiftChartCanvas) macaChart = createEmptyChart(shiftChartCanvas, 'Không có dữ liệu ca');
-if (timeChartCanvas) timeChart = createEmptyChart(timeChartCanvas, 'Không có dữ liệu thời gian');
+        if (totalChartCanvas) quantityChart = createEmptyChart(totalChartCanvas, 'Không có dữ liệu');
+        if (shiftChartCanvas) macaChart = createEmptyChart(shiftChartCanvas, 'Không có dữ liệu ca');
+        if (timeChartCanvas) timeChart = createEmptyChart(timeChartCanvas, 'Không có dữ liệu thời gian');
 
-// Hiển thị bảng chi tiết trống
-displayDetailTable({ totalPaper: 0, totalWaste: 0, shiftData: [] }, filters);
+        // Hiển thị bảng chi tiết trống
+        displayDetailTable({ totalPaper: 0, totalWaste: 0, shiftData: [] }, filters);
 
-return;
-}
+        return;
+    }
 
-    
+
     // Hiển thị section báo cáo
     const reportSection = document.getElementById('reportSection');
     if (reportSection) {
         reportSection.style.display = 'block';
         reportSection.classList.add('slide-up');
     }
-    
-    // Hiển thị tóm tắt số liệu
-displaySummaryStats(data, filters);
 
-// Hiển thị thống kê thời gian
-displayTimeStats(data, filters);
-    
+    // Hiển thị tóm tắt số liệu
+    displaySummaryStats(data, filters);
+
+    // Hiển thị thống kê thời gian
+    displayTimeStats(data, filters);
+
     // Hiển thị progress bar
     displayProgressBar(data, filters);
-    
+
     // Hiển thị biểu đồ số lượng sản xuất
     displayQuantityCharts(data, filters);
-    
+
     // Hiển thị phân tích sản xuất (bảng)
     displayQuantityAnalysis(data, filters);;
-    
+
     // Hiển thị biểu đồ thời gian
     displayTimeCharts(data, filters)
-    
+
     // Hiển thị phân tích thời gian (lý do dừng máy)
     displayTimeAnalysis(data, filters);
 
     // Hiển thị bảng chi tiết
     displayDetailTable(data, filters);
-    
+
     // Lưu dữ liệu hiện tại
     currentChartData = data;
 }
@@ -559,11 +559,11 @@ displayTimeStats(data, filters);
 function displayReportInfo(data) {
     const customerName = document.getElementById('customerName');
     const productCode = document.getElementById('productCode');
-    
+
     if (customerName) {
         customerName.textContent = data.customer || '-';
     }
-    
+
     if (productCode) {
         productCode.textContent = data.product || '-';
     }
@@ -573,9 +573,9 @@ function displayReportInfo(data) {
 function displayFilterInfo(filters) {
     const filterInfo = document.getElementById('filterInfo');
     if (!filterInfo) return;
-    
+
     const filterItems = [];
-    
+
     if (filters.ws) filterItems.push(`<strong>WS:</strong> ${filters.ws}`);
     if (filters.maca) filterItems.push(`<strong>Ca:</strong> ${filters.maca}`);
     if (filters.may) filterItems.push(`<strong>Máy:</strong> ${filters.may}`);
@@ -583,11 +583,11 @@ function displayFilterInfo(filters) {
     if (filters.fromDate && filters.toDate) {
         filterItems.push(`<strong>Thời gian:</strong> ${formatDate(filters.fromDate)} - ${formatDate(filters.toDate)}`);
     }
-    
+
     if (filterItems.length === 0) {
         filterItems.push('<em>Không có điều kiện lọc</em>');
     }
-    
+
     filterInfo.innerHTML = filterItems.join('<br>');
 }
 
@@ -598,7 +598,7 @@ function displaySummaryStats(data, filters) {
         const totalPaper = document.getElementById('totalPaper');
         const totalWaste = document.getElementById('totalWaste');
         const totalData = document.getElementById('totalData');
-        
+
         if (totalPaper) totalPaper.textContent = '0';
         if (totalWaste) totalWaste.textContent = '0';
         if (totalData) totalData.textContent = '0';
@@ -607,32 +607,32 @@ function displaySummaryStats(data, filters) {
 
     // Nếu lọc theo mã ca cụ thể, chỉ hiển thị số liệu của ca đó
     let displayPaper = data.totalPaper || 0;
-let displayWaste = data.totalWaste || 0;
+    let displayWaste = data.totalWaste || 0;
 
-if (filters && filters.maca && data.shiftData) {
-    const shiftData = data.shiftData.find(shift => shift.shift === filters.maca);
-    if (shiftData) {
-        displayPaper = shiftData.paper || 0;
-        displayWaste = shiftData.waste || 0;
-    } else {
-        // Không tìm thấy dữ liệu cho mã ca này - reset về 0
-        displayPaper = 0;
-        displayWaste = 0;
+    if (filters && filters.maca && data.shiftData) {
+        const shiftData = data.shiftData.find(shift => shift.shift === filters.maca);
+        if (shiftData) {
+            displayPaper = shiftData.paper || 0;
+            displayWaste = shiftData.waste || 0;
+        } else {
+            // Không tìm thấy dữ liệu cho mã ca này - reset về 0
+            displayPaper = 0;
+            displayWaste = 0;
+        }
     }
-}
 
     const totalPaper = document.getElementById('totalPaper');
     const totalWaste = document.getElementById('totalWaste');
     const totalData = document.getElementById('totalData');
-    
+
     if (totalPaper) {
         totalPaper.textContent = formatNumber(displayPaper);
     }
-    
+
     if (totalWaste) {
         totalWaste.textContent = formatNumber(displayWaste);
     }
-    
+
     if (totalData) {
         totalData.textContent = formatNumber(displayPaper + displayWaste);
     }
@@ -643,46 +643,46 @@ if (filters && filters.maca && data.shiftData) {
 // Hiển thị thống kê thời gian
 function displayTimeStats(data, filters) {
     // Tính thời gian dừng máy (thời gian khác)
-const stopTime = data.stopReasons ? 
-data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
+    const stopTime = data.stopReasons ?
+        data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
 
-// Tính tổng thời gian từ dữ liệu thực tế (thời gian kết thúc - thời gian bắt đầu)
-let totalTime = 0;
-if (data.reports && data.reports.length > 0) {
-    totalTime = data.reports.reduce((sum, report) => {
-        if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
-            const start = new Date(report.thoi_gian_bat_dau);
-            const end = new Date(report.thoi_gian_ket_thuc);
-            
-            // Với định dạng ISO, ca đêm sẽ có ngày khác nhau
-            // Nếu end < start, có nghĩa là ca đêm qua ngày hôm sau
-            let diff = (end - start) / (1000 * 60); // phút
-            
-            // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
-            if (diff < 0) {
-                diff += 24 * 60; // cộng 24 giờ = 1440 phút
+    // Tính tổng thời gian từ dữ liệu thực tế (thời gian kết thúc - thời gian bắt đầu)
+    let totalTime = 0;
+    if (data.reports && data.reports.length > 0) {
+        totalTime = data.reports.reduce((sum, report) => {
+            if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+                const start = new Date(report.thoi_gian_bat_dau);
+                const end = new Date(report.thoi_gian_ket_thuc);
+
+                // Với định dạng ISO, ca đêm sẽ có ngày khác nhau
+                // Nếu end < start, có nghĩa là ca đêm qua ngày hôm sau
+                let diff = (end - start) / (1000 * 60); // phút
+
+                // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
+                if (diff < 0) {
+                    diff += 24 * 60; // cộng 24 giờ = 1440 phút
+                }
+
+                return sum + diff;
             }
-            
-            return sum + diff;
-        }
-        return sum;
-    }, 0);
-} else {
-    totalTime = data.timeData?.totalTime || 0;
-}
-const setupTime = data.timeData?.setupTime || 0;
+            return sum;
+        }, 0);
+    } else {
+        totalTime = data.timeData?.totalTime || 0;
+    }
+    const setupTime = data.timeData?.setupTime || 0;
 
-// Thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
-const runTime = Math.max(0, totalTime - setupTime - stopTime);
+    // Thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
+    const runTime = Math.max(0, totalTime - setupTime - stopTime);
 
-// Thời gian làm việc = tổng thời gian - thời gian dừng máy
-const workTime = Math.max(0, totalTime - stopTime);
-    
+    // Thời gian làm việc = tổng thời gian - thời gian dừng máy
+    const workTime = Math.max(0, totalTime - stopTime);
+
     // Lọc theo mã ca nếu có
     let displayWorkTime = workTime;
     let displayStopTime = stopTime;
     let displayTotalTime = totalTime;
-    
+
     if (filters && filters.maca && data.shiftData) {
         const shiftData = data.shiftData.find(shift => shift.shift === filters.maca);
         if (shiftData) {
@@ -690,7 +690,7 @@ const workTime = Math.max(0, totalTime - stopTime);
             const totalWaste = data.totalWaste || 0;
             const grandTotal = totalPaper + totalWaste;
             const shiftTotal = (shiftData.paper || 0) + (shiftData.waste || 0);
-            
+
             if (grandTotal > 0) {
                 const ratio = shiftTotal / grandTotal;
                 displayTotalTime = Math.round(totalTime * ratio);
@@ -701,16 +701,16 @@ const workTime = Math.max(0, totalTime - stopTime);
             }
         }
     }
-    
+
     // Cập nhật display
     const totalTimeEl = document.getElementById('totalTimeDisplay');
     const workTimeEl = document.getElementById('workTimeDisplay');
     const stopTimeEl = document.getElementById('stopTimeDisplay');
-    
+
     if (totalTimeEl) totalTimeEl.textContent = formatDuration(displayTotalTime);
     if (workTimeEl) workTimeEl.textContent = formatDuration(displayWorkTime);
     if (stopTimeEl) stopTimeEl.textContent = formatDuration(displayStopTime);
-    
+
     // Cập nhật progress bar thời gian
     displayTimeProgressBar(displayWorkTime, displayStopTime, displayTotalTime);
 }
@@ -721,42 +721,42 @@ const workTime = Math.max(0, totalTime - stopTime);
 function displayTimeProgressBar(workTime, stopTime, totalTime) {
     // Tính tổng cho thanh tiến độ = chỉ gồm thời gian làm việc + thời gian dừng máy
     const progressTotal = workTime + stopTime;
-    
+
     if (progressTotal === 0) {
         const workProgress = document.getElementById('workTimeProgress');
         const stopProgress = document.getElementById('stopTimeProgress');
         const workPercentSpan = document.getElementById('workTimePercent');
         const stopPercentSpan = document.getElementById('stopTimePercent');
-        
+
         if (workProgress) workProgress.style.width = '0%';
         if (stopProgress) stopProgress.style.width = '0%';
         if (workPercentSpan) workPercentSpan.textContent = '0%';
         if (stopPercentSpan) stopPercentSpan.textContent = '0%';
         return;
     }
-    
+
     const workPercent = (workTime / progressTotal) * 100;
     const stopPercent = (stopTime / progressTotal) * 100;
-    
+
     const workProgress = document.getElementById('workTimeProgress');
     const stopProgress = document.getElementById('stopTimeProgress');
     const workPercentSpan = document.getElementById('workTimePercent');
     const stopPercentSpan = document.getElementById('stopTimePercent');
-    
+
     if (workProgress) {
         workProgress.style.width = workPercent + '%';
         workProgress.setAttribute('aria-valuenow', workPercent);
     }
-    
+
     if (stopProgress) {
         stopProgress.style.width = stopPercent + '%';
         stopProgress.setAttribute('aria-valuenow', stopPercent);
     }
-    
+
     if (workPercentSpan) {
         workPercentSpan.textContent = workPercent.toFixed(1) + '%';
     }
-    
+
     if (stopPercentSpan) {
         stopPercentSpan.textContent = stopPercent.toFixed(1) + '%';
     }
@@ -768,57 +768,57 @@ function displayTimeProgressBar(workTime, stopTime, totalTime) {
 // Hiển thị progress bar
 function displayProgressBar(data, filters) {
     // Nếu lọc theo mã ca cụ thể, chỉ tính tổng của ca đó
-let totalPaper = data.totalPaper || 0;
-let totalWaste = data.totalWaste || 0;
+    let totalPaper = data.totalPaper || 0;
+    let totalWaste = data.totalWaste || 0;
 
-if (filters && filters.maca && data.shiftData) {
-    const shiftData = data.shiftData.find(shift => shift.shift === filters.maca);
-    if (shiftData) {
-        totalPaper = shiftData.paper || 0;
-        totalWaste = shiftData.waste || 0;
+    if (filters && filters.maca && data.shiftData) {
+        const shiftData = data.shiftData.find(shift => shift.shift === filters.maca);
+        if (shiftData) {
+            totalPaper = shiftData.paper || 0;
+            totalWaste = shiftData.waste || 0;
+        }
     }
-}
 
-const total = totalPaper + totalWaste;
-    
+    const total = totalPaper + totalWaste;
+
     if (total === 0) {
         // Reset progress bar về 0
         const paperProgress = document.getElementById('paperProgress');
         const wasteProgress = document.getElementById('wasteProgress');
         const paperPercentSpan = document.getElementById('paperPercent');
         const wastePercentSpan = document.getElementById('wastePercent');
-        
+
         if (paperProgress) paperProgress.style.width = '0%';
         if (wasteProgress) wasteProgress.style.width = '0%';
         if (paperPercentSpan) paperPercentSpan.textContent = '0%';
         if (wastePercentSpan) wastePercentSpan.textContent = '0%';
         return;
     }
-    
+
     if (total === 0) return;
-    
+
     const paperPercent = (totalPaper / total) * 100;
-const wastePercent = (totalWaste / total) * 100;
-    
+    const wastePercent = (totalWaste / total) * 100;
+
     const paperProgress = document.getElementById('paperProgress');
     const wasteProgress = document.getElementById('wasteProgress');
     const paperPercentSpan = document.getElementById('paperPercent');
     const wastePercentSpan = document.getElementById('wastePercent');
-    
+
     if (paperProgress) {
         paperProgress.style.width = paperPercent + '%';
         paperProgress.setAttribute('aria-valuenow', paperPercent);
     }
-    
+
     if (wasteProgress) {
         wasteProgress.style.width = wastePercent + '%';
         wasteProgress.setAttribute('aria-valuenow', wastePercent);
     }
-    
+
     if (paperPercentSpan) {
         paperPercentSpan.textContent = paperPercent.toFixed(1) + '%';
     }
-    
+
     if (wastePercentSpan) {
         wastePercentSpan.textContent = wastePercent.toFixed(1) + '%';
     }
@@ -831,10 +831,10 @@ function displayPieChart(data) {
         pieChart.destroy();
         pieChart = null;
     }
-    
+
     const ctx = document.getElementById('pieChart');
     if (!ctx) return;
-    
+
     pieChart = new Chart(ctx, {
         type: 'pie',
         data: chartData,
@@ -852,7 +852,7 @@ function displayPieChart(data) {
                 },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percent = ((context.parsed / total) * 100).toFixed(1);
                             return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
@@ -869,7 +869,7 @@ function displayPieChart(data) {
 
 function displayQuantityCharts(data, filters) {
     console.log('🎯 Hiển thị biểu đồ số lượng sản xuất với filters:', filters);
-    
+
     // Destroy chart cũ
     if (quantityChart) {
         quantityChart.destroy();
@@ -879,60 +879,60 @@ function displayQuantityCharts(data, filters) {
         macaChart.destroy();
         macaChart = null;
     }
-    
+
     // Lấy 2 canvas có sẵn
     const totalChartCanvas = document.getElementById('quantityChart');
     const shiftChartCanvas = document.getElementById('macaChart');
-    
+
     if (!totalChartCanvas || !shiftChartCanvas) {
         console.error('Không tìm thấy canvas biểu đồ');
         return;
     }
-    
+
     // Xác định logic hiển thị
     const hasSpecificMacaFilter = (filters.maca && filters.maca.trim() !== '');
-    
+
     console.log('🔍 Kiểm tra filter mã ca:', hasSpecificMacaFilter, 'Giá trị mã ca:', filters.maca);
     console.log('🔍 Số ca trong dữ liệu:', data.shiftData ? data.shiftData.length : 0);
-    
+
     // Luôn hiển thị cả 2 container
-const totalContainer = totalChartCanvas.closest('.col-md-6');
-const shiftContainer = shiftChartCanvas.closest('.col-md-6');
+    const totalContainer = totalChartCanvas.closest('.col-md-6');
+    const shiftContainer = shiftChartCanvas.closest('.col-md-6');
 
-if (totalContainer) totalContainer.style.display = 'block';
-if (shiftContainer) shiftContainer.style.display = 'block';
+    if (totalContainer) totalContainer.style.display = 'block';
+    if (shiftContainer) shiftContainer.style.display = 'block';
 
-// Tạo biểu đồ tổng
-quantityChart = createTotalQuantityChartOnCanvas(totalChartCanvas, data);
+    // Tạo biểu đồ tổng
+    quantityChart = createTotalQuantityChartOnCanvas(totalChartCanvas, data);
 
-// Tạo biểu đồ từng ca
-if (data.shiftData && data.shiftData.length > 0) {
-    console.log('📊 Có', data.shiftData.length, 'ca - hiển thị biểu đồ từng ca');
-    
-    // Nếu lọc mã ca cụ thể, chỉ hiển thị ca đó
-    const displayShiftData = hasSpecificMacaFilter ? 
-        data.shiftData.filter(shift => shift.shift === filters.maca) : 
-        data.shiftData;
-    
-    if (displayShiftData.length > 0) {
-        createMultipleShiftCharts(shiftChartCanvas, displayShiftData);
+    // Tạo biểu đồ từng ca
+    if (data.shiftData && data.shiftData.length > 0) {
+        console.log('📊 Có', data.shiftData.length, 'ca - hiển thị biểu đồ từng ca');
+
+        // Nếu lọc mã ca cụ thể, chỉ hiển thị ca đó
+        const displayShiftData = hasSpecificMacaFilter ?
+            data.shiftData.filter(shift => shift.shift === filters.maca) :
+            data.shiftData;
+
+        if (displayShiftData.length > 0) {
+            createMultipleShiftCharts(shiftChartCanvas, displayShiftData);
+        } else {
+            macaChart = createEmptyChart(shiftChartCanvas, `Không có dữ liệu ca ${filters.maca}`);
+        }
     } else {
-        macaChart = createEmptyChart(shiftChartCanvas, `Không có dữ liệu ca ${filters.maca}`);
-    }
-} else {
         // Người dùng KHÔNG chọn mã ca cụ thể - hiển thị tổng + từng ca
         console.log('📊 Hiển thị biểu đồ tổng + từng ca');
-        
+
         // Hiển thị cả 2 container
         const totalContainer = totalChartCanvas.closest('.col-md-6');
         const shiftContainer = shiftChartCanvas.closest('.col-md-6');
-        
+
         if (totalContainer) totalContainer.style.display = 'block';
         if (shiftContainer) shiftContainer.style.display = 'block';
-        
+
         // Tạo biểu đồ tổng
         quantityChart = createTotalQuantityChartOnCanvas(totalChartCanvas, data);
-        
+
         // Tạo biểu đồ từng ca
         if (data.shiftData && data.shiftData.length > 0) {
             console.log('📊 Có', data.shiftData.length, 'ca - hiển thị biểu đồ từng ca');
@@ -953,7 +953,7 @@ function displayNoDataChart(canvas, message) {
     // Tìm card-body chứa canvas
     const cardBody = canvas.closest('.card-body');
     if (!cardBody) return;
-    
+
     // Thay thế nội dung card-body
     cardBody.innerHTML = `
         <div class="text-center text-muted p-4">
@@ -969,12 +969,12 @@ function displayNoDataChart(canvas, message) {
 function createTotalQuantityChartOnCanvas(canvas, data) {
     const totalPaper = data.totalPaper || 0;
     const totalWaste = data.totalWaste || 0;
-    
-    console.log('🎯 Tạo biểu đồ tổng với dữ liệu:', {totalPaper, totalWaste});
+
+    console.log('🎯 Tạo biểu đồ tổng với dữ liệu:', { totalPaper, totalWaste });
     console.log('🎯 Canvas element:', canvas);
     console.log('🎯 Canvas ID:', canvas.id);
     console.log('🎯 Canvas parent:', canvas.parentElement);
-    
+
     try {
         return new Chart(canvas, {
             type: 'pie',
@@ -1019,7 +1019,7 @@ function createTotalQuantityChartOnCanvas(canvas, data) {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
                                 return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
@@ -1033,7 +1033,7 @@ function createTotalQuantityChartOnCanvas(canvas, data) {
                             size: 14,
                             weight: 'bold'
                         },
-                        formatter: function(value, context) {
+                        formatter: function (value, context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                             return percent + '%';
@@ -1055,25 +1055,25 @@ function createMultipleShiftCharts(canvas, shiftData) {
     // Giữ nguyên canvas gốc, chỉ thay đổi nội dung card-body chứa nó
     const cardBody = canvas.closest('.card-body');
     if (!cardBody) return;
-    
+
     // Ẩn canvas gốc
     canvas.style.display = 'none';
-    
+
     // Tạo container mới cho multiple charts
     const existingMultiContainer = cardBody.querySelector('.multi-shift-charts');
     if (existingMultiContainer) {
         existingMultiContainer.remove();
     }
-    
+
     const multiContainer = document.createElement('div');
     multiContainer.className = 'multi-shift-charts';
-    
+
     let html = '<div class="row justify-content-center">';
-    
+
     shiftData.forEach((shift, index) => {
         const canvasId = `shiftChart_${index}`;
         const colClass = shiftData.length <= 2 ? 'col-md-6' : 'col-md-4';
-        
+
         html += `
             <div class="${colClass} mb-3">
                 <div class="text-center">
@@ -1085,17 +1085,17 @@ function createMultipleShiftCharts(canvas, shiftData) {
             </div>
         `;
     });
-    
+
     html += '</div>';
-    
+
     multiContainer.innerHTML = html;
     cardBody.appendChild(multiContainer);
-    
+
     // Tạo biểu đồ cho từng ca
     shiftData.forEach((shift, index) => {
         const canvasId = `shiftChart_${index}`;
         const canvasElement = document.getElementById(canvasId);
-        
+
         if (canvasElement) {
             createSingleShiftPieChart(canvasElement, shift);
         }
@@ -1108,7 +1108,7 @@ function createSingleShiftPieChart(canvas, shiftData) {
     const paper = shiftData.paper || 0;
     const waste = shiftData.waste || 0;
     const total = paper + waste;
-    
+
     if (total === 0) {
         // Hiển thị thông báo không có dữ liệu
         const container = canvas.parentElement;
@@ -1120,7 +1120,7 @@ function createSingleShiftPieChart(canvas, shiftData) {
         `;
         return;
     }
-    
+
     new Chart(canvas, {
         type: 'pie',
         data: {
@@ -1159,7 +1159,7 @@ function createSingleShiftPieChart(canvas, shiftData) {
                 },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
                             return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
                         }
@@ -1172,7 +1172,7 @@ function createSingleShiftPieChart(canvas, shiftData) {
                         size: 12,
                         weight: 'bold'
                     },
-                    formatter: function(value, context) {
+                    formatter: function (value, context) {
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
                         const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                         return percent + '%';
@@ -1193,13 +1193,13 @@ function createSingleShiftChartOnCanvas(canvas, data, shiftName) {
             datasets: [{
                 data: [data.totalPaper || 0, data.totalWaste || 0],
                 backgroundColor: [
-                        'rgb(174,207,188)',
-                        'rgb(248,179,181)'
-                    ],
-                    borderColor: [
-                        'rgb(148, 199, 169)',
-                        'rgb(255, 141, 152)'
-                    ],
+                    'rgb(174,207,188)',
+                    'rgb(248,179,181)'
+                ],
+                borderColor: [
+                    'rgb(148, 199, 169)',
+                    'rgb(255, 141, 152)'
+                ],
                 borderWidth: 2
             }]
         },
@@ -1229,7 +1229,7 @@ function createSingleShiftChartOnCanvas(canvas, data, shiftName) {
                 },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
                             return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
@@ -1243,7 +1243,7 @@ function createSingleShiftChartOnCanvas(canvas, data, shiftName) {
                         size: 14,
                         weight: 'bold'
                     },
-                    formatter: function(value, context) {
+                    formatter: function (value, context) {
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
                         const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                         return percent + '%';
@@ -1259,27 +1259,50 @@ function createSingleShiftChartOnCanvas(canvas, data, shiftName) {
 function displayQuantityAnalysis(data, filters) {
     const analysisContainer = document.getElementById('quantityAnalysis');
     if (!analysisContainer) return;
-    
+
     console.log('📊 Hiển thị phân tích với dữ liệu:', data);
-    
+
     let html = '';
-    
+
     if (data.shiftData && data.shiftData.length > 0) {
-    // Lọc dữ liệu theo mã ca nếu có
-    const displayData = filters && filters.maca ? 
-        data.shiftData.filter(shift => shift.shift === filters.maca) : 
-        data.shiftData;
-    
-    if (displayData.length === 0) {
-        html = `
+        // Lọc dữ liệu theo mã ca nếu có
+        const displayData = filters && filters.maca ?
+            data.shiftData.filter(shift => shift.shift === filters.maca) :
+            data.shiftData;
+
+        if (displayData.length === 0) {
+            html = `
             <div class="text-center text-muted p-4">
                 <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
                 <h5>Không có dữ liệu cho mã ca ${filters.maca}</h5>
                 <p>Vui lòng kiểm tra lại điều kiện lọc.</p>
             </div>
         `;
-    } else {
-        html += `
+        } else {
+            // Sắp xếp dữ liệu theo mã ca theo thứ tự A-B-C-D-A1-B1-AB-AB--AB+-HC
+            displayData.sort((a, b) => {
+                const aShift = a.shift.toString().toUpperCase();
+                const bShift = b.shift.toString().toUpperCase();
+
+                // Định nghĩa thứ tự ưu tiên
+                const order = ['A', 'B', 'C', 'D', 'A1', 'B1', 'AB', 'AB-', 'AB+', 'HC'];
+
+                const aIndex = order.indexOf(aShift);
+                const bIndex = order.indexOf(bShift);
+
+                // Nếu cả hai đều có trong danh sách ưu tiên
+                if (aIndex !== -1 && bIndex !== -1) {
+                    return aIndex - bIndex;
+                }
+
+                // Nếu chỉ có một trong hai có trong danh sách ưu tiên
+                if (aIndex !== -1) return -1;
+                if (bIndex !== -1) return 1;
+
+                // Nếu cả hai đều không có trong danh sách ưu tiên, sắp xếp theo alphabet
+                return aShift.localeCompare(bShift);
+            });
+            html += `
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
                     <thead class="table-dark">
@@ -1295,15 +1318,15 @@ function displayQuantityAnalysis(data, filters) {
                     </thead>
                     <tbody>
         `;
-        
-        displayData.forEach(shift => {
-            const paper = shift.paper || 0;
-            const waste = shift.waste || 0;
-            const total = paper + waste;
-            const paperRate = total > 0 ? ((paper / total) * 100).toFixed(1) : 0;
-            const wasteRate = total > 0 ? ((waste / total) * 100).toFixed(1) : 0;
-            
-            html += `
+
+            displayData.forEach(shift => {
+                const paper = shift.paper || 0;
+                const waste = shift.waste || 0;
+                const total = paper + waste;
+                const paperRate = total > 0 ? ((paper / total) * 100).toFixed(1) : 0;
+                const wasteRate = total > 0 ? ((waste / total) * 100).toFixed(1) : 0;
+
+                html += `
                 <tr>
                     <td><strong>Ca ${shift.shift}</strong></td>
                     <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${shift.may || 'Tất cả'}</span></td>
@@ -1322,22 +1345,22 @@ function displayQuantityAnalysis(data, filters) {
                     </td>
                 </tr>
             `;
-        });
-        
-        html += `
+            });
+
+            html += `
                     </tbody>
                 </table>
             </div>
         `;
-        
-        // Thống kê chỉ cho dữ liệu được hiển thị
-        const totalPaper = displayData.reduce((sum, shift) => sum + (shift.paper || 0), 0);
-        const totalWaste = displayData.reduce((sum, shift) => sum + (shift.waste || 0), 0);
-        const grandTotal = totalPaper + totalWaste;
-        const totalPaperRate = grandTotal > 0 ? ((totalPaper / grandTotal) * 100).toFixed(1) : 0;
-        const totalWasteRate = grandTotal > 0 ? ((totalWaste / grandTotal) * 100).toFixed(1) : 0;
-        
-        html += `
+
+            // Thống kê chỉ cho dữ liệu được hiển thị
+            const totalPaper = displayData.reduce((sum, shift) => sum + (shift.paper || 0), 0);
+            const totalWaste = displayData.reduce((sum, shift) => sum + (shift.waste || 0), 0);
+            const grandTotal = totalPaper + totalWaste;
+            const totalPaperRate = grandTotal > 0 ? ((totalPaper / grandTotal) * 100).toFixed(1) : 0;
+            const totalWasteRate = grandTotal > 0 ? ((totalWaste / grandTotal) * 100).toFixed(1) : 0;
+
+            html += `
             <div class="row mt-3">
                 <div class="col-md-4">
                     <div class="card bg-light">
@@ -1365,17 +1388,17 @@ function displayQuantityAnalysis(data, filters) {
                 </div>
             </div>
         `;
-    }
-} else {
-    html = `
+        }
+    } else {
+        html = `
         <div class="text-center text-muted p-4">
             <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
             <h5>Không có dữ liệu phù hợp với điều kiện lọc</h5>
             <p>Vui lòng kiểm tra lại mã ca hoặc khoảng thời gian đã chọn.</p>
         </div>
     `;
-}
-    
+    }
+
     analysisContainer.innerHTML = html;
 }
 
@@ -1436,68 +1459,71 @@ function displayTimeCharts(data, filters) {
         timeChart.destroy();
         timeChart = null;
     }
-    
+
     const timeCtx = document.getElementById('timeChart');
     if (!timeCtx) return;
-    
-// Tính toán thời gian - nếu lọc theo mã ca thì tính theo tỷ lệ
-// Tính tổng thời gian từ dữ liệu thực tế
-let totalTime = 0;
-if (data.reports && data.reports.length > 0) {
-    totalTime = data.reports.reduce((sum, report) => {
-        if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
-            const start = new Date(report.thoi_gian_bat_dau);
-            const end = new Date(report.thoi_gian_ket_thuc);
-            
-            let diff = (end - start) / (1000 * 60); // phút
-            
-            // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
-            if (diff < 0) {
-                diff += 24 * 60; // cộng 24 giờ = 1440 phút
-            }
-            
-            return sum + diff;
-        }
-        return sum;
-    }, 0);
-} else {
-    totalTime = data.timeData?.totalTime || 0;
-}
-let setupTime = data.timeData?.setupTime || 0;
-let otherTime = data.stopReasons ? 
-    data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
 
-if (filters && filters.maca && data.shiftData) {
-    const shiftData = data.shiftData.find(shift => shift.shift === filters.maca);
-    if (shiftData) {
-        // Tính tỷ lệ thời gian theo tỷ lệ sản xuất
-        const totalPaper = data.totalPaper || 0;
-        const totalWaste = data.totalWaste || 0;
-        const grandTotal = totalPaper + totalWaste;
-        const shiftTotal = (shiftData.paper || 0) + (shiftData.waste || 0);
-        
-        if (grandTotal > 0) {
-            const ratio = shiftTotal / grandTotal;
-            totalTime = Math.round(totalTime * ratio);
-            setupTime = Math.round(setupTime * ratio);
-            otherTime = Math.round(otherTime * ratio);
+    // Tính toán thời gian - nếu lọc theo mã ca thì tính theo tỷ lệ
+    // Tính tổng thời gian từ dữ liệu thực tế
+    let totalTime = 0;
+    if (data.reports && data.reports.length > 0) {
+        totalTime = data.reports.reduce((sum, report) => {
+            if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+                const start = new Date(report.thoi_gian_bat_dau);
+                const end = new Date(report.thoi_gian_ket_thuc);
+
+                let diff = (end - start) / (1000 * 60); // phút
+
+                // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
+                if (diff < 0) {
+                    diff += 24 * 60; // cộng 24 giờ = 1440 phút
+                }
+
+                return sum + diff;
+            }
+            return sum;
+        }, 0);
+    } else {
+        totalTime = data.timeData?.totalTime || 0;
+    }
+
+    // Sử dụng totalTime làm totalWorkTime (TG kết thúc - TG bắt đầu)
+    const totalWorkTime = totalTime;
+
+    let setupTime = data.timeData?.setupTime || 0;
+    let otherTime = data.stopReasons ? data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
+
+    if (filters && filters.maca && data.shiftData) {
+        const shiftData = data.shiftData.find(shift => shift.shift === filters.maca);
+        if (shiftData) {
+            // Tính tỷ lệ thời gian theo tỷ lệ sản xuất
+            const totalPaper = data.totalPaper || 0;
+            const totalWaste = data.totalWaste || 0;
+            const grandTotal = totalPaper + totalWaste;
+            const shiftTotal = (shiftData.paper || 0) + (shiftData.waste || 0);
+
+            if (grandTotal > 0) {
+                const ratio = shiftTotal / grandTotal;
+                totalTime = Math.round(totalTime * ratio);
+                setupTime = Math.round(setupTime * ratio);
+                otherTime = Math.round(otherTime * ratio);
+            }
         }
     }
-}
 
-// Thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
-const runTime = Math.max(0, totalTime - setupTime - otherTime);
+    // Thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
+    const runTime = Math.max(0, totalWorkTime - setupTime - otherTime);
 
 
-console.log('🔍 DEBUG thời gian trong displayTimeCharts:');
-console.log('- Total time:', totalTime, 'phút');
-console.log('- Setup time:', setupTime, 'phút');
-console.log('- Other time (dừng máy):', otherTime, 'phút');
-console.log('- Run time (tính toán):', totalTime - setupTime - otherTime);
-console.log('- Run time (sau Math.max):', runTime);
-    
+    console.log('🔍 DEBUG thời gian trong displayTimeCharts:');
+    console.log('- Total time:', totalTime, 'phút');
+    console.log('- Setup time:', setupTime, 'phút');
+    console.log('- Other time (dừng máy):', otherTime, 'phút');
+    console.log('- Run time (tính toán):', totalTime - setupTime - otherTime);
+    console.log('- Run time (sau Math.max):', runTime);
+
     console.log('⏰ Dữ liệu thời gian:', { runTime, setupTime, otherTime, totalTime });
-    
+
     timeChart = new Chart(timeCtx, {
         type: 'pie',
         data: {
@@ -1505,14 +1531,14 @@ console.log('- Run time (sau Math.max):', runTime);
             datasets: [{
                 data: [runTime, setupTime, otherTime],
                 backgroundColor: [
-                    'rgb(167,190,211)',    // Xanh lá - chạy máy
-                    'rgb(218,184,148)',    // Vàng - canh máy  
-                    'rgb(240,128,128)'     // Đỏ - khác
+                    'rgb(175, 196, 215)',  // Xanh dương pastel dịu (thay cho xanh lá quá đậm)
+                    'rgb(225, 203, 161)',  // Vàng kem pastel (dịu hơn)
+                    'rgb(243, 174, 174)'   // Hồng nhạt pastel (dịu thay đỏ)
                 ],
                 borderColor: [
-                    'rgb(144, 169, 192)',    // Xanh lá - chạy máy
-                    'rgb(196, 162, 126)',    // Vàng - canh máy  
-                    'rgb(199, 105, 105)'     // Đỏ - khác
+                    'rgb(165, 190, 214)',  // Xanh dương pastel viền
+                    'rgb(223, 201, 158)',  // Vàng kem viền
+                    'rgb(221, 152, 152)'   // Hồng pastel viền
                 ],
                 borderWidth: 2
             }]
@@ -1535,7 +1561,7 @@ console.log('- Run time (sau Math.max):', runTime);
                 },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
                             return `${context.label}: ${formatDuration(context.parsed)} (${percent}%)`;
@@ -1549,7 +1575,7 @@ console.log('- Run time (sau Math.max):', runTime);
                         size: 14,
                         weight: 'bold'
                     },
-                    formatter: function(value, context) {
+                    formatter: function (value, context) {
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
                         const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                         return percent + '%';
@@ -1558,12 +1584,16 @@ console.log('- Run time (sau Math.max):', runTime);
             }
         }
     });
-    
-    // Tạo biểu đồ lý do dừng máy
-displayStopReasonChart(data, filters);
 
-// Cập nhật thông tin thời gian ở bên phân tích
-updateTimeAnalysisInfo(data.timeData);
+    // Tạo biểu đồ lý do dừng máy
+    displayStopReasonChart(data, filters);
+
+    // Cập nhật thông tin thời gian ở bên phân tích
+updateTimeAnalysisInfo({
+    totalTime: totalTime,
+    setupTime: setupTime,
+    otherTime: otherTime // Truyền otherTime đã tính toán
+});
 }
 
 
@@ -1575,16 +1605,16 @@ function displayStopReasonChart(data, filters) {
         stopReasonChart.destroy();
         stopReasonChart = null;
     }
-    
+
     const stopReasonCtx = document.getElementById('stopReasonChart');
     if (!stopReasonCtx) return;
-    
+
     // Kiểm tra có dữ liệu lý do dừng máy không
     if (!data.stopReasons || data.stopReasons.length === 0) {
         stopReasonChart = createEmptyChart(stopReasonCtx, 'Không có lý do dừng máy');
         return;
     }
-    
+
     // Lọc dữ liệu theo mã ca nếu có
     let displayStopReasons = data.stopReasons;
     if (filters && filters.maca && data.shiftData) {
@@ -1595,7 +1625,7 @@ function displayStopReasonChart(data, filters) {
             const totalWaste = data.totalWaste || 0;
             const grandTotal = totalPaper + totalWaste;
             const shiftTotal = (shiftData.paper || 0) + (shiftData.waste || 0);
-            
+
             if (grandTotal > 0) {
                 const ratio = shiftTotal / grandTotal;
                 displayStopReasons = data.stopReasons.map(reason => ({
@@ -1605,30 +1635,32 @@ function displayStopReasonChart(data, filters) {
             }
         }
     }
-    
+
     if (displayStopReasons.length === 0) {
         stopReasonChart = createEmptyChart(stopReasonCtx, 'Không có lý do dừng máy');
         return;
     }
-    
+
     const labels = displayStopReasons.map(item => item.reason);
     const durations = displayStopReasons.map(item => item.duration);
-    
+
     // Tạo màu sắc cho từng lý do
     const colors = [
-        'rgb(148, 185, 219)',  // xanh dương pastel
-        'rgb(229, 148, 148)',  // đỏ pastel
-        'rgb(150, 208, 162)',  // xanh lá pastel
-'rgb(179, 154, 228)',  // tím pastel
-'rgb(224, 219, 152)',  // vàng pastel
-'rgb(205, 170, 125)',  // nâu pastel
-'rgb(223, 178, 133)',  // cam pastel
-'rgb(174, 171, 171)',  // xám pastel
-'rgb(130, 174, 174)',  // xanh đậm pastel (teal nhẹ)
-'rgb(214, 153, 162)',  // hồng pastel
-'rgb(141, 150, 193)',  // xanh tím than nhạt (đậm đằm)
+        'rgb(137, 192, 217)',  // xanh baby blue đậm hơn
+        'rgb(240, 143, 160)',  // hồng pastel đậm
+        'rgb(138, 209, 158)',  // xanh lá mint đậm
+        'rgb(189, 139, 197)',  // tím pastel đậm
+        'rgb(236, 229, 125)',  // vàng mỡ gà pastel
+        'rgb(212, 177, 134)',  // nâu sáng đậm pastel
+        'rgb(112, 194, 194)',  // xanh teal dịu đậm
+        'rgb(255, 170, 102)',  // cam đào đậm pastel
+        'rgb(184, 184, 184)',  // xám trung tính pastel
+        'rgb(129, 144, 190)',  // xanh tím pastel đậm
+        'rgb(226, 135, 161)',  // hồng dâu pastel đậm
+        'rgb(193, 176, 226)',  // lavender đậm pastel
+        'rgb(228, 200, 168)',  // be đậm pastel
     ];
-    
+
     stopReasonChart = new Chart(stopReasonCtx, {
         type: 'pie',
         data: {
@@ -1652,13 +1684,16 @@ function displayStopReasonChart(data, filters) {
                 legend: {
                     position: 'bottom',
                     labels: {
-                        padding: 15,
-                        usePointStyle: true
+                        padding: 20,
+                        usePointStyle: true,
+                        font: {
+                            size: 12
+                        }
                     }
                 },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
                             return `${context.label}: ${formatDuration(context.parsed)} (${percent}%)`;
@@ -1666,17 +1701,23 @@ function displayStopReasonChart(data, filters) {
                     }
                 },
                 datalabels: {
-                    display: true,
+                    display: function (context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percent = total > 0 ? ((context.parsed / total) * 100) : 0;
+                        return percent >= 5; // Chỉ hiển thị label nếu >= 5%
+                    },
                     color: 'white',
                     font: {
-                        size: 12,
+                        size: 11,
                         weight: 'bold'
                     },
-                    formatter: function(value, context) {
+                    formatter: function (value, context) {
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
                         const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                         return percent + '%';
-                    }
+                    },
+                    anchor: 'center',
+                    align: 'center'
                 }
             }
         }
@@ -1691,48 +1732,47 @@ function updateTimeAnalysisInfo(timeData) {
     const setupTimeEl = document.getElementById('setupTime');
     const otherTimeEl = document.getElementById('otherTime');
     const totalTimeEl = document.getElementById('totalTime');
-    
+
     if (timeData) {
         const setupTime = timeData.setupTime || 0;
-        const otherTime = currentChartData && currentChartData.stopReasons ? 
-    currentChartData.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
+        const otherTime = timeData.otherTime || 0; // Lấy trực tiếp từ tham số
         // Tính tổng thời gian từ dữ liệu báo cáo thực tế
-let totalTime = 0;
-if (currentChartData && currentChartData.reports) {
+        let totalTime = 0;
+        if (currentChartData && currentChartData.reports) {
 
-    console.log('🔍 DEBUG currentChartData.reports:', currentChartData.reports.length, 'báo cáo');
-    console.log('🔍 DEBUG timeData:', timeData);
+            console.log('🔍 DEBUG currentChartData.reports:', currentChartData.reports.length, 'báo cáo');
+            console.log('🔍 DEBUG timeData:', timeData);
 
 
-    totalTime = currentChartData.reports.reduce((sum, report) => {
-        if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
-            const start = new Date(report.thoi_gian_bat_dau);
-            const end = new Date(report.thoi_gian_ket_thuc);
-            
-            let diff = (end - start) / (1000 * 60); // phút
-            
-            // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
-            if (diff < 0) {
-                diff += 24 * 60; // cộng 24 giờ = 1440 phút
-            }
-            
-            return sum + diff;
+            totalTime = currentChartData.reports.reduce((sum, report) => {
+                if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+                    const start = new Date(report.thoi_gian_bat_dau);
+                    const end = new Date(report.thoi_gian_ket_thuc);
+
+                    let diff = (end - start) / (1000 * 60); // phút
+
+                    // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
+                    if (diff < 0) {
+                        diff += 24 * 60; // cộng 24 giờ = 1440 phút
+                    }
+
+                    return sum + diff;
+                }
+                return sum;
+            }, 0);
+        } else {
+            totalTime = timeData?.totalTime || 0;
         }
-        return sum;
-    }, 0);
-} else {
-    totalTime = timeData?.totalTime || 0;
-}
         const runTime = Math.max(0, totalTime - setupTime - otherTime);
 
         // Debug thời gian
-console.log('🔍 DEBUG thời gian trong updateTimeAnalysisInfo:');
-console.log('- Total time:', totalTime, 'phút');
-console.log('- Setup time:', setupTime, 'phút');
-console.log('- Other time (dừng máy):', otherTime, 'phút');
-console.log('- Run time (tính toán):', totalTime - setupTime - otherTime);
-console.log('- Run time (sau Math.max):', runTime);
-        
+        console.log('🔍 DEBUG thời gian trong updateTimeAnalysisInfo:');
+        console.log('- Total time:', totalTime, 'phút');
+        console.log('- Setup time:', setupTime, 'phút');
+        console.log('- Other time (dừng máy):', otherTime, 'phút');
+        console.log('- Run time (tính toán):', totalTime - setupTime - otherTime);
+        console.log('- Run time (sau Math.max):', runTime);
+
         if (runTimeEl) runTimeEl.textContent = formatDuration(runTime);
         if (setupTimeEl) setupTimeEl.textContent = formatDuration(setupTime);
         if (otherTimeEl) otherTimeEl.textContent = formatDuration(otherTime);
@@ -1745,9 +1785,9 @@ console.log('- Run time (sau Math.max):', runTime);
 function displayTimeAnalysis(data, filters) {
     const stopReasonsEl = document.getElementById('stopReasonsAnalysis');
     if (!stopReasonsEl) return;
-    
+
     let html = '';
-    
+
     // Chỉ hiển thị khi có lý do dừng máy (thời gian khác > 0)
     if (data.timeData && data.timeData.otherTime > 0 && data.stopReasons && data.stopReasons.length > 0) {
         html += `
@@ -1764,13 +1804,29 @@ function displayTimeAnalysis(data, filters) {
                         </thead>
                         <tbody>
         `;
-        
+
+
+        // Sắp xếp lý do dừng máy theo thứ tự F1, F2, F3...
+        data.stopReasons.sort((a, b) => {
+            const aReason = a.reason.toString();
+            const bReason = b.reason.toString();
+
+            const aMatch = aReason.match(/F(\d+)/);
+            const bMatch = bReason.match(/F(\d+)/);
+
+            if (aMatch && bMatch) {
+                return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+            }
+
+            return aReason.localeCompare(bReason);
+        });
+
         const totalStopTime = data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0);
-        
+
         data.stopReasons.forEach(reason => {
             const duration = reason.duration || 0;
             const percent = totalStopTime > 0 ? ((duration / totalStopTime) * 100).toFixed(1) : 0;
-            
+
             html += `
                 <tr>
                     <td>${reason.reason}</td>
@@ -1781,7 +1837,7 @@ function displayTimeAnalysis(data, filters) {
                 </tr>
             `;
         });
-        
+
         html += `
                         </tbody>
                     </table>
@@ -1802,7 +1858,7 @@ function displayTimeAnalysis(data, filters) {
             </div>
         `;
     }
-    
+
     stopReasonsEl.innerHTML = html;
 }
 
@@ -1812,25 +1868,25 @@ function handleResetFilters() {
     document.getElementById('wsInput').value = '';
     document.getElementById('caSelect').selectedIndex = 0;
     document.getElementById('maySelect').selectedIndex = 0;
-    
+
     // Reset dates
     setDefaultDates();
 
     // Reset thêm các trường khác
-const wsInput = document.getElementById('wsInput');
-const caSelect = document.getElementById('caSelect');
-const maySelect = document.getElementById('maySelect');
+    const wsInput = document.getElementById('wsInput');
+    const caSelect = document.getElementById('caSelect');
+    const maySelect = document.getElementById('maySelect');
 
-if (wsInput) wsInput.value = '';
-if (caSelect) caSelect.selectedIndex = 0;
-if (maySelect) maySelect.selectedIndex = 0;
-    
+    if (wsInput) wsInput.value = '';
+    if (caSelect) caSelect.selectedIndex = 0;
+    if (maySelect) maySelect.selectedIndex = 0;
+
     // Ẩn báo cáo
     const reportSection = document.getElementById('reportSection');
     if (reportSection) {
         reportSection.style.display = 'none';
     }
-    
+
     // Hủy biểu đồ
     if (pieChart) {
         pieChart.destroy();
@@ -1848,10 +1904,10 @@ if (maySelect) maySelect.selectedIndex = 0;
         timeChart.destroy();
         timeChart = null;
     }
-    
+
 
     // Reset phân trang
-resetPagination();
+    resetPagination();
 
 
     showNotification('Đã reset bộ lọc', 'info');
@@ -1892,14 +1948,14 @@ function showNotification(message, type = 'info') {
         min-width: 300px;
         max-width: 500px;
     `;
-    
+
     toast.innerHTML = `
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
+
     document.body.appendChild(toast);
-    
+
     // Tự động ẩn sau 5 giây
     setTimeout(() => {
         if (toast.parentNode) {
@@ -1939,11 +1995,11 @@ function formatDate(dateString) {
 // Format thời gian (phút -> giờ phút)
 function formatDuration(minutes) {
     if (!minutes || isNaN(minutes)) return '0 phút';
-    
+
     const totalMinutes = parseInt(minutes);
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
-    
+
     if (hours === 0) {
         return `${mins} phút`;
     } else if (mins === 0) {
@@ -1961,7 +2017,7 @@ console.log('✅ Hệ thống biểu đồ đã được khởi tạo hoàn tấ
 // Hàm helper để destroy tất cả chart
 function destroyAllCharts() {
     console.log('🗑️ Destroy tất cả biểu đồ');
-    
+
     if (pieChart) {
         pieChart.destroy();
         pieChart = null;
@@ -1982,9 +2038,9 @@ function destroyAllCharts() {
         stopReasonChart.destroy();
         stopReasonChart = null;
     }
-    
+
     // Destroy tất cả chart con được tạo động
-    Chart.helpers.each(Chart.instances, function(instance) {
+    Chart.helpers.each(Chart.instances, function (instance) {
         if (instance.canvas && instance.canvas.id && instance.canvas.id.startsWith('shiftChart_')) {
             instance.destroy();
         }
@@ -1992,14 +2048,14 @@ function destroyAllCharts() {
 
 
     // Xóa container multiple charts
-document.querySelectorAll('.multi-shift-charts').forEach(container => {
-    container.remove();
-});
+    document.querySelectorAll('.multi-shift-charts').forEach(container => {
+        container.remove();
+    });
 
-// Hiển thị lại canvas gốc
-document.querySelectorAll('#macaChart').forEach(canvas => {
-    canvas.style.display = 'block';
-});
+    // Hiển thị lại canvas gốc
+    document.querySelectorAll('#macaChart').forEach(canvas => {
+        canvas.style.display = 'block';
+    });
 }
 
 
@@ -2018,21 +2074,21 @@ function hideReportSection() {
 function ensureReportSectionStructure() {
     const reportSection = document.getElementById('reportSection');
     if (!reportSection) return;
-    
+
     // Kiểm tra xem có đủ các element cần thiết không
     const requiredElements = [
         'totalPaper', 'totalWaste', 'totalData',
         'quantityChart', 'macaChart', 'timeChart',
         'quantityAnalysis', 'detailTableContainer'
     ];
-    
+
     let needsReset = false;
     requiredElements.forEach(id => {
         if (!document.getElementById(id)) {
             needsReset = true;
         }
     });
-    
+
     // Nếu thiếu element, reload lại trang
     if (needsReset) {
         location.reload();
@@ -2047,28 +2103,28 @@ function displayDetailTable(data, filters) {
     if (!container) return;
 
     // Reset phân trang khi load dữ liệu mới
-resetPagination();
-    
+    resetPagination();
+
     // Gọi API lấy dữ liệu báo cáo In theo filters
-fetchInReportList(filters)
-.then(detailData => {
-    // Lọc dữ liệu theo mã ca nếu có
-    let filteredData = detailData;
-    if (filters && filters.maca) {
-        filteredData = detailData.filter(record => record.ma_ca === filters.maca);
-    }
-    renderDetailTable(container, filteredData, filters);
-})
-.catch(error => {
-    console.error('Lỗi khi lấy dữ liệu chi tiết:', error);
-    container.innerHTML = `
+    fetchInReportList(filters)
+        .then(detailData => {
+            // Lọc dữ liệu theo mã ca nếu có
+            let filteredData = detailData;
+            if (filters && filters.maca) {
+                filteredData = detailData.filter(record => record.ma_ca === filters.maca);
+            }
+            renderDetailTable(container, filteredData, filters);
+        })
+        .catch(error => {
+            console.error('Lỗi khi lấy dữ liệu chi tiết:', error);
+            container.innerHTML = `
         <div class="text-center text-muted p-4">
             <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
             <h6>Không thể tải dữ liệu chi tiết</h6>
             <p>Lỗi: ${error.message}</p>
         </div>
     `;
-});
+        });
 }
 
 
@@ -2076,25 +2132,25 @@ fetchInReportList(filters)
 async function fetchDetailTableData(filters) {
     try {
         const params = new URLSearchParams();
-        
+
         if (filters.fromDate) params.append('fromDate', filters.fromDate);
         if (filters.toDate) params.append('toDate', filters.toDate);
         if (filters.ws) params.append('ws', filters.ws);
         if (filters.maca) params.append('ca', filters.maca);
         if (filters.may) params.append('may', filters.may);
         if (filters.tuan) params.append('tuan', filters.tuan);
-        
+
         // Thêm tham số để lấy dữ liệu chi tiết
         params.append('detail', 'true');
-        
+
         const response = await fetch(`/api/bao-cao-in/list?${params.toString()}`);
-        
+
         if (!response.ok) {
             throw new Error('Không thể tải dữ liệu chi tiết');
         }
-        
+
         return await response.json();
-        
+
     } catch (error) {
         console.error('Lỗi khi gọi API chi tiết:', error);
         throw error;
@@ -2108,23 +2164,23 @@ async function fetchDetailTableData(filters) {
 async function fetchInReportList(filters) {
     try {
         const params = new URLSearchParams();
-        
+
         if (filters.fromDate) params.append('fromDate', filters.fromDate);
         if (filters.toDate) params.append('toDate', filters.toDate);
         if (filters.ws) params.append('ws', filters.ws);
         if (filters.maca) params.append('ca', filters.maca);
         if (filters.may) params.append('may', filters.may);
         if (filters.tuan) params.append('tuan', filters.tuan);
-        
+
         const response = await fetch(`/api/bieu-do/in/chart-data?${params.toString()}&detail=true`);
-        
+
         if (!response.ok) {
             throw new Error('Không thể tải dữ liệu báo cáo In');
         }
-        
+
         const result = await response.json();
         return result.reports || [];
-        
+
     } catch (error) {
         console.error('Lỗi khi lấy dữ liệu báo cáo In:', error);
         throw error;
@@ -2137,8 +2193,8 @@ async function fetchInReportList(filters) {
 // Render bảng chi tiết
 function renderDetailTable(container, data, filters) {
     if (!data || data.length === 0) {
-        const noDataMessage = filters && filters.maca ? 
-            `Không có dữ liệu chi tiết cho mã ca ${filters.maca}` : 
+        const noDataMessage = filters && filters.maca ?
+            `Không có dữ liệu chi tiết cho mã ca ${filters.maca}` :
             'Không có dữ liệu chi tiết';
         container.innerHTML = `
             <div class="text-center text-muted p-4">
@@ -2151,16 +2207,16 @@ function renderDetailTable(container, data, filters) {
     }
 
     // Lưu dữ liệu gốc
-currentPageData = data;
-totalItems = data.length;
+    currentPageData = data;
+    totalItems = data.length;
 
-// Tính toán phân trang
-const totalPages = Math.ceil(totalItems / itemsPerPage);
-const startIndex = (currentPage - 1) * itemsPerPage;
-const endIndex = startIndex + itemsPerPage;
-const paginatedData = data.slice(startIndex, endIndex);
+    // Tính toán phân trang
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = data.slice(startIndex, endIndex);
 
-    
+
     let html = `
     <div class="row mb-3">
         <div class="col-md-6">
@@ -2183,9 +2239,9 @@ const paginatedData = data.slice(startIndex, endIndex);
             </div>
         </div>
     </div>
-        <div class="table-responsive">
-            <table class="table table-striped table-hover text-center">
-                <thead class="table-dark">
+        <div class="table-responsive" style="overflow-x: auto;">
+    <table class="table table-striped table-hover text-center" style="white-space: nowrap; min-width: 1200px;">
+                <thead class="table-dark sticky-top" id="detailTableHeader">
                     <tr>
                         <th>STT</th>
                         <th>WS</th>
@@ -2196,13 +2252,14 @@ const paginatedData = data.slice(startIndex, endIndex);
                         <th class="text-end">Thành phẩm in</th>
                         <th class="text-end">Phế liệu</th>
                         <th>Thời gian</th>
-                        <th class="text-end">Thời gian canh máy</th>
+                        <th class="text-end">Thời gian chạy máy</th>
+<th class="text-end">Thời gian canh máy</th>
                         <th class="text-end">Thời gian dừng máy</th>
                     </tr>
                 </thead>
                 <tbody>
     `;
-    
+
     paginatedData.forEach((record, index) => {
         const ws = record.ws || '-';
         const maca = record.ma_ca || '-';
@@ -2212,17 +2269,15 @@ const paginatedData = data.slice(startIndex, endIndex);
         const paper = formatNumber(record.thanh_pham_in || 0);
         const waste = formatNumber((parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0));
         // const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
-        
-        // Format thời gian
-        const timeRange = formatTimeRange(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
-        
 
-// Trong vòng lặp paginatedData.forEach(), sau dòng tính setupTime:
-const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
+       // Format thời gian với chênh lệch
+const timeRange = formatTimeRangeWithDuration(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
 
-// Thêm:
+
+        const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
+
 // Tính thời gian dừng máy cho record này từ dữ liệu stopReasons
-const stopTimeForRecord = record.stopTime || 0;
+let stopTimeForRecord = record.stopTime || 0;
 if (currentChartData && currentChartData.reports) {
     // Tìm record trong dữ liệu chi tiết
     const detailRecord = currentChartData.reports.find(r => r.id === record.id);
@@ -2231,6 +2286,22 @@ if (currentChartData && currentChartData.reports) {
     }
 }
 const stopTimeDisplay = formatDuration(stopTimeForRecord);
+
+// Tính thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
+let runTimeForRecord = 0;
+if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
+    const start = new Date(record.thoi_gian_bat_dau);
+    const end = new Date(record.thoi_gian_ket_thuc);
+    let totalMinutes = (end - start) / (1000 * 60);
+    if (totalMinutes < 0) totalMinutes += 24 * 60;
+    
+    const setupMinutes = record.thoi_gian_canh_may || 0;
+    const stopMinutes = stopTimeForRecord || 0;
+    runTimeForRecord = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+}
+const runTimeDisplay = formatDuration(runTimeForRecord);
+
+
 
 
         html += `
@@ -2243,36 +2314,56 @@ const stopTimeDisplay = formatDuration(stopTimeForRecord);
                 <td>${product}</td>
                 <td class="text-end text-success"><strong>${paper}</strong></td>
                 <td class="text-end text-danger"><strong>${waste}</strong></td>
-                <td><small>${timeRange}</small></td>
+                <td>${timeRange}</td>
+                <td class="text-end">${runTimeDisplay}</td>
                 <td class="text-end">${setupTime}</td>
+<td class="text-end">${stopTimeDisplay}</td>
             </tr>
         `;
     });
-    
+
     html += `
                 </tbody>
             </table>
         </div>
     `;
-    
+
     // Thêm thống kê tổng
     const totalPaper = data.reduce((sum, record) => sum + (parseFloat(record.thanh_pham_in) || 0), 0);
-    const totalWaste = data.reduce((sum, record) => 
+    const totalWaste = data.reduce((sum, record) =>
         sum + (parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0), 0);
     const totalSetupTime = data.reduce((sum, record) => sum + (parseFloat(record.thoi_gian_canh_may) || 0), 0);
 
-// Đếm số WS không trùng lặp
-const uniqueWS = new Set(data.map(record => record.ws).filter(ws => ws && ws !== '-')).size;
+    // Tính tổng thời gian chạy máy và dừng máy
+    const totalRunTime = data.reduce((sum, record) => {
+        if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
+            const start = new Date(record.thoi_gian_bat_dau);
+            const end = new Date(record.thoi_gian_ket_thuc);
+            let totalMinutes = (end - start) / (1000 * 60);
+            if (totalMinutes < 0) totalMinutes += 24 * 60;
 
-// Tính tổng thời gian dừng máy từ currentChartData
-const totalStopTime = currentChartData && currentChartData.stopReasons ? 
-    currentChartData.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
+            const setupMinutes = record.thoi_gian_canh_may || 0;
+            const stopMinutes = 0; // Tạm thời set 0, có thể tính từ currentChartData
+            const runMinutes = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+            return sum + runMinutes;
+        }
+        return sum;
+    }, 0);
+
+
+
+    // Đếm số WS không trùng lặp
+    const uniqueWS = new Set(data.map(record => record.ws).filter(ws => ws && ws !== '-')).size;
+
+    // Tính tổng thời gian dừng máy từ currentChartData
+    const totalStopTime = currentChartData && currentChartData.stopReasons ?
+        currentChartData.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
 
 
 
     // Phân trang
-if (totalPages > 1) {
-    html += `
+    if (totalPages > 1) {
+        html += `
         <div class="row mt-3">
             <div class="col-12">
                 <nav aria-label="Phân trang bảng chi tiết">
@@ -2281,20 +2372,20 @@ if (totalPages > 1) {
                             <a class="page-link" href="#" onclick="changeTablePage(${currentPage - 1})">Trước</a>
                         </li>
     `;
-    
-    for (let i = 1; i <= totalPages; i++) {
-        if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
-            html += `
+
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                html += `
                 <li class="page-item ${currentPage === i ? 'active' : ''}">
                     <a class="page-link" href="#" onclick="changeTablePage(${i})">${i}</a>
                 </li>
             `;
-        } else if (i === currentPage - 3 || i === currentPage + 3) {
-            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
         }
-    }
-    
-    html += `
+
+        html += `
                         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
                             <a class="page-link" href="#" onclick="changeTablePage(${currentPage + 1})">Sau</a>
                         </li>
@@ -2303,11 +2394,11 @@ if (totalPages > 1) {
             </div>
         </div>
     `;
-}
+    }
 
 
-    
-html += `
+
+    html += `
 <div class="row mt-3">
     <div class="col-md-2">
         <div class="card bg-light">
@@ -2333,40 +2424,103 @@ html += `
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-light">
-            <div class="card-body text-center">
-                <h6>Tổng thời gian canh máy</h6>
-                <h4 class="text-warning">${formatDuration(totalSetupTime)}</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-light">
-            <div class="card-body text-center">
-                <h6>Tổng thời gian dừng máy</h6>
-                <td class="text-end text-warning"><strong>${stopTimeDisplay}</strong></td>
-            </div>
+    <div class="col-md-2">
+    <div class="card bg-light">
+        <div class="card-body text-center">
+            <h6>Tổng TG chạy máy</h6>
+            <h4 class="text-success">${formatDuration(totalRunTime)}</h4>
         </div>
     </div>
 </div>
+<div class="col-md-2">
+    <div class="card bg-light">
+        <div class="card-body text-center">
+            <h6>Tổng TG canh máy</h6>
+            <h4 class="text-warning">${formatDuration(totalSetupTime)}</h4>
+        </div>
+    </div>
+</div>
+<div class="col-md-2">
+    <div class="card bg-light">
+        <div class="card-body text-center">
+            <h6>Tổng TG dừng máy</h6>
+            <h4 class="text-danger">${formatDuration(totalStopTime)}</h4>
+        </div>
+    </div>
+</div>
+</div>
 `;
-    
+
     container.innerHTML = html;
 
+
+    // Thiết lập sticky header sau khi render
+setTimeout(() => {
+    setupStickyTableHeader();
+}, 100);
+
     // Gắn sự kiện cho select
-const itemsSelect = document.getElementById('itemsPerPageSelect');
-if (itemsSelect) {
-    itemsSelect.addEventListener('change', function() {
-        itemsPerPage = parseInt(this.value);
-        currentPage = 1; // Reset về trang đầu
-        renderDetailTable(container, currentPageData, filters);
-    });
+    const itemsSelect = document.getElementById('itemsPerPageSelect');
+    if (itemsSelect) {
+        itemsSelect.addEventListener('change', function () {
+            itemsPerPage = parseInt(this.value);
+            currentPage = 1; // Reset về trang đầu
+            renderDetailTable(container, currentPageData, filters);
+        });
+    }
 }
+
+
+
+
+// Quản lý sticky header cho bảng chi tiết
+function setupStickyTableHeader() {
+    const tableContainer = document.getElementById('detailTableContainer');
+    const header = document.getElementById('detailTableHeader');
+    
+    if (!tableContainer || !header) return;
+    
+    const observer = new IntersectionObserver(
+        (entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Bảng đang hiển thị, kích hoạt sticky header
+                    header.style.position = 'sticky';
+                    header.style.top = '0';
+                } else {
+                    // Bảng không hiển thị, tắt sticky header
+                    header.style.position = 'static';
+                }
+            });
+        },
+        { threshold: 0.1 }
+    );
+    
+    observer.observe(tableContainer);
 }
+
+
 
 // Format khoảng thời gian
 function formatTimeRange(startTime, endTime) {
+    if (!startTime || !endTime) return '-';
+
+    try {
+        const start = new Date(startTime);
+        const end = new Date(endTime);
+
+        const startFormatted = formatDateTime(start);
+        const endFormatted = formatDateTime(end);
+
+        return `${startFormatted} - ${endFormatted}`;
+    } catch (error) {
+        return '-';
+    }
+}
+
+
+// Format khoảng thời gian với chênh lệch
+function formatTimeRangeWithDuration(startTime, endTime) {
     if (!startTime || !endTime) return '-';
     
     try {
@@ -2376,7 +2530,23 @@ function formatTimeRange(startTime, endTime) {
         const startFormatted = formatDateTime(start);
         const endFormatted = formatDateTime(end);
         
-        return `${startFormatted} - ${endFormatted}`;
+        // Tính chênh lệch thời gian
+        let diffMs = end - start;
+        
+        // Nếu chênh lệch âm, có thể là ca đêm - cộng thêm 24 giờ
+        if (diffMs < 0) {
+            diffMs += 24 * 60 * 60 * 1000; // cộng 24 giờ
+        }
+        
+        // Chuyển đổi sang giờ:phút:giây
+        const totalSeconds = Math.floor(diffMs / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        
+        const duration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        return `${startFormatted} - ${endFormatted} | <i>${duration}</i>`;
     } catch (error) {
         return '-';
     }
@@ -2385,13 +2555,13 @@ function formatTimeRange(startTime, endTime) {
 // Format ngày giờ (dd/mm hh:mm:ss)
 function formatDateTime(date) {
     if (!date) return '-';
-    
+
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const seconds = date.getSeconds().toString().padStart(2, '0');
-    
+
     return `${day}/${month} ${hours}:${minutes}:${seconds}`;
 }
 
@@ -2401,13 +2571,20 @@ function formatDateTime(date) {
 // Hàm thay đổi trang
 function changeTablePage(page) {
     if (page < 1 || page > Math.ceil(totalItems / itemsPerPage)) return;
-    
+
+    // Lưu vị trí scroll hiện tại
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
     currentPage = page;
     const container = document.getElementById('detailTableContainer');
-    const filters = collectFilters(); // Lấy filters hiện tại
-    
+    const filters = collectFilters();
+
     if (container && currentPageData.length > 0) {
         renderDetailTable(container, currentPageData, filters);
+        // Khôi phục vị trí scroll
+        setTimeout(() => {
+            window.scrollTo(0, scrollPosition);
+        }, 100);
     }
 }
 
