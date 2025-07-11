@@ -347,7 +347,7 @@ async function fetchInReportData(filters) {
 
         // Xử lý dữ liệu thành format đúng
         const processedData = processApiData(rawData);
-console.log('🔄 Processed data:', processedData);
+        console.log('🔄 Processed data:', processedData);
 
 
         return processedData;
@@ -481,10 +481,10 @@ function displayInReport(data, filters) {
 
         // Hiển thị section báo cáo với thông báo không có dữ liệu
         const reportSection = document.getElementById('reportSection');
-if (reportSection) {
-    reportSection.style.display = 'block';
-    reportSection.classList.add('slide-up');
-}
+        if (reportSection) {
+            reportSection.style.display = 'block';
+            reportSection.classList.add('slide-up');
+        }
 
 
 
@@ -556,17 +556,17 @@ if (reportSection) {
 
 
     // Hiển thị Top 10 Analytics
-displayTopAnalytics(data, filters);
+    displayTopAnalytics(data, filters);
 
 
-// Hiển thị section Top Analytics - ĐẢM BẢO LUÔN HIỂN THỊ
-const topAnalyticsSection = document.getElementById('topAnalyticsSection');
-if (topAnalyticsSection) {
-    topAnalyticsSection.style.display = 'block';
-    console.log('✅ Đã hiển thị topAnalyticsSection');
-} else {
-    console.log('❌ Không tìm thấy topAnalyticsSection');
-}
+    // Hiển thị section Top Analytics - ĐẢM BẢO LUÔN HIỂN THỊ
+    const topAnalyticsSection = document.getElementById('topAnalyticsSection');
+    if (topAnalyticsSection) {
+        topAnalyticsSection.style.display = 'block';
+        console.log('✅ Đã hiển thị topAnalyticsSection');
+    } else {
+        console.log('❌ Không tìm thấy topAnalyticsSection');
+    }
 
 
     // Hiển thị bảng chi tiết
@@ -921,12 +921,12 @@ function displayQuantityCharts(data, filters) {
 
 
     // Xác định dữ liệu hiển thị
-let displayShiftData = [];
-if (data.shiftData && data.shiftData.length > 0) {
-    displayShiftData = hasSpecificMacaFilter ?
-        data.shiftData.filter(shift => shift.shift === filters.maca) :
-        data.shiftData;
-}
+    let displayShiftData = [];
+    if (data.shiftData && data.shiftData.length > 0) {
+        displayShiftData = hasSpecificMacaFilter ?
+            data.shiftData.filter(shift => shift.shift === filters.maca) :
+            data.shiftData;
+    }
 
     // Luôn hiển thị cả 2 container
     const totalContainer = totalChartCanvas.closest('.col-md-6');
@@ -977,18 +977,38 @@ if (data.shiftData && data.shiftData.length > 0) {
     // }
 
     // Tạo tất cả biểu đồ dạng multiple charts (bao gồm cả tổng)
-const allChartsData = [{
-    shift: 'Tổng',
-    paper: data.totalPaper || 0,
-    waste: data.totalWaste || 0,
-    isTotal: true
-}];
+    const allChartsData = [{
+        shift: 'Tổng',
+        paper: data.totalPaper || 0,
+        waste: data.totalWaste || 0,
+        isTotal: true
+    }];
 
-if (displayShiftData.length > 0) {
-    allChartsData.push(...displayShiftData);
-}
+    // Sắp xếp displayShiftData theo thứ tự A-B-C-D-A1-B1-AB-AB--AB+-HC
+    if (displayShiftData.length > 0) {
+        const sortedShiftData = [...displayShiftData].sort((a, b) => {
+            const aShift = a.shift.toString().toUpperCase();
+            const bShift = b.shift.toString().toUpperCase();
 
-createMultipleShiftCharts(shiftChartCanvas, allChartsData);
+            const order = ['A', 'B', 'C', 'D', 'A1', 'B1', 'AB', 'AB-', 'AB+', 'HC'];
+
+            const aIndex = order.indexOf(aShift);
+            const bIndex = order.indexOf(bShift);
+
+            if (aIndex !== -1 && bIndex !== -1) {
+                return aIndex - bIndex;
+            }
+
+            if (aIndex !== -1) return -1;
+            if (bIndex !== -1) return 1;
+
+            return aShift.localeCompare(bShift);
+        });
+
+        allChartsData.push(...sortedShiftData);
+    }
+
+    createMultipleShiftCharts(shiftChartCanvas, allChartsData);
 
 
 }
@@ -1446,28 +1466,28 @@ function displayQuantityAnalysis(data, filters) {
 
     analysisContainer.innerHTML = html;
 
-     // Debug và tạo biểu đồ cột cho máy
-     console.log('🔍 Kiểm tra dữ liệu cho biểu đồ máy:', data);
-        
-     if (data.reports && data.reports.length > 0) {
-         let reportData = data.reports;
-         
-         // Lọc theo mã ca nếu có
-         if (filters && filters.maca) {
-             reportData = data.reports.filter(report => report.ma_ca === filters.maca);
-             console.log('🔍 Dữ liệu sau khi lọc theo mã ca:', reportData.length);
-         }
-         
-         console.log('🔍 Report data for chart:', reportData);
-         
-         if (reportData.length > 0) {
-             setTimeout(() => {
-                 createMachineProductionChart(reportData);
-             }, 200);
-         }
-     } else {
-         console.log('⚠️ Không có data.reports để tạo biểu đồ máy');
-     }
+    // Debug và tạo biểu đồ cột cho máy
+    console.log('🔍 Kiểm tra dữ liệu cho biểu đồ máy:', data);
+
+    if (data.reports && data.reports.length > 0) {
+        let reportData = data.reports;
+
+        // Lọc theo mã ca nếu có
+        if (filters && filters.maca) {
+            reportData = data.reports.filter(report => report.ma_ca === filters.maca);
+            console.log('🔍 Dữ liệu sau khi lọc theo mã ca:', reportData.length);
+        }
+
+        console.log('🔍 Report data for chart:', reportData);
+
+        if (reportData.length > 0) {
+            setTimeout(() => {
+                createMachineProductionChart(reportData);
+            }, 200);
+        }
+    } else {
+        console.log('⚠️ Không có data.reports để tạo biểu đồ máy');
+    }
 
 }
 
@@ -1658,11 +1678,11 @@ function displayTimeCharts(data, filters) {
     displayStopReasonChart(data, filters);
 
     // Cập nhật thông tin thời gian ở bên phân tích
-updateTimeAnalysisInfo({
-    totalTime: totalTime,
-    setupTime: setupTime,
-    otherTime: otherTime // Truyền otherTime đã tính toán
-});
+    updateTimeAnalysisInfo({
+        totalTime: totalTime,
+        setupTime: setupTime,
+        otherTime: otherTime // Truyền otherTime đã tính toán
+    });
 }
 
 
@@ -1930,6 +1950,7 @@ function displayTimeAnalysis(data, filters) {
     stopReasonsEl.innerHTML = html;
 }
 
+
 // Reset filters
 function handleResetFilters() {
     // Reset form
@@ -2121,7 +2142,7 @@ function destroyAllCharts() {
         window.machinePaperChart.destroy();
     }
     window.machinePaperChart = null;
-    
+
     if (window.machineWasteChart && typeof window.machineWasteChart.destroy === 'function') {
         window.machineWasteChart.destroy();
     }
@@ -2338,8 +2359,10 @@ function renderDetailTable(container, data, filters) {
                         <th>Khách hàng</th>
                         <th>Mã sản phẩm</th>
                         <th style="">SL Đơn hàng</th>
+                        <th style="">Số màu</th>    
                         <th class="text-end">Thành phẩm in</th>
                         <th class="text-end">Phế liệu</th>
+                        <th class="text-end">Tốc độ (s/h)</th>
                         <th>Thời gian</th>
                         <th class="text-end">Thời gian chạy máy</th>
 <th class="text-end">Thời gian canh máy</th>
@@ -2359,51 +2382,57 @@ function renderDetailTable(container, data, filters) {
         const waste = formatNumber((parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0));
         // const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
 
-       // Format thời gian với chênh lệch
-const timeRange = formatTimeRangeWithDuration(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
+        // Format thời gian với chênh lệch
+        const timeRange = formatTimeRangeWithDuration(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
 
 
         const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
 
-// Tính thời gian dừng máy cho record này từ dữ liệu stopReasons
-let stopTimeForRecord = record.stopTime || 0;
-if (currentChartData && currentChartData.reports) {
-    // Tìm record trong dữ liệu chi tiết
-    const detailRecord = currentChartData.reports.find(r => r.id === record.id);
-    if (detailRecord && detailRecord.stopReasons) {
-        stopTimeForRecord = detailRecord.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0);
-    }
-}
-const stopTimeDisplay = formatDuration(stopTimeForRecord);
+        // Tính thời gian dừng máy cho record này từ dữ liệu stopReasons
+        let stopTimeForRecord = record.stopTime || 0;
+        if (currentChartData && currentChartData.reports) {
+            // Tìm record trong dữ liệu chi tiết
+            const detailRecord = currentChartData.reports.find(r => r.id === record.id);
+            if (detailRecord && detailRecord.stopReasons) {
+                stopTimeForRecord = detailRecord.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0);
+            }
+        }
+        const stopTimeDisplay = formatDuration(stopTimeForRecord);
 
-// Tính thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
-let runTimeForRecord = 0;
-if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
-    const start = new Date(record.thoi_gian_bat_dau);
-    const end = new Date(record.thoi_gian_ket_thuc);
-    let totalMinutes = (end - start) / (1000 * 60);
-    if (totalMinutes < 0) totalMinutes += 24 * 60;
-    
-    const setupMinutes = record.thoi_gian_canh_may || 0;
-    const stopMinutes = stopTimeForRecord || 0;
-    runTimeForRecord = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
-}
-const runTimeDisplay = formatDuration(runTimeForRecord);
+        // Tính thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
+        let runTimeForRecord = 0;
+        if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
+            const start = new Date(record.thoi_gian_bat_dau);
+            const end = new Date(record.thoi_gian_ket_thuc);
+            let totalMinutes = (end - start) / (1000 * 60);
+            if (totalMinutes < 0) totalMinutes += 24 * 60;
+
+            const setupMinutes = record.thoi_gian_canh_may || 0;
+            const stopMinutes = stopTimeForRecord || 0;
+            runTimeForRecord = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+        }
+        const runTimeDisplay = formatDuration(runTimeForRecord);
 
 
 
 
         html += `
             <tr>
-                <td><strong>${index + 1}</strong></td>
+                <td><strong>${startIndex + index + 1}</strong></td>
                 <td><span class="badge bg-primary">${ws}</span></td>
                 <td><span class="badge " style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
                 <td><span class="badge " style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
                 <td>${customer}</td>
                 <td>${product}</td>
                 <td style="">${record.sl_don_hang || 0}</td>
+                <td style="">${record.so_mau || 0}</td>
                 <td class="text-end text-success"><strong>${paper}</strong></td>
                 <td class="text-end text-danger"><strong>${waste}</strong></td>
+                <td class="text-end">
+    <span class="badge bg-info">
+        ${calculateSpeed(record.thanh_pham_in, runTimeForRecord)}
+    </span>
+</td>
                 <td>${timeRange}</td>
                 <td class="text-end">${runTimeDisplay}</td>
                 <td class="text-end">${setupTime}</td>
@@ -2459,7 +2488,7 @@ const runTimeDisplay = formatDuration(runTimeForRecord);
                 <nav aria-label="Phân trang bảng chi tiết">
                     <ul class="pagination justify-content-center">
                         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                            <a class="page-link" href="#" onclick="changeTablePage(${currentPage - 1})">Trước</a>
+                            <a class="page-link" href="javascript:void(0)" onclick="changeTablePage(${currentPage - 1}); return false;">Trước</a>
                         </li>
     `;
 
@@ -2467,7 +2496,7 @@ const runTimeDisplay = formatDuration(runTimeForRecord);
             if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
                 html += `
                 <li class="page-item ${currentPage === i ? 'active' : ''}">
-                    <a class="page-link" href="#" onclick="changeTablePage(${i})">${i}</a>
+                    <a class="page-link" href="javascript:void(0)" onclick="changeTablePage(${i}); return false;">${i}</a>
                 </li>
             `;
             } else if (i === currentPage - 3 || i === currentPage + 3) {
@@ -2477,7 +2506,7 @@ const runTimeDisplay = formatDuration(runTimeForRecord);
 
         html += `
                         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                            <a class="page-link" href="#" onclick="changeTablePage(${currentPage + 1})">Sau</a>
+                            <a class="page-link" href="javascript:void(0)" onclick="changeTablePage(${currentPage + 1}); return false;">Sau</a>
                         </li>
                     </ul>
                 </nav>
@@ -2493,7 +2522,7 @@ const runTimeDisplay = formatDuration(runTimeForRecord);
     <div class="col-md-2">
         <div class="card bg-light">
             <div class="card-body text-center">
-                <h6>Tổng báo cáo</h6>
+                <h6>Tổng WS</h6>
                 <h4 class="text-primary">${uniqueWS}</h4>
             </div>
         </div>
@@ -2545,9 +2574,9 @@ const runTimeDisplay = formatDuration(runTimeForRecord);
 
 
     // Thiết lập sticky header sau khi render
-setTimeout(() => {
-    setupStickyTableHeader();
-}, 100);
+    setTimeout(() => {
+        setupStickyTableHeader();
+    }, 100);
 
     // Gắn sự kiện cho select
     const itemsSelect = document.getElementById('itemsPerPageSelect');
@@ -2567,9 +2596,9 @@ setTimeout(() => {
 function setupStickyTableHeader() {
     const tableContainer = document.getElementById('detailTableContainer');
     const header = document.getElementById('detailTableHeader');
-    
+
     if (!tableContainer || !header) return;
-    
+
     const observer = new IntersectionObserver(
         (entries) => {
             entries.forEach(entry => {
@@ -2585,7 +2614,7 @@ function setupStickyTableHeader() {
         },
         { threshold: 0.1 }
     );
-    
+
     observer.observe(tableContainer);
 }
 
@@ -2612,30 +2641,30 @@ function formatTimeRange(startTime, endTime) {
 // Format khoảng thời gian với chênh lệch
 function formatTimeRangeWithDuration(startTime, endTime) {
     if (!startTime || !endTime) return '-';
-    
+
     try {
         const start = new Date(startTime);
         const end = new Date(endTime);
-        
+
         const startFormatted = formatDateTime(start);
         const endFormatted = formatDateTime(end);
-        
+
         // Tính chênh lệch thời gian
         let diffMs = end - start;
-        
+
         // Nếu chênh lệch âm, có thể là ca đêm - cộng thêm 24 giờ
         if (diffMs < 0) {
             diffMs += 24 * 60 * 60 * 1000; // cộng 24 giờ
         }
-        
+
         // Chuyển đổi sang giờ:phút:giây
         const totalSeconds = Math.floor(diffMs / 1000);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
-        
+
         const duration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        
+
         return `${startFormatted} - ${endFormatted} | <i>${duration}</i>`;
     } catch (error) {
         return '-';
@@ -2662,21 +2691,16 @@ function formatDateTime(date) {
 function changeTablePage(page) {
     if (page < 1 || page > Math.ceil(totalItems / itemsPerPage)) return;
 
-    // Lưu vị trí scroll hiện tại
-    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-
     currentPage = page;
     const container = document.getElementById('detailTableContainer');
     const filters = collectFilters();
 
     if (container && currentPageData.length > 0) {
         renderDetailTable(container, currentPageData, filters);
-        // Khôi phục vị trí scroll
-        setTimeout(() => {
-            window.scrollTo(0, scrollPosition);
-        }, 100);
     }
 }
+
+
 
 // Hàm reset phân trang
 function resetPagination() {
@@ -2695,23 +2719,23 @@ function resetPagination() {
 // Tính toán top 10 khách hàng từ dữ liệu bảng chi tiết
 function calculateTopCustomersFromTable(reports) {
     console.log('🔍 calculateTopCustomersFromTable với', reports.length, 'báo cáo');
-    
+
     if (!reports || reports.length === 0) {
         console.log('❌ Không có báo cáo để tính toán');
         return [];
     }
-    
+
     const customerStats = {};
     const customerWsSet = {}; // Theo dõi các WS đã tính cho mỗi khách hàng
-    
+
     // Lặp qua từng báo cáo
     reports.forEach((report, index) => {
         const customer = report.khach_hang || 'Không xác định';
         const ws = report.ws || '';
         const orderQuantity = parseFloat(report.sl_don_hang) || 0;
-        
+
         console.log(`📋 Báo cáo ${index}: KH=${customer}, WS=${ws}, SL=${orderQuantity}`);
-        
+
         if (!customerStats[customer]) {
             customerStats[customer] = {
                 customer: customer,
@@ -2721,25 +2745,25 @@ function calculateTopCustomersFromTable(reports) {
             };
             customerWsSet[customer] = new Set();
         }
-        
+
         // Chỉ cộng số lượng đơn hàng nếu WS chưa được tính cho khách hàng này
         if (ws && !customerWsSet[customer].has(ws)) {
             customerWsSet[customer].add(ws);
             customerStats[customer].totalQuantity += orderQuantity;
             customerStats[customer].wsCount++;
         }
-        
+
         customerStats[customer].orderCount++; // Tổng số báo cáo
     });
-    
+
     console.log('📊 Customer stats:', customerStats);
-    
+
     // Chuyển đổi và sắp xếp theo số lượng đơn hàng
     const result = Object.values(customerStats)
         .filter(stat => stat.totalQuantity > 0)
         .sort((a, b) => b.totalQuantity - a.totalQuantity)
         .slice(0, 10);
-    
+
     console.log('📊 Top 10 customers result:', result);
     return result;
 }
@@ -2747,23 +2771,23 @@ function calculateTopCustomersFromTable(reports) {
 // Tính toán top 10 mã sản phẩm từ dữ liệu bảng chi tiết
 function calculateTopProductsFromTable(reports) {
     console.log('🔍 calculateTopProductsFromTable với', reports.length, 'báo cáo');
-    
+
     if (!reports || reports.length === 0) {
         console.log('❌ Không có báo cáo để tính toán');
         return [];
     }
-    
+
     const productStats = {};
     const productWsSet = {}; // Theo dõi các WS đã tính cho mỗi sản phẩm
-    
+
     // Lặp qua từng báo cáo
     reports.forEach((report, index) => {
         const product = report.ma_sp || 'Không xác định';
         const ws = report.ws || '';
         const orderQuantity = parseFloat(report.sl_don_hang) || 0;
-        
+
         console.log(`📋 Báo cáo ${index}: MSP=${product}, WS=${ws}, SL=${orderQuantity}`);
-        
+
         if (!productStats[product]) {
             productStats[product] = {
                 product: product,
@@ -2773,25 +2797,25 @@ function calculateTopProductsFromTable(reports) {
             };
             productWsSet[product] = new Set();
         }
-        
+
         // Chỉ cộng số lượng đơn hàng nếu WS chưa được tính cho sản phẩm này
         if (ws && !productWsSet[product].has(ws)) {
             productWsSet[product].add(ws);
             productStats[product].totalQuantity += orderQuantity;
             productStats[product].wsCount++;
         }
-        
+
         productStats[product].orderCount++; // Tổng số báo cáo
     });
-    
+
     console.log('📊 Product stats:', productStats);
-    
+
     // Chuyển đổi và sắp xếp theo số lượng đơn hàng
     const result = Object.values(productStats)
         .filter(stat => stat.totalQuantity > 0)
         .sort((a, b) => b.totalQuantity - a.totalQuantity)
         .slice(0, 10);
-    
+
     console.log('📊 Top 10 products result:', result);
     return result;
 }
@@ -2803,7 +2827,7 @@ function calculateTopProductsFromTable(reports) {
 function displayTopAnalytics(data, filters) {
     console.log('🎯 displayTopAnalytics được gọi với data:', data);
     console.log('🎯 currentPageData:', currentPageData);
-    
+
     // Lấy dữ liệu từ data.reports thay vì currentPageData
     let reportsData = [];
     if (data && data.reports && data.reports.length > 0) {
@@ -2814,24 +2838,24 @@ function displayTopAnalytics(data, filters) {
         console.log('📊 Sử dụng dữ liệu từ currentPageData:', reportsData.length, 'báo cáo');
     } else {
         console.log('⚠️ Không có dữ liệu để hiển thị top analytics');
-        
+
         // Vẫn hiển thị biểu đồ trống
         displayTopCustomersChart({ topCustomers: [] }, filters);
         displayTopProductsChart({ topProducts: [] }, filters);
         return;
     }
-    
+
     // Lọc dữ liệu theo điều kiện filter nếu có
     let filteredData = reportsData;
     if (filters && filters.maca) {
         filteredData = reportsData.filter(report => report.ma_ca === filters.maca);
         console.log('📊 Sau khi lọc theo mã ca:', filteredData.length, 'báo cáo');
     }
-    
+
     // Tính toán top 10 từ dữ liệu đã lọc
     const topCustomers = calculateTopCustomersFromTable(filteredData);
     const topProducts = calculateTopProductsFromTable(filteredData);
-    
+
     // Hiển thị biểu đồ
     displayTopCustomersChart({ topCustomers }, filters);
     displayTopProductsChart({ topProducts }, filters);
@@ -2841,27 +2865,27 @@ function displayTopAnalytics(data, filters) {
 // Hiển thị biểu đồ Top 10 khách hàng
 function displayTopCustomersChart(data, filters) {
     console.log('📊 displayTopCustomersChart với data.topCustomers:', data.topCustomers);
-    
+
     // Destroy chart cũ
     if (topCustomersChart) {
         topCustomersChart.destroy();
         topCustomersChart = null;
     }
-    
+
     let ctx = document.getElementById('topCustomersChart');
     console.log('🔍 Canvas found:', ctx);
-    
+
     if (!ctx) {
         console.error('❌ Không tìm thấy canvas topCustomersChart');
         return;
     }
-    
+
     // RECREATE CANVAS
     const container = ctx.parentElement;
     if (container) {
         // Xóa canvas cũ
         ctx.remove();
-        
+
         // Tạo canvas mới
         const newCanvas = document.createElement('canvas');
         newCanvas.id = 'topCustomersChart';
@@ -2869,26 +2893,26 @@ function displayTopCustomersChart(data, filters) {
         newCanvas.height = 400;
         newCanvas.style.width = '100%';
         newCanvas.style.height = '400px';
-        
+
         container.appendChild(newCanvas);
         ctx = newCanvas;
-        
+
         console.log('✅ Đã tạo lại canvas:', ctx);
     }
-    
+
     // Kiểm tra dữ liệu
     if (!data.topCustomers || data.topCustomers.length === 0) {
         console.log('⚠️ Không có dữ liệu khách hàng, hiển thị biểu đồ trống');
         topCustomersChart = createEmptyChart(ctx, 'Không có dữ liệu khách hàng');
         return;
     }
-    
+
     const labels = data.topCustomers.map(item => item.customer);
     const quantities = data.topCustomers.map(item => item.totalQuantity);
-    
+
     console.log('📊 Labels:', labels);
     console.log('📊 Quantities:', quantities);
-    
+
     try {
         topCustomersChart = new Chart(ctx, {
             type: 'bar',
@@ -2928,7 +2952,7 @@ function displayTopCustomersChart(data, filters) {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
                             }
                         }
@@ -2942,7 +2966,7 @@ function displayTopCustomersChart(data, filters) {
                             weight: 'bold',
                             size: 12
                         },
-                        formatter: function(value, context) {
+                        formatter: function (value, context) {
                             return formatNumber(value);
                         }
                     }
@@ -2954,13 +2978,13 @@ function displayTopCustomersChart(data, filters) {
                             display: true,
                             text: 'Số lượng đơn hàng',
                             font: {
-                            size: 14,
-                            weight: 'bold',
-                            family: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                                size: 14,
+                                weight: 'bold',
+                                family: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                            },
+                            color: 'black'
                         },
-                        color: 'black'
-                        },
-                        
+
                     },
                     x: {
                         title: {
@@ -2971,16 +2995,16 @@ function displayTopCustomersChart(data, filters) {
                             display: true,
                             maxRotation: 0,
                             minRotation: 0,
-                            callback: function(value, index, values) {
+                            callback: function (value, index, values) {
                                 const label = this.getLabelForValue(value);
                                 const maxLength = 12; // Độ dài tối đa mỗi dòng
-                                
+
                                 // Wrap text nếu quá dài
                                 if (label.length > maxLength) {
                                     const words = label.split(' ');
                                     const lines = [];
                                     let currentLine = '';
-                                    
+
                                     words.forEach(word => {
                                         if ((currentLine + ' ' + word).length > maxLength && currentLine !== '') {
                                             lines.push(currentLine);
@@ -2990,7 +3014,7 @@ function displayTopCustomersChart(data, filters) {
                                         }
                                     });
                                     if (currentLine) lines.push(currentLine);
-                                    
+
                                     return lines;
                                 }
                                 return label;
@@ -3000,9 +3024,9 @@ function displayTopCustomersChart(data, filters) {
                 }
             }
         });
-        
+
         console.log('✅ Biểu đồ khách hàng được tạo thành công');
-        
+
     } catch (error) {
         console.error('❌ Lỗi khi tạo biểu đồ khách hàng:', error);
     }
@@ -3013,27 +3037,27 @@ function displayTopCustomersChart(data, filters) {
 // Hiển thị biểu đồ Top 10 mã sản phẩm
 function displayTopProductsChart(data, filters) {
     console.log('📊 displayTopProductsChart với data.topProducts:', data.topProducts);
-    
+
     // Destroy chart cũ
     if (topProductsChart) {
         topProductsChart.destroy();
         topProductsChart = null;
     }
-    
+
     let ctx = document.getElementById('topProductsChart');
     console.log('🔍 Canvas found:', ctx);
-    
+
     if (!ctx) {
         console.error('❌ Không tìm thấy canvas topProductsChart');
         return;
     }
-    
+
     // RECREATE CANVAS
     const container = ctx.parentElement;
     if (container) {
         // Xóa canvas cũ
         ctx.remove();
-        
+
         // Tạo canvas mới
         const newCanvas = document.createElement('canvas');
         newCanvas.id = 'topProductsChart';
@@ -3041,26 +3065,26 @@ function displayTopProductsChart(data, filters) {
         newCanvas.height = 400;
         newCanvas.style.width = '100%';
         newCanvas.style.height = '400px';
-        
+
         container.appendChild(newCanvas);
         ctx = newCanvas;
-        
+
         console.log('✅ Đã tạo lại canvas:', ctx);
     }
-    
+
     // Kiểm tra dữ liệu
     if (!data.topProducts || data.topProducts.length === 0) {
         console.log('⚠️ Không có dữ liệu sản phẩm, hiển thị biểu đồ trống');
         topProductsChart = createEmptyChart(ctx, 'Không có dữ liệu sản phẩm');
         return;
     }
-    
+
     const labels = data.topProducts.map(item => item.product);
     const quantities = data.topProducts.map(item => item.totalQuantity);
-    
+
     console.log('📊 Labels:', labels);
     console.log('📊 Quantities:', quantities);
-    
+
     try {
         topProductsChart = new Chart(ctx, {
             type: 'bar',
@@ -3100,7 +3124,7 @@ function displayTopProductsChart(data, filters) {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
                             }
                         }
@@ -3114,7 +3138,7 @@ function displayTopProductsChart(data, filters) {
                             weight: 'bold',
                             size: 11
                         },
-                        formatter: function(value, context) {
+                        formatter: function (value, context) {
                             return formatNumber(value); // Hiển thị số lượng trên đầu cột
                         }
                     }
@@ -3141,7 +3165,7 @@ function displayTopProductsChart(data, filters) {
                             display: true,
                             maxRotation: 0,
                             minRotation: 0,
-                            callback: function(value, index, values) {
+                            callback: function (value, index, values) {
                                 const label = this.getLabelForValue(value);
                                 const maxLength = 10; // Mã sản phẩm ngắn hơn
                                 if (label.length > maxLength) {
@@ -3159,9 +3183,9 @@ function displayTopProductsChart(data, filters) {
                 }
             }
         });
-        
+
         console.log('✅ Biểu đồ sản phẩm được tạo thành công');
-        
+
     } catch (error) {
         console.error('❌ Lỗi khi tạo biểu đồ sản phẩm:', error);
     }
@@ -3172,28 +3196,28 @@ function displayTopProductsChart(data, filters) {
 // Tạo biểu đồ cột sản xuất theo máy từ dữ liệu báo cáo thực tế
 function createMachineProductionChart(reportData) {
     console.log('🎯 createMachineProductionChart được gọi với:', reportData.length, 'báo cáo');
-    
+
     const paperCanvas = document.getElementById('machinePaperChart');
     const wasteCanvas = document.getElementById('machineWasteChart');
-    
+
     console.log('🔍 Canvas elements:', { paperCanvas, wasteCanvas });
-    
+
     if (!paperCanvas || !wasteCanvas) {
         console.error('❌ Không tìm thấy canvas elements');
         return;
     }
-    
+
     // Destroy chart cũ nếu có
     if (window.machinePaperChart && typeof window.machinePaperChart.destroy === 'function') {
         window.machinePaperChart.destroy();
     }
     window.machinePaperChart = null;
-    
+
     if (window.machineWasteChart && typeof window.machineWasteChart.destroy === 'function') {
         window.machineWasteChart.destroy();
     }
     window.machineWasteChart = null;
-    
+
     // Group dữ liệu theo máy từ báo cáo thực tế
     const machineGroups = {};
     reportData.forEach(report => {
@@ -3204,20 +3228,20 @@ function createMachineProductionChart(reportData) {
         machineGroups[machine].paper += parseFloat(report.thanh_pham_in) || 0;
         machineGroups[machine].waste += (parseFloat(report.phe_lieu) || 0) + (parseFloat(report.phe_lieu_trang) || 0);
     });
-    
+
     console.log('📊 Machine groups:', machineGroups);
-    
+
     const machines = Object.keys(machineGroups);
     const paperData = machines.map(machine => machineGroups[machine].paper);
     const wasteData = machines.map(machine => machineGroups[machine].waste);
-    
+
     console.log('📊 Chart data:', { machines, paperData, wasteData });
-    
+
     if (machines.length === 0) {
         console.log('⚠️ Không có dữ liệu máy để hiển thị');
         return;
     }
-    
+
     // Tạo biểu đồ thành phẩm
     try {
         window.machinePaperChart = new Chart(paperCanvas, {
@@ -3246,7 +3270,7 @@ function createMachineProductionChart(reportData) {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 return `Thành phẩm: ${formatNumber(context.parsed.y)}`;
                             }
                         }
@@ -3260,7 +3284,7 @@ function createMachineProductionChart(reportData) {
                             size: 11,
                             weight: 'bold'
                         },
-                        formatter: function(value) {
+                        formatter: function (value) {
                             return value > 0 ? formatNumber(value) : '';
                         }
                     }
@@ -3287,12 +3311,12 @@ function createMachineProductionChart(reportData) {
                 }
             }
         });
-        
+
         console.log('✅ Biểu đồ thành phẩm đã tạo thành công');
     } catch (error) {
         console.error('❌ Lỗi khi tạo biểu đồ thành phẩm:', error);
     }
-    
+
     // Tạo biểu đồ phế liệu
     try {
         window.machineWasteChart = new Chart(wasteCanvas, {
@@ -3321,7 +3345,7 @@ function createMachineProductionChart(reportData) {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 return `Phế liệu: ${formatNumber(context.parsed.y)}`;
                             }
                         }
@@ -3335,7 +3359,7 @@ function createMachineProductionChart(reportData) {
                             size: 11,
                             weight: 'bold'
                         },
-                        formatter: function(value) {
+                        formatter: function (value) {
                             return value > 0 ? formatNumber(value) : '';
                         }
                     }
@@ -3362,9 +3386,23 @@ function createMachineProductionChart(reportData) {
                 }
             }
         });
-        
+
         console.log('✅ Biểu đồ phế liệu đã tạo thành công');
     } catch (error) {
         console.error('❌ Lỗi khi tạo biểu đồ phế liệu:', error);
     }
+}
+
+
+
+
+// Tính tốc độ s/h (sheet per hour)
+function calculateSpeed(thanhPham, runTimeMinutes) {
+    const paper = parseFloat(thanhPham) || 0;
+    const timeHours = runTimeMinutes / 60;
+
+    if (timeHours === 0 || paper === 0) return '0';
+
+    const speed = Math.round(paper / timeHours);
+    return formatNumber(speed);
 }

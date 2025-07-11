@@ -54,7 +54,7 @@ router.get('/in/chart-data', async (req, res) => {
             db.all(`SELECT 
     thanh_pham_in, phe_lieu, phe_lieu_trang, thoi_gian_canh_may,
     thoi_gian_bat_dau, thoi_gian_ket_thuc, khach_hang, ma_sp, id, ws, ma_ca, may,
-    sl_don_hang
+    sl_don_hang, so_mau
 FROM bao_cao_in ${whereClause}
 ORDER BY created_at DESC`,
                 params, (err, rows) => {
