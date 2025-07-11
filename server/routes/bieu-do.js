@@ -363,6 +363,81 @@ if (req.query.detail === 'true') {
     }
 });
 
+
+
+
+
+
+
+router.get('/in/yearly-data', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    try {
+        const { year } = req.query;
+        
+        if (!year) {
+            return res.status(400).json({ error: 'Thiếu tham số năm' });
+        }
+        
+        // Lấy dữ liệu theo năm, group theo máy và tháng
+        const yearlyData = await new Promise((resolve, reject) => {
+            db.all(`SELECT 
+                strftime('%m', created_at) as month,
+                may,
+                SUM(CAST(thanh_pham_in as REAL)) as total_paper,
+                SUM(CAST(phe_lieu as REAL) + CAST(phe_lieu_trang as REAL)) as total_waste
+                FROM bao_cao_in 
+                WHERE strftime('%Y', created_at) = ? 
+                AND is_started_only = 0
+                AND thanh_pham_in IS NOT NULL AND thanh_pham_in != ''
+                AND may IS NOT NULL AND may != ''
+                GROUP BY strftime('%m', created_at), may
+                ORDER BY may, month`, 
+                [year], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+        
+        // Lấy danh sách máy duy nhất
+        const machines = [...new Set(yearlyData.map(row => row.may))].sort();
+        
+        // Xử lý dữ liệu thành format mong muốn
+        const result = {};
+        
+        // Khởi tạo dữ liệu cho tất cả máy
+        machines.forEach(machine => {
+            result[machine] = {};
+            for (let month = 1; month <= 12; month++) {
+                const monthKey = `T${month}`;
+                result[machine][monthKey] = {
+                    paper: 0,
+                    waste: 0
+                };
+            }
+        });
+        
+        // Điền dữ liệu thực tế
+        yearlyData.forEach(row => {
+            const month = parseInt(row.month);
+            const machine = row.may;
+            const monthKey = `T${month}`;
+            
+            if (result[machine] && result[machine][monthKey]) {
+                result[machine][monthKey].paper += row.total_paper || 0;
+                result[machine][monthKey].waste += row.total_waste || 0;
+            }
+        });
+        
+        console.log('Dữ liệu biểu đồ năm:', result);
+        res.json(result);
+        
+    } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu theo năm:', error);
+        res.status(500).json({ error: 'Lỗi khi lấy dữ liệu theo năm: ' + error.message });
+    }
+});
+
 // ====================================================================================================================================
 // API BIỂU ĐỒ CHO BÁO CÁO GMC
 // ====================================================================================================================================
@@ -770,5 +845,73 @@ function getModuleUrl(moduleId) {
 
 
 
+
+
+
+// Thêm API mới sau router.get('/in/chart-data')
+router.get('/in/yearly-data', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    try {
+        const { year } = req.query;
+        
+        if (!year) {
+            return res.status(400).json({ error: 'Thiếu tham số năm' });
+        }
+        
+        // Lấy dữ liệu theo năm
+        const yearlyData = await new Promise((resolve, reject) => {
+            db.all(`SELECT 
+                strftime('%m', created_at) as month,
+                may,
+                SUM(CAST(thanh_pham_in as REAL)) as total_paper,
+                SUM(CAST(phe_lieu as REAL) + CAST(phe_lieu_trang as REAL)) as total_waste
+                FROM bao_cao_in 
+                WHERE strftime('%Y', created_at) = ? 
+                AND is_started_only = 0
+                AND thanh_pham_in IS NOT NULL AND thanh_pham_in != ''
+                GROUP BY strftime('%m', created_at), may
+                ORDER BY month, may`, 
+                [year], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+        
+        // Xử lý dữ liệu thành format mong muốn
+        const result = {};
+        const machines = ['1', '2', '3', '4', '5', '6'];
+        
+        // Khởi tạo dữ liệu cho 6 máy
+        machines.forEach(machine => {
+            result[`machine${machine}`] = {};
+            for (let month = 1; month <= 12; month++) {
+                const monthKey = `T${month}`;
+                result[`machine${machine}`][monthKey] = {
+                    paper: 0,
+                    waste: 0
+                };
+            }
+        });
+        
+        // Điền dữ liệu thực tế
+        yearlyData.forEach(row => {
+            const month = parseInt(row.month);
+            const machine = row.may || '1';
+            const monthKey = `T${month}`;
+            
+            if (result[`machine${machine}`] && result[`machine${machine}`][monthKey]) {
+                result[`machine${machine}`][monthKey].paper += row.total_paper || 0;
+                result[`machine${machine}`][monthKey].waste += row.total_waste || 0;
+            }
+        });
+        
+        res.json(result);
+        
+    } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu theo năm:', error);
+        res.status(500).json({ error: 'Lỗi khi lấy dữ liệu theo năm: ' + error.message });
+    }
+});
 
 module.exports = router;

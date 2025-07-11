@@ -165,6 +165,7 @@ function initBaoCaoIn() {
 // Thiết lập bộ lọc báo cáo In
 function setupInFilters() {
     loadMachineList();
+    setupYearlyCharts();
 }
 
 // Thiết lập events cho báo cáo In
@@ -225,6 +226,281 @@ async function loadMachineList() {
     }
 }
 
+
+function setupYearlyCharts() {
+    const yearSelect = document.getElementById('yearSelectChart');
+    if (yearSelect) {
+        const currentYear = new Date().getFullYear();
+        yearSelect.innerHTML = '';
+        
+        // Thêm 5 năm gần nhất, chọn sẵn năm hiện tại
+        for (let i = 0; i < 5; i++) {
+            const year = currentYear - i;
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            if (year === currentYear) option.selected = true;
+            yearSelect.appendChild(option);
+        }
+        
+        // Gắn sự kiện thay đổi năm
+        yearSelect.addEventListener('change', function() {
+            loadYearlyCharts(this.value);
+        });
+        
+        // Load biểu đồ cho năm hiện tại
+        loadYearlyCharts(currentYear);
+    }
+}
+
+
+async function loadYearlyCharts(year) {
+    try {
+        showLoading(true);
+        
+        // Lấy dữ liệu theo năm
+        const yearlyData = await fetchYearlyData(year);
+        
+        // Hiển thị biểu đồ
+        displayYearlyMachineCharts(yearlyData);
+        
+        showLoading(false);
+    } catch (error) {
+        console.error('Lỗi khi tải biểu đồ năm:', error);
+        showLoading(false);
+    }
+}
+
+
+
+async function fetchYearlyData(year) {
+    try {
+        const response = await fetch(`/api/bieu-do/in/yearly-data?year=${year}`);
+        if (!response.ok) {
+            throw new Error('Không thể tải dữ liệu theo năm');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Lỗi khi gọi API dữ liệu năm:', error);
+        throw error;
+    }
+}
+
+
+function displayYearlyMachineCharts(yearlyData) {
+    const container = document.getElementById('yearlyChartsContainer');
+    if (!container) return;
+    
+    // Destroy tất cả chart cũ
+    if (window.yearlyCharts) {
+        window.yearlyCharts.forEach(chart => {
+            if (chart) chart.destroy();
+        });
+    }
+    window.yearlyCharts = [];
+    
+    // Lấy danh sách máy từ dữ liệu thực tế
+    const machines = Object.keys(yearlyData).sort();
+    
+    if (machines.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                <h6>Không có dữ liệu máy cho năm này</h6>
+            </div>
+        `;
+        return;
+    }
+    
+    // Tạo HTML cho từng máy (mỗi máy 1 hàng với 2 cột)
+    let html = '';
+    machines.forEach((machine, index) => {
+        const paperCanvasId = `yearlyPaperChart_${machine.replace(/\s+/g, '_')}`;
+        const wasteCanvasId = `yearlyWasteChart_${machine.replace(/\s+/g, '_')}`;
+        
+        html += `
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="mb-3"><i class="fas fa-cogs me-2"></i>${machine}</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Thành phẩm</h6>
+                        </div>
+                        <div class="card-body">
+                            <div style="height: 350px; position: relative;">
+                                <canvas id="${paperCanvasId}"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Phế liệu</h6>
+                        </div>
+                        <div class="card-body">
+                            <div style="height: 350px; position: relative;">
+                                <canvas id="${wasteCanvasId}"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Tạo biểu đồ cho từng máy
+    const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+    
+    machines.forEach(machine => {
+        const paperCanvasId = `yearlyPaperChart_${machine.replace(/\s+/g, '_')}`;
+        const wasteCanvasId = `yearlyWasteChart_${machine.replace(/\s+/g, '_')}`;
+        
+        const paperCanvas = document.getElementById(paperCanvasId);
+        const wasteCanvas = document.getElementById(wasteCanvasId);
+        
+        if (!paperCanvas || !wasteCanvas) return;
+        
+        // Lấy dữ liệu cho máy này
+        const machineData = yearlyData[machine] || {};
+        const paperData = months.map(month => machineData[month]?.paper || 0);
+        const wasteData = months.map(month => machineData[month]?.waste || 0);
+        
+        // Tạo biểu đồ thành phẩm
+        const paperChart = new Chart(paperCanvas, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Thành phẩm',
+                    data: paperData,
+                    backgroundColor: 'rgba(174, 207, 188, 0.8)',
+                    borderColor: 'rgba(148, 199, 169, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 40 // Thêm khoảng cách cho số liệu trên đầu
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Thành phẩm: ${formatNumber(context.parsed.y)}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: 'top',
+                        color: 'black',
+                        font: {
+                            size: 10,
+                            weight: 'bold'
+                        },
+                        formatter: function(value) {
+                            return value > 0 ? formatNumber(value) : '';
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng thành phẩm'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tháng'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Tạo biểu đồ phế liệu
+        const wasteChart = new Chart(wasteCanvas, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Phế liệu',
+                    data: wasteData,
+                    backgroundColor: 'rgba(248, 179, 181, 0.8)',
+                    borderColor: 'rgba(255, 141, 152, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 40 // Thêm khoảng cách cho số liệu trên đầu
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Phế liệu: ${formatNumber(context.parsed.y)}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: 'top',
+                        color: 'black',
+                        font: {
+                            size: 10,
+                            weight: 'bold'
+                        },
+                        formatter: function(value) {
+                            return value > 0 ? formatNumber(value) : '';
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng phế liệu'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tháng'
+                        }
+                    }
+                }
+            }
+        });
+        
+        window.yearlyCharts.push(paperChart, wasteChart);
+    });
+}
 
 // Thiết lập ngày mặc định
 function setDefaultDates() {
@@ -2360,13 +2636,13 @@ function renderDetailTable(container, data, filters) {
                         <th>Mã sản phẩm</th>
                         <th style="">SL Đơn hàng</th>
                         <th style="">Số màu</th>    
-                        <th class="text-end">Thành phẩm in</th>
-                        <th class="text-end">Phế liệu</th>
-                        <th class="text-end">Tốc độ (s/h)</th>
+                        <th >Thành phẩm in</th>
+                        <th >Phế liệu</th>
+                        <th >Tốc độ (s/h)</th>
                         <th>Thời gian</th>
-                        <th class="text-end">Thời gian chạy máy</th>
-<th class="text-end">Thời gian canh máy</th>
-                        <th class="text-end">Thời gian dừng máy</th>
+                        <th >Thời gian chạy máy</th>
+<th >Thời gian canh máy</th>
+                        <th >Thời gian dừng máy</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -2426,17 +2702,17 @@ function renderDetailTable(container, data, filters) {
                 <td>${product}</td>
                 <td style="">${record.sl_don_hang || 0}</td>
                 <td style="">${record.so_mau || 0}</td>
-                <td class="text-end text-success"><strong>${paper}</strong></td>
-                <td class="text-end text-danger"><strong>${waste}</strong></td>
-                <td class="text-end">
-    <span class="badge bg-info">
+                <td class="text-center text-success"><strong>${paper}</strong></td>
+                <td class="text-center text-danger"><strong>${waste}</strong></td>
+                <td class="text-center">
+    <span class="">
         ${calculateSpeed(record.thanh_pham_in, runTimeForRecord)}
     </span>
 </td>
                 <td>${timeRange}</td>
-                <td class="text-end">${runTimeDisplay}</td>
-                <td class="text-end">${setupTime}</td>
-<td class="text-end">${stopTimeDisplay}</td>
+                <td class="text-center">${runTimeDisplay}</td>
+                <td class="text-center">${setupTime}</td>
+<td class="text-center">${stopTimeDisplay}</td>
             </tr>
         `;
     });
