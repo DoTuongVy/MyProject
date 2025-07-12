@@ -101,6 +101,8 @@ if (!checkUserAuthentication()) {
 }
 
 
+
+
   
   // Hiển thị thông tin người dùng
   const userNameElement = document.getElementById('user-name');

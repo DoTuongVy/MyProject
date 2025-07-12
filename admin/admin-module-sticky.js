@@ -307,7 +307,18 @@
                     font-size: 11px !important;
                 }
             }
+                #admin-module-sticky.hidden {
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+}
+
+#admin-module-sticky {
+    transition: transform 0.3s ease;
+}
         `;
+
+
+        
         document.head.appendChild(style);
     }
     
@@ -352,11 +363,38 @@
                 minimizeStickyBar(stickyBar);
             });
         }
+
+        // Thêm scroll effect cho admin sticky bar
+let lastScrollTop = 0;
+let isScrolling = false;
+
+window.addEventListener('scroll', function() {
+    if (isScrolling) return;
+    
+    isScrolling = true;
+    requestAnimationFrame(function() {
+        const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (stickyBar && !stickyBar.classList.contains('minimized')) {
+            if (currentScroll > lastScrollTop && currentScroll > 80) {
+                // Scroll xuống - ẩn header
+                stickyBar.classList.add('hidden');
+            } else if (currentScroll < lastScrollTop) {
+                // Scroll lên - hiện header
+                stickyBar.classList.remove('hidden');
+            }
+        }
+        
+        lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+        isScrolling = false;
+    });
+});
+
     }
     
     function minimizeStickyBar(stickyBar) {
         // Ẩn sticky bar
-        stickyBar.style.transform = 'translateY(-100%)';
+        stickyBar.classList.add('minimized');
         stickyBar.style.opacity = '0';
         
         // Restore padding
@@ -389,7 +427,7 @@
         
         restoreBtn.addEventListener('click', function() {
             // Hiện lại sticky bar
-            stickyBar.style.transform = 'translateY(0)';
+            stickyBar.classList.remove('minimized', 'hidden');
             stickyBar.style.opacity = '1';
             
             // Restore padding

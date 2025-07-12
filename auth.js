@@ -23,7 +23,29 @@ async function checkAuthentication() {
     // Tạo header riêng cho thông tin người dùng và đăng xuất
     createUserHeader(currentUser);
     // Đảm bảo header luôn hiển thị
-ensureHeaderAlwaysVisible();
+// ensureHeaderAlwaysVisible();
+
+let lastScrollTop = 0;
+        window.addEventListener('scroll', function() {
+            // Sử dụng window.pageYOffset cho tương thích trình duyệt tốt hơn
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            // Nếu cuộn lên (scroll up)
+            if (scrollTop < lastScrollTop) {
+                header.style.top = '0';
+            } 
+            // Nếu cuộn xuống (scroll down)
+            else {
+                // Chỉ ẩn khi đã cuộn qua chiều cao của header
+                if (scrollTop > header.offsetHeight) {
+                    header.style.top = `-${header.offsetHeight}px`;
+                }
+            }
+            // Cập nhật vị trí scroll cuối, xử lý trường hợp cuộn lên trên cùng
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+        }, false);
+
+        
     
     // Lấy đường dẫn hiện tại
     const currentPath = window.location.pathname;
@@ -283,16 +305,6 @@ if (user.role === 'admin') {
     document.getElementById('logout-btn').addEventListener('click', logout);
 }
 
-
-function ensureHeaderAlwaysVisible() {
-    const authHeader = document.getElementById('user-auth-header');
-    if (authHeader) {
-        authHeader.style.position = 'sticky';
-        authHeader.style.top = '0';
-        authHeader.style.zIndex = '1000';
-        authHeader.style.display = 'flex';
-    }
-}
 
 
 //TODO Lấy thông tin người dùng hiện tại từ session storage========================================================================

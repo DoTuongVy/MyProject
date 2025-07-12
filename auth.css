@@ -110,3 +110,52 @@ header {
     cursor: pointer;
     transition: background-color 0.3s;
 }
+
+
+
+
+/* --- CSS cho Header --- */
+#userInfoHeader {
+    position: sticky; /* Giữ header ở trên cùng khi chưa cuộn */
+    top: 0;
+    z-index: 1000;
+    transition: top 0.3s ease-in-out; /* Tạo hiệu ứng trượt mượt mà */
+}
+
+/* Lớp này sẽ được thêm bằng JavaScript để ẩn header */
+.header-hidden {
+    top: -100px; /* Hoặc chiều cao của header */
+}
+
+/* --- CSS cho Điều kiện lọc --- */
+#filterSection {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+#toggleFilterBtn {
+    border: none;
+    background: none;
+    font-size: 1.2rem;
+}
+
+/* Lớp này sẽ được thêm bằng JavaScript để "dính" bộ lọc */
+.filter-sticky {
+    position: sticky;
+    top: 0; /* Sẽ được cập nhật bằng JS */
+    z-index: 999;
+}
+
+#filterContent.collapsed {
+    display: none;
+}

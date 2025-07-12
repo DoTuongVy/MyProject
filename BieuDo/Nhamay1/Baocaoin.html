@@ -14,7 +14,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     <!-- Chart.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 
@@ -47,12 +49,13 @@
 
         <!-- Filter Section -->
         <div class="row mb-4">
-            <div class="col-12">
+            <div id="filterSection">
                 <div class="card">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5><i class="fas fa-filter me-2"></i>Điều kiện lọc</h5>
+                        <button id="toggleFilterBtn" class="btn btn-light btn-sm"><i class="fas fa-bars"></i></button>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body" id="filterContent">
                         <div class="row g-3 d-flex justify-content-center align-items-center ">
                             <div class="col-md-3">
                                 <label for="wsInput" class="form-label">Số WS</label>
@@ -61,53 +64,47 @@
                             <div class="col-md-3">
                                 <div class="row">
                                     <div class="col">
-                                         <label for="caSelect" class="form-label">Mã Ca</label>
-                                <select class="form-select" id="caSelect">
-                                    <option value="">Tất cả ca</option>
-                                    <option value="A">A (6H - 14H)</option>
-                                    <option value="B">B (14H - 22H)</option>
-                                    <option value="C">C (22H - 6H)</option>
-                                    <option value="D">D (10H - 22H)</option>
-                                    <option value="A1">A1 (6H - 18H)</option>
-                                    <option value="B1">B1 (18H - 6H)</option>
-                                    <option value="AB">AB (7H - 16H)</option>
-                                    <option value="AB-">AB- (7H - 15H)</option>
-                                    <option value="AB+">AB+ (7H - 17H)</option>
-                                    <option value="HC">HC (8H - 17H)</option>
-                                </select>
+                                            <label for="caSelect" class="form-label">Mã Ca</label>
+                                    <select class="form-select" id="caSelect">
+                                        <option value="">Tất cả ca</option>
+                                        <option value="A">A (6H - 14H)</option>
+                                        <option value="B">B (14H - 22H)</option>
+                                        <option value="C">C (22H - 6H)</option>
+                                        <option value="D">D (10H - 22H)</option>
+                                        <option value="A1">A1 (6H - 18H)</option>
+                                        <option value="B1">B1 (18H - 6H)</option>
+                                        <option value="AB">AB (7H - 16H)</option>
+                                        <option value="AB-">AB- (7H - 15H)</option>
+                                        <option value="AB+">AB+ (7H - 17H)</option>
+                                        <option value="HC">HC (8H - 17H)</option>
+                                    </select>
                                     </div>
                                     <div class="col">
                                         <label for="maySelect" class="form-label">Máy</label>
-                                <select class="form-select" id="maySelect">
-                                    <option value="">Tất cả máy</option>
-                                    <!-- Danh sách máy sẽ được load từ API -->
-                                </select>
+                                    <select class="form-select" id="maySelect">
+                                        <option value="">Tất cả máy</option>
+                                        </select>
                                     </div>
                                 </div>
-                               
-                                
                             </div>
                             <div class="col-md-4">
                                 <div class="row">
                                     <div class="col">
-<label for="fromDate" class="form-label">Từ ngày</label>
-                                <input type="date" class="form-control" id="fromDate">
+                                        <label for="fromDate" class="form-label">Từ ngày</label>
+                                        <input type="date" class="form-control" id="fromDate">
                                     </div>
                                     <div class="col">
-<label for="toDate" class="form-label">Đến ngày</label>
-                                <input type="date" class="form-control" id="toDate">
+                                        <label for="toDate" class="form-label">Đến ngày</label>
+                                        <input type="date" class="form-control" id="toDate">
                                     </div>
                                 </div>
-                                
-                                
-
                             </div>
-                            <div class="col-md-2 d-flex justify-content-center mt-5">
-                                <button type="button" class="btn btn-primary btn-lg me-3" id="btnViewReport">
-                                    <i class="fas fa-chart-line me-2"></i>Xem báo cáo
+                            <div class="col-md-2 d-flex justify-content-center align-items-end">
+                                <button type="button" class="btn btn-primary me-2" id="btnViewReport">
+                                    <i class="fas fa-chart-line me-1"></i>Xem
                                 </button>
-                                <button type="button" class="btn btn-secondary btn-lg" id="btnReset">
-                                    <i class="fas fa-refresh me-2"></i>Reset
+                                <button type="button" class="btn btn-secondary" id="btnReset">
+                                    <i class="fas fa-sync me-1"></i>Reset
                                 </button>
                             </div>
                         </div>
@@ -271,7 +268,25 @@
                                 <!-- Nội dung phân tích sản xuất sẽ được load động -->
                             </div>
                         </div>
+
+
+<div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-chart-bar me-2"></i>Sản xuất theo máy</h6>
+                        </div>
+                        <div class="card-body">
+                            <div style="height: 400px; position: relative;">
+                                <canvas id="machineStackedChart"></canvas>
+                            </div>
+                        </div>
                     </div>
+
+
+
+                    </div>
+
+
+                    
                 </div>
             </div>
 
@@ -279,29 +294,8 @@
 
             
             <div class="row mt-4 mb-4">
-                <div class="col-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6><i class="fas fa-chart-bar me-2"></i>Thành phẩm in theo máy</h6>
-                        </div>
-                        <div class="card-body">
-                            <div style="height: 350px; position: relative;">
-                                <canvas id="machinePaperChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6><i class="fas fa-chart-bar me-2"></i>Phế liệu theo máy</h6>
-                        </div>
-                        <div class="card-body">
-                            <div style="height: 350px; position: relative;">
-                                <canvas id="machineWasteChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
+                <div class="col-12">
+                    
                 </div>
             </div>
 
@@ -348,6 +342,15 @@
                         </div>
                         <div class="card-body">
                             <div id="timeAnalysis">
+                                <div class="row">
+                                    <div class="col-6 border-end border-dark">
+                                        <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span><i class="fa-solid fa-clock me-2" style="color: green;"></i>Tổng TG làm việc:</span>
+                                        <strong id="">0 giờ 0 phút</strong>
+                                    </div>
+                                </div>
+                                <hr>
                                 <div class="mb-3">
                                     <div class="d-flex justify-content-between">
                                         <span><i class="fa-solid fa-circle-play me-2" style="color: rgb(174, 195, 214);"></i>Thời gian chạy máy:</span>
@@ -366,13 +369,51 @@
                                         <strong id="otherTime">0 giờ 0 phút</strong>
                                     </div>
                                 </div>
-                                <hr>
-                                <div>
+                                <div class="mb-3">
                                     <div class="d-flex justify-content-between">
                                         <span><i class="fas fa-clock text-primary me-2"></i>Tổng thời gian:</span>
                                         <strong id="totalTime">0 giờ 0 phút</strong>
                                     </div>
                                 </div>
+                                    </div>
+
+
+                                    <div class="col-6">
+<div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span><i class="fa-solid fa-clock me-2" style="color: green;"></i>Tổng TG làm việc:</span>
+                                        <strong id="runTime">0 giờ 0 phút</strong>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span><i class="fa-solid fa-circle-play me-2" style="color: rgb(174, 195, 214);"></i>Thời gian sản xuất:</span>
+                                        <strong id="runTime">0 giờ 0 phút</strong>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span><i class="fas fa-tools me-2" style="color: rgb(224, 202, 162);"></i>Thời gian chạy mẫu:</span>
+                                        <strong id="setupTime">0 giờ 0 phút</strong>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span><i class="fas fa-pause-circle me-2" style="color: rgb(242, 174, 174);"></i>Thời gian dừng máy:</span>
+                                        <strong id="otherTime">0 giờ 0 phút</strong>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span><i class="fas fa-clock text-primary me-2"></i>Tổng thời gian:</span>
+                                        <strong id="totalTime">0 giờ 0 phút</strong>
+                                    </div>
+                                </div>
+
+                                    </div>
+                                </div>
+                                
                                 <hr>
                                 <div id="stopReasonsAnalysis">
                                     <!-- Phân tích lý do dừng máy sẽ được load động -->
@@ -408,7 +449,9 @@
 
 <!-- Charts Section Row 3: Top 10 Analytics -->
 <div class=" mt-4" style="display: none;" id="topAnalyticsSection">
-    <!-- Top 10 Khách hàng -->
+    <div class="row">
+        <div class="col-6">
+             <!-- Top 10 Khách hàng -->
     <div class="">
         <div class="card h-100">
             <div class="card-header">
@@ -421,8 +464,9 @@
             </div>
         </div>
     </div>
-
-    <!-- Top 10 Mã sản phẩm -->
+        </div>
+        <div class="col-6">
+            <!-- Top 10 Mã sản phẩm -->
     <div class="">
         <div class="card h-100">
             <div class="card-header">
@@ -435,6 +479,11 @@
             </div>
         </div>
     </div>
+        </div>
+    </div>
+   
+
+    
 </div>
 
 

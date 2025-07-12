@@ -232,7 +232,7 @@ function setupYearlyCharts() {
     if (yearSelect) {
         const currentYear = new Date().getFullYear();
         yearSelect.innerHTML = '';
-        
+
         // Thêm 5 năm gần nhất, chọn sẵn năm hiện tại
         for (let i = 0; i < 5; i++) {
             const year = currentYear - i;
@@ -242,12 +242,12 @@ function setupYearlyCharts() {
             if (year === currentYear) option.selected = true;
             yearSelect.appendChild(option);
         }
-        
+
         // Gắn sự kiện thay đổi năm
-        yearSelect.addEventListener('change', function() {
+        yearSelect.addEventListener('change', function () {
             loadYearlyCharts(this.value);
         });
-        
+
         // Load biểu đồ cho năm hiện tại
         loadYearlyCharts(currentYear);
     }
@@ -257,13 +257,13 @@ function setupYearlyCharts() {
 async function loadYearlyCharts(year) {
     try {
         showLoading(true);
-        
+
         // Lấy dữ liệu theo năm
         const yearlyData = await fetchYearlyData(year);
-        
+
         // Hiển thị biểu đồ
         displayYearlyMachineCharts(yearlyData);
-        
+
         showLoading(false);
     } catch (error) {
         console.error('Lỗi khi tải biểu đồ năm:', error);
@@ -290,7 +290,7 @@ async function fetchYearlyData(year) {
 function displayYearlyMachineCharts(yearlyData) {
     const container = document.getElementById('yearlyChartsContainer');
     if (!container) return;
-    
+
     // Destroy tất cả chart cũ
     if (window.yearlyCharts) {
         window.yearlyCharts.forEach(chart => {
@@ -298,10 +298,16 @@ function displayYearlyMachineCharts(yearlyData) {
         });
     }
     window.yearlyCharts = [];
-    
+
     // Lấy danh sách máy từ dữ liệu thực tế
     const machines = Object.keys(yearlyData).sort();
-    
+
+    // THÊM DÒNG NÀY Ở ĐÂY - TRƯỚC KHI SỬ DỤNG
+    const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+
+    console.log('🔍 DEBUG yearlyData:', yearlyData);
+    console.log('🔍 DEBUG machines:', machines);
+
     if (machines.length === 0) {
         container.innerHTML = `
             <div class="text-center text-muted p-4">
@@ -311,65 +317,349 @@ function displayYearlyMachineCharts(yearlyData) {
         `;
         return;
     }
-    
-    // Tạo HTML cho từng máy (mỗi máy 1 hàng với 2 cột)
-    let html = '';
-    machines.forEach((machine, index) => {
-        const paperCanvasId = `yearlyPaperChart_${machine.replace(/\s+/g, '_')}`;
-        const wasteCanvasId = `yearlyWasteChart_${machine.replace(/\s+/g, '_')}`;
-        
-        html += `
-            <div class="row mb-4">
-                <div class="col-12">
-                    <h6 class="mb-3"><i class="fas fa-cogs me-2"></i>${machine}</h6>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header bg-success text-white">
-                            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Thành phẩm</h6>
-                        </div>
-                        <div class="card-body">
-                            <div style="height: 350px; position: relative;">
-                                <canvas id="${paperCanvasId}"></canvas>
-                            </div>
-                        </div>
+
+    // Tạo HTML cho 2 biểu đồ line
+    let html = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Biểu đồ thành phẩm theo tháng</h6>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header bg-danger text-white">
-                            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Phế liệu</h6>
-                        </div>
-                        <div class="card-body">
-                            <div style="height: 350px; position: relative;">
-                                <canvas id="${wasteCanvasId}"></canvas>
-                            </div>
+                    <div class="card-body">
+                        <div style="height: 400px; position: relative;">
+                            <canvas id="yearlyPaperLineChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
-        `;
-    });
-    
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Biểu đồ phế liệu theo tháng</h6>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 400px; position: relative;">
+                            <canvas id="yearlyWasteLineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Sau khi set container.innerHTML = html;
     container.innerHTML = html;
-    
+
+    // THÊM TIMEOUT ĐỂ ĐỢI DOM RENDER
+    setTimeout(() => {
+        // Tạo datasets cho biểu đồ thành phẩm
+        const paperDatasets = [];
+        const wasteDatasets = [];
+        const colors = [
+            '#f4cfe0', '#b6d8f3', '#ffdabf', '#b5ead8', '#c7ceea', '#ede9a1'
+        ];
+
+        console.log('🔍 Bắt đầu tạo datasets...');
+
+        machines.forEach((machine, index) => {
+            const machineData = yearlyData[machine] || {};
+            const paperData = months.map(month => {
+                const value = machineData[month]?.paper || 0;
+                return value;
+            });
+            const wasteData = months.map(month => {
+                const value = machineData[month]?.waste || 0;
+                return value;
+            });
+
+            paperDatasets.push({
+                label: `Máy ${machine}`,
+                data: paperData,
+                borderColor: colors[index % colors.length],
+                backgroundColor: colors[index % colors.length] + '20',
+                fill: false,
+                tension: 0.1,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            });
+
+            wasteDatasets.push({
+                label: `Máy ${machine}`,
+                data: wasteData,
+                borderColor: colors[index % colors.length],
+                backgroundColor: colors[index % colors.length] + '20',
+                fill: false,
+                tension: 0.1,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            });
+        });
+
+        console.log('📊 Final paperDatasets:', paperDatasets);
+        console.log('📊 Final wasteDatasets:', wasteDatasets);
+
+        // Tạo biểu đồ thành phẩm
+        const paperCanvas = document.getElementById('yearlyPaperLineChart');
+        console.log('🔍 Paper canvas element:', paperCanvas);
+
+        if (paperCanvas) {
+            console.log('✅ Tạo biểu đồ thành phẩm...');
+
+            try {
+                const paperChart = new Chart(paperCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: paperDatasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                top: 40 // THÊM PADDING ĐỂ CHỪA CHỖ CHO LABEL
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom'
+                                
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                display: true,
+                                anchor: 'end',
+                                align: 'top',
+                                // color: 'black',
+                                font: {
+                                    size: 10,
+                                    weight: 'bold'
+                                },
+                                formatter: function (value) {
+                                    return value > 0 ? formatNumber(value) : '';
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Số lượng thành phẩm',
+                                    font: {
+                                        color: 'black',
+                                        weight: 'bold'
+                                    },
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Tháng',
+                                    font: {
+                                        color: 'black',
+                                        weight: 'bold'
+                                    },
+                                }
+                            }
+                        }
+                    }
+                });
+
+                window.yearlyCharts.push(paperChart);
+                console.log('✅ Biểu đồ thành phẩm đã tạo thành công');
+
+            } catch (error) {
+                console.error('❌ Lỗi tạo biểu đồ thành phẩm:', error);
+            }
+        } else {
+            console.error('❌ Không tìm thấy canvas thành phẩm');
+        }
+
+        // Tạo biểu đồ phế liệu
+        const wasteCanvas = document.getElementById('yearlyWasteLineChart');
+        console.log('🔍 Waste canvas element:', wasteCanvas);
+
+        if (wasteCanvas) {
+            console.log('✅ Tạo biểu đồ phế liệu...');
+
+            try {
+                const wasteChart = new Chart(wasteCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: wasteDatasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                top: 40 // THÊM PADDING ĐỂ CHỪA CHỖ CHO LABEL
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                display: true,
+                                anchor: 'end',
+                                align: 'top',
+                                // color: 'black',
+                                font: {
+                                    size: 10,
+                                    weight: 'bold'
+                                },
+                                formatter: function (value) {
+                                    return value > 0 ? formatNumber(value) : '';
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Số lượng phế liệu',
+                                    font: {
+                                        color: 'black',
+                                        weight: 'bold'
+                                    },
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Tháng',
+                                    font: {
+                                        color: 'black',
+                                        weight: 'bold'
+                                    },
+                                }
+                            }
+                        }
+                    }
+                });
+
+                window.yearlyCharts.push(wasteChart);
+                console.log('✅ Biểu đồ phế liệu đã tạo thành công');
+
+            } catch (error) {
+                console.error('❌ Lỗi tạo biểu đồ phế liệu:', error);
+            }
+        } else {
+            console.error('❌ Không tìm thấy canvas phế liệu');
+        }
+
+    }, 100); // Đợi 100ms để DOM render xong
+
+    // Tạo biểu đồ phế liệu
+    const wasteCanvas = document.getElementById('yearlyWasteLineChart');
+    if (wasteCanvas) {
+        console.log('✅ Tạo biểu đồ phế liệu...');
+
+        // Kiểm tra có dữ liệu không
+        const hasWasteData = wasteDatasets.some(dataset =>
+            dataset.data.some(value => value > 0)
+        );
+
+        if (!hasWasteData) {
+            console.log('⚠️ Không có dữ liệu phế liệu');
+            wasteCanvas.parentElement.innerHTML = `
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-chart-line fa-3x mb-3"></i>
+                <h6>Không có dữ liệu phế liệu cho năm này</h6>
+            </div>
+        `;
+        } else {
+            const wasteChart = new Chart(wasteCanvas, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: wasteDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Số lượng phế liệu'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Tháng'
+                            }
+                        }
+                    }
+                }
+            });
+
+            window.yearlyCharts.push(wasteChart);
+        }
+    }
+
+    container.innerHTML = html;
+
     // Tạo biểu đồ cho từng máy
-    const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-    
+    // const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+
     machines.forEach(machine => {
         const paperCanvasId = `yearlyPaperChart_${machine.replace(/\s+/g, '_')}`;
         const wasteCanvasId = `yearlyWasteChart_${machine.replace(/\s+/g, '_')}`;
-        
+
         const paperCanvas = document.getElementById(paperCanvasId);
         const wasteCanvas = document.getElementById(wasteCanvasId);
-        
+
         if (!paperCanvas || !wasteCanvas) return;
-        
+
         // Lấy dữ liệu cho máy này
         const machineData = yearlyData[machine] || {};
         const paperData = months.map(month => machineData[month]?.paper || 0);
         const wasteData = months.map(month => machineData[month]?.waste || 0);
-        
+
         // Tạo biểu đồ thành phẩm
         const paperChart = new Chart(paperCanvas, {
             type: 'bar',
@@ -397,7 +687,7 @@ function displayYearlyMachineCharts(yearlyData) {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 return `Thành phẩm: ${formatNumber(context.parsed.y)}`;
                             }
                         }
@@ -411,7 +701,7 @@ function displayYearlyMachineCharts(yearlyData) {
                             size: 10,
                             weight: 'bold'
                         },
-                        formatter: function(value) {
+                        formatter: function (value) {
                             return value > 0 ? formatNumber(value) : '';
                         }
                     }
@@ -433,7 +723,7 @@ function displayYearlyMachineCharts(yearlyData) {
                 }
             }
         });
-        
+
         // Tạo biểu đồ phế liệu
         const wasteChart = new Chart(wasteCanvas, {
             type: 'bar',
@@ -461,7 +751,7 @@ function displayYearlyMachineCharts(yearlyData) {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 return `Phế liệu: ${formatNumber(context.parsed.y)}`;
                             }
                         }
@@ -475,7 +765,7 @@ function displayYearlyMachineCharts(yearlyData) {
                             size: 10,
                             weight: 'bold'
                         },
-                        formatter: function(value) {
+                        formatter: function (value) {
                             return value > 0 ? formatNumber(value) : '';
                         }
                     }
@@ -497,7 +787,7 @@ function displayYearlyMachineCharts(yearlyData) {
                 }
             }
         });
-        
+
         window.yearlyCharts.push(paperChart, wasteChart);
     });
 }
@@ -2414,15 +2704,10 @@ function destroyAllCharts() {
         topProductsChart = null;
     }
 
-    if (window.machinePaperChart && typeof window.machinePaperChart.destroy === 'function') {
-        window.machinePaperChart.destroy();
+    if (window.machineStackedChart && typeof window.machineStackedChart.destroy === 'function') {
+        window.machineStackedChart.destroy();
     }
-    window.machinePaperChart = null;
-
-    if (window.machineWasteChart && typeof window.machineWasteChart.destroy === 'function') {
-        window.machineWasteChart.destroy();
-    }
-    window.machineWasteChart = null;
+    window.machineStackedChart = null;
 
     // Destroy tất cả chart con được tạo động
     Chart.helpers.each(Chart.instances, function (instance) {
@@ -3473,26 +3758,24 @@ function displayTopProductsChart(data, filters) {
 function createMachineProductionChart(reportData) {
     console.log('🎯 createMachineProductionChart được gọi với:', reportData.length, 'báo cáo');
 
-    const paperCanvas = document.getElementById('machinePaperChart');
-    const wasteCanvas = document.getElementById('machineWasteChart');
+    const stackedCanvas = document.getElementById('machineStackedChart');
 
-    console.log('🔍 Canvas elements:', { paperCanvas, wasteCanvas });
+console.log('🔍 Canvas elements:', { stackedCanvas });
 
-    if (!paperCanvas || !wasteCanvas) {
-        console.error('❌ Không tìm thấy canvas elements');
-        return;
-    }
+if (!stackedCanvas) {
+    console.error('❌ Không tìm thấy canvas elements');
+    return;
+}
+
+
 
     // Destroy chart cũ nếu có
-    if (window.machinePaperChart && typeof window.machinePaperChart.destroy === 'function') {
-        window.machinePaperChart.destroy();
-    }
-    window.machinePaperChart = null;
+if (window.machineStackedChart && typeof window.machineStackedChart.destroy === 'function') {
+    window.machineStackedChart.destroy();
+}
+window.machineStackedChart = null;
 
-    if (window.machineWasteChart && typeof window.machineWasteChart.destroy === 'function') {
-        window.machineWasteChart.destroy();
-    }
-    window.machineWasteChart = null;
+
 
     // Group dữ liệu theo máy từ báo cáo thực tế
     const machineGroups = {};
@@ -3518,155 +3801,97 @@ function createMachineProductionChart(reportData) {
         return;
     }
 
-    // Tạo biểu đồ thành phẩm
-    try {
-        window.machinePaperChart = new Chart(paperCanvas, {
-            type: 'bar',
-            data: {
-                labels: machines,
-                datasets: [{
-                    label: 'Thành phẩm in',
-                    data: paperData,
-                    backgroundColor: 'rgba(174, 207, 188, 0.8)',
-                    borderColor: 'rgba(148, 199, 169, 1)',
-                    borderWidth: 1
-                }]
+    // Tạo biểu đồ stacked
+try {
+    window.machineStackedChart = new Chart(stackedCanvas, {
+        type: 'bar',
+        data: {
+            labels: machines,
+            datasets: [{
+                label: 'Thành phẩm in',
+                data: paperData,
+                backgroundColor: 'rgba(174, 207, 188, 0.8)',
+                borderColor: 'rgba(148, 199, 169, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Phế liệu',
+                data: wasteData,
+                backgroundColor: 'rgba(248, 179, 181, 0.8)',
+                borderColor: 'rgba(255, 141, 152, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 30 // THÊM PADDING ĐỂ CHỪA CHỖ CHO LABEL
+                }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        top: 40 // Thêm khoảng cách cho số liệu trên đầu
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return `Thành phẩm: ${formatNumber(context.parsed.y)}`;
-                            }
-                        }
-                    },
-                    datalabels: {
+            scales: {
+                x: {
+                    stacked: true,
+                    title: {
                         display: true,
-                        anchor: 'end',
-                        align: 'top',
-                        color: 'black',
-                        font: {
-                            size: 11,
-                            weight: 'bold'
-                        },
-                        formatter: function (value) {
-                            return value > 0 ? formatNumber(value) : '';
-                        }
+                        // text: 'Máy'
                     }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Số lượng thành phẩm',
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            },
-                            color: 'black'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Máy'
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Số lượng',
+                        font:{
+                            weight: 'bold'
                         }
                     }
                 }
-            }
-        });
-
-        console.log('✅ Biểu đồ thành phẩm đã tạo thành công');
-    } catch (error) {
-        console.error('❌ Lỗi khi tạo biểu đồ thành phẩm:', error);
-    }
-
-    // Tạo biểu đồ phế liệu
-    try {
-        window.machineWasteChart = new Chart(wasteCanvas, {
-            type: 'bar',
-            data: {
-                labels: machines,
-                datasets: [{
-                    label: 'Phế liệu',
-                    data: wasteData,
-                    backgroundColor: 'rgba(248, 179, 181, 0.8)',
-                    borderColor: 'rgba(255, 141, 152, 1)',
-                    borderWidth: 1
-                }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        top: 40 // Thêm khoảng cách cho số liệu trên đầu
-                    }
+            plugins: {
+                legend: {
+                    position: 'bottom'
                 },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return `Phế liệu: ${formatNumber(context.parsed.y)}`;
-                            }
-                        }
-                    },
-                    datalabels: {
-                        display: true,
-                        anchor: 'end',
-                        align: 'top',
-                        color: 'black',
-                        font: {
-                            size: 11,
-                            weight: 'bold'
-                        },
-                        formatter: function (value) {
-                            return value > 0 ? formatNumber(value) : '';
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
                         }
                     }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Số lượng phế liệu',
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            },
-                            color: 'black'
-                        }
+                datalabels: {
+                    display: true,
+                    anchor: 'center',
+                    align: 'center',
+                    // color: 'white',
+                    font: {
+                        size: 11,
+                        weight: 'bold'
                     },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Máy'
-                        }
+                    formatter: function(value, context) {
+                        if (value === 0) return '';
+                        
+                        // Tính tổng cho máy này
+                        const machineIndex = context.dataIndex;
+                        const paperValue = context.chart.data.datasets[0].data[machineIndex];
+                        const wasteValue = context.chart.data.datasets[1].data[machineIndex];
+                        const total = paperValue + wasteValue;
+                        
+                        if (total === 0) return '';
+                        
+                        const percent = ((value / total) * 100).toFixed(1);
+                        return `${formatNumber(value)} (${percent}%)`;
                     }
                 }
             }
-        });
+        }
+    });
 
-        console.log('✅ Biểu đồ phế liệu đã tạo thành công');
-    } catch (error) {
-        console.error('❌ Lỗi khi tạo biểu đồ phế liệu:', error);
-    }
+    console.log('✅ Biểu đồ stacked đã tạo thành công');
+} catch (error) {
+    console.error('❌ Lỗi khi tạo biểu đồ stacked:', error);
+}
 }
 
 
