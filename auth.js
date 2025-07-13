@@ -25,25 +25,25 @@ async function checkAuthentication() {
     // Đảm bảo header luôn hiển thị
 // ensureHeaderAlwaysVisible();
 
-let lastScrollTop = 0;
-        window.addEventListener('scroll', function() {
-            // Sử dụng window.pageYOffset cho tương thích trình duyệt tốt hơn
-            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+// let lastScrollTop = 0;
+//         window.addEventListener('scroll', function() {
+//             // Sử dụng window.pageYOffset cho tương thích trình duyệt tốt hơn
+//             let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-            // Nếu cuộn lên (scroll up)
-            if (scrollTop < lastScrollTop) {
-                header.style.top = '0';
-            } 
-            // Nếu cuộn xuống (scroll down)
-            else {
-                // Chỉ ẩn khi đã cuộn qua chiều cao của header
-                if (scrollTop > header.offsetHeight) {
-                    header.style.top = `-${header.offsetHeight}px`;
-                }
-            }
-            // Cập nhật vị trí scroll cuối, xử lý trường hợp cuộn lên trên cùng
-            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-        }, false);
+//             // Nếu cuộn lên (scroll up)
+//             if (scrollTop < lastScrollTop) {
+//                 header.style.top = '0';
+//             } 
+//             // Nếu cuộn xuống (scroll down)
+//             else {
+//                 // Chỉ ẩn khi đã cuộn qua chiều cao của header
+//                 if (scrollTop > header.offsetHeight) {
+//                     header.style.top = `-${header.offsetHeight}px`;
+//                 }
+//             }
+//             // Cập nhật vị trí scroll cuối, xử lý trường hợp cuộn lên trên cùng
+//             lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+//         }, false);
 
         
     

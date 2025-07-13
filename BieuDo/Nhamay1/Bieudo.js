@@ -429,7 +429,7 @@ function displayYearlyMachineCharts(yearlyData) {
                             legend: {
                                 display: true,
                                 position: 'bottom'
-                                
+
                             },
                             tooltip: {
                                 callbacks: {
@@ -1233,8 +1233,10 @@ function displaySummaryStats(data, filters) {
 // Hiển thị thống kê thời gian
 function displayTimeStats(data, filters) {
     // Tính thời gian dừng máy (thời gian khác)
-    const stopTime = data.stopReasons ?
-        data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
+const stopTime = data.stopReasons ?
+    data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
+
+console.log('📊 Thời gian dừng máy từ API:', stopTime, 'phút');
 
     // Tính tổng thời gian từ dữ liệu thực tế (thời gian kết thúc - thời gian bắt đầu)
     let totalTime = 0;
@@ -2382,6 +2384,97 @@ function displayStopReasonChart(data, filters) {
 
 // Cập nhật thông tin thời gian
 function updateTimeAnalysisInfo(timeData) {
+
+    console.log('🎯 updateTimeAnalysisInfo được gọi!');
+console.log('🎯 timeData:', timeData);
+console.log('🎯 currentChartData:', currentChartData);
+
+    // Tính tổng thời gian làm việc theo mã ca và ngày cho phân tích thời gian
+    let totalWorkHoursByDay = 0;
+
+    console.log('🔍 DEBUG updateTimeAnalysisInfo - currentChartData:', currentChartData);
+    console.log('🔍 DEBUG currentChartData.reports:', currentChartData?.reports);
+
+    if (currentChartData && currentChartData.reports) {
+        let workTimeByDay = {};
+
+        console.log('🔍 Tính toán tổng thời gian làm việc theo ca và ngày:');
+        console.log('🔍 Số báo cáo:', currentChartData.reports.length);
+
+        currentChartData.reports.forEach((report, index) => {
+            console.log(`🔍 Báo cáo ${index}:`, {
+                thoi_gian_bat_dau: report.thoi_gian_bat_dau,
+                thoi_gian_ket_thuc: report.thoi_gian_ket_thuc,
+                ma_ca: report.ma_ca,
+                may: report.may
+            });
+
+            if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+                const start = new Date(report.thoi_gian_bat_dau);
+                const end = new Date(report.thoi_gian_ket_thuc);
+
+                console.log(`🔍 Thời gian start:`, start);
+                console.log(`🔍 Thời gian end:`, end);
+
+                // Lấy ngày từ thời gian bắt đầu
+                const workDate = start.toISOString().split('T')[0];
+                const maCa = report.ma_ca || 'Unknown';
+                const may = report.may || 'Unknown';
+
+                let diff = (end - start) / (1000 * 60); // phút
+                console.log(`🔍 Diff ban đầu:`, diff);
+
+                if (diff < 0) {
+                    diff += 24 * 60;
+                    console.log(`🔍 Diff sau khi cộng 24h:`, diff);
+                }
+
+                const dayKey = workDate;
+                const machineShiftKey = `${may}_${maCa}`;
+
+                console.log(`🔍 dayKey:`, dayKey);
+                console.log(`🔍 machineShiftKey:`, machineShiftKey);
+
+                if (!workTimeByDay[dayKey]) {
+                    workTimeByDay[dayKey] = {
+                        date: workDate,
+                        totalMinutes: 0,
+                        shifts: {}
+                    };
+                }
+
+                // Chỉ cộng thời gian nếu ca này của máy này chưa được tính trong ngày
+                if (!workTimeByDay[dayKey].shifts[machineShiftKey]) {
+                    workTimeByDay[dayKey].shifts[machineShiftKey] = {
+                        machine: may,
+                        shift: maCa,
+                        minutes: diff
+                    };
+                    workTimeByDay[dayKey].totalMinutes += diff;
+                    console.log(`📅 ${workDate} - Máy ${may} - Ca ${maCa}: ${Math.round(diff)} phút`);
+                } else {
+                    console.log(`⚠️ Đã tính ca ${machineShiftKey} trong ngày ${dayKey}`);
+                }
+            } else {
+                console.log(`❌ Báo cáo ${index} thiếu thời gian`);
+            }
+        });
+
+        console.log('🔍 workTimeByDay:', workTimeByDay);
+
+        // Cộng tổng thời gian từ tất cả các ngày
+        Object.values(workTimeByDay).forEach(dayData => {
+            totalWorkHoursByDay += dayData.totalMinutes;
+            console.log(`📊 Ngày ${dayData.date}: ${Math.round(dayData.totalMinutes)} phút (${(dayData.totalMinutes / 60).toFixed(1)} giờ)`);
+        });
+
+        console.log(`📊 TỔNG THỜI GIAN LÀM VIỆC THEO CA: ${Math.round(totalWorkHoursByDay)} phút (${(totalWorkHoursByDay / 60).toFixed(1)} giờ)`);
+    } else {
+        console.log('❌ Không có currentChartData hoặc reports');
+    }
+
+    console.log('🔍 Final totalWorkHoursByDay:', totalWorkHoursByDay);
+
     const runTimeEl = document.getElementById('runTime');
     const setupTimeEl = document.getElementById('setupTime');
     const otherTimeEl = document.getElementById('otherTime');
@@ -2427,6 +2520,18 @@ function updateTimeAnalysisInfo(timeData) {
         console.log('- Run time (tính toán):', totalTime - setupTime - otherTime);
         console.log('- Run time (sau Math.max):', runTime);
 
+        // Cập nhật tổng thời gian làm việc theo ca
+const totalWorkHoursEl = document.getElementById('totalWorkHours');
+console.log('🔍 totalWorkHoursEl element:', totalWorkHoursEl);
+console.log('🔍 Giá trị sẽ set:', formatDuration(totalWorkHoursByDay));
+
+if (totalWorkHoursEl) {
+    totalWorkHoursEl.textContent = formatDuration(totalWorkHoursByDay);
+    console.log('✅ Đã cập nhật totalWorkHours');
+} else {
+    console.log('❌ Không tìm thấy element totalWorkHours');
+}
+
         if (runTimeEl) runTimeEl.textContent = formatDuration(runTime);
         if (setupTimeEl) setupTimeEl.textContent = formatDuration(setupTime);
         if (otherTimeEl) otherTimeEl.textContent = formatDuration(otherTime);
@@ -2439,6 +2544,95 @@ function updateTimeAnalysisInfo(timeData) {
 function displayTimeAnalysis(data, filters) {
     const stopReasonsEl = document.getElementById('stopReasonsAnalysis');
     if (!stopReasonsEl) return;
+
+
+// Tính tổng thời gian làm việc theo mã ca và ngày
+let totalWorkHoursByDay = 0;
+
+console.log('🎯 displayTimeAnalysis được gọi!');
+
+// Định nghĩa thời gian chuẩn cho từng mã ca (tính bằng giờ)
+const shiftHours = {
+    'A': 8,     // 6H - 14H
+    'B': 8,     // 14H - 22H  
+    'C': 8,     // 22H - 6H
+    'D': 12,    // 10H - 22H
+    'A1': 12,   // 6H - 18H
+    'B1': 12,   // 18H - 6H
+    'AB': 9,    // 7H - 16H
+    'AB-': 8,   // 7H - 15H
+    'AB+': 10,  // 7H - 17H
+    'HC': 9     // 8H - 17H
+};
+
+if (data && data.reports && data.reports.length > 0) {
+    let workTimeByDay = {};
+    
+    console.log('🔍 Tính toán tổng thời gian làm việc theo định nghĩa mã ca:');
+    console.log('🔍 Số báo cáo:', data.reports.length);
+    
+    data.reports.forEach((report, index) => {
+        const workDate = report.ngay_phu ? new Date(report.ngay_phu).toISOString().split('T')[0] : 
+                  new Date(report.thoi_gian_bat_dau).toISOString().split('T')[0];
+        const maCa = report.ma_ca || 'Unknown';
+        const may = report.may || 'Unknown';
+        
+        // Lấy số giờ chuẩn của ca này
+        const caHours = shiftHours[maCa] || 8; // Mặc định 8 giờ nếu không tìm thấy
+        
+        console.log(`🔍 Báo cáo ${index}: ${workDate} | Máy ${may} | Ca ${maCa} | ${caHours} giờ (chuẩn)`);
+        
+        const dayKey = workDate;
+        const machineShiftKey = `${may}_${maCa}`;
+        
+        if (!workTimeByDay[dayKey]) {
+            workTimeByDay[dayKey] = {
+                date: workDate,
+                totalHours: 0,
+                shifts: {}
+            };
+            console.log(`📅 Tạo mới ngày: ${dayKey}`);
+        }
+        
+        // Chỉ cộng thời gian nếu ca này của máy này chưa được tính trong ngày
+        if (!workTimeByDay[dayKey].shifts[machineShiftKey]) {
+            workTimeByDay[dayKey].shifts[machineShiftKey] = {
+                machine: may,
+                shift: maCa,
+                hours: caHours
+            };
+            workTimeByDay[dayKey].totalHours += caHours;
+            console.log(`✅ CỘNG: ${workDate} - Máy ${may} - Ca ${maCa}: ${caHours} giờ`);
+        } else {
+            console.log(`❌ BỎ QUA (đã tính): ${workDate} - Máy ${may} - Ca ${maCa}: ${caHours} giờ`);
+        }
+        
+        console.log(`    - Tổng ngày ${workDate}: ${workTimeByDay[dayKey].totalHours} giờ`);
+        console.log('---');
+    });
+    
+    console.log('📊 CHI TIẾT TỪNG NGÀY:');
+    Object.values(workTimeByDay).forEach(dayData => {
+        totalWorkHoursByDay += dayData.totalHours;
+        console.log(`📅 ${dayData.date}:`);
+        console.log(`   - Tổng: ${dayData.totalHours} giờ`);
+        console.log('   - Chi tiết ca:');
+        Object.entries(dayData.shifts).forEach(([key, shift]) => {
+            console.log(`     + ${shift.machine}-${shift.shift}: ${shift.hours} giờ`);
+        });
+        console.log('---');
+    });
+    
+    console.log(`📊 TỔNG THỜI GIAN LÀM VIỆC THEO CA: ${totalWorkHoursByDay} giờ`);
+}
+
+// Cập nhật hiển thị (chuyển giờ thành phút để dùng formatDuration)
+const totalWorkHoursEl = document.getElementById('totalWorkHours');
+if (totalWorkHoursEl) {
+    totalWorkHoursEl.textContent = `${totalWorkHoursByDay} giờ`;
+    console.log('✅ Đã cập nhật totalWorkHours:', `${totalWorkHoursByDay} giờ`);
+}
+
 
     let html = '';
 
@@ -3331,7 +3525,7 @@ function calculateTopCustomersFromTable(reports) {
 
 // Tính toán top 10 mã sản phẩm từ dữ liệu bảng chi tiết
 function calculateTopProductsFromTable(reports) {
-    console.log('🔍 calculateTopProductsFromTable với', reports.length, 'báo cáo');
+    // console.log('🔍 calculateTopProductsFromTable với', reports.length, 'báo cáo');
 
     if (!reports || reports.length === 0) {
         console.log('❌ Không có báo cáo để tính toán');
@@ -3347,7 +3541,7 @@ function calculateTopProductsFromTable(reports) {
         const ws = report.ws || '';
         const orderQuantity = parseFloat(report.sl_don_hang) || 0;
 
-        console.log(`📋 Báo cáo ${index}: MSP=${product}, WS=${ws}, SL=${orderQuantity}`);
+        // console.log(`📋 Báo cáo ${index}: MSP=${product}, WS=${ws}, SL=${orderQuantity}`);
 
         if (!productStats[product]) {
             productStats[product] = {
@@ -3386,19 +3580,19 @@ function calculateTopProductsFromTable(reports) {
 
 // Hiển thị Top 10 Analytics
 function displayTopAnalytics(data, filters) {
-    console.log('🎯 displayTopAnalytics được gọi với data:', data);
-    console.log('🎯 currentPageData:', currentPageData);
+    // console.log('🎯 displayTopAnalytics được gọi với data:', data);
+    // console.log('🎯 currentPageData:', currentPageData);
 
     // Lấy dữ liệu từ data.reports thay vì currentPageData
     let reportsData = [];
     if (data && data.reports && data.reports.length > 0) {
         reportsData = data.reports;
-        console.log('📊 Sử dụng dữ liệu từ data.reports:', reportsData.length, 'báo cáo');
+        // console.log('📊 Sử dụng dữ liệu từ data.reports:', reportsData.length, 'báo cáo');
     } else if (currentPageData && currentPageData.length > 0) {
         reportsData = currentPageData;
-        console.log('📊 Sử dụng dữ liệu từ currentPageData:', reportsData.length, 'báo cáo');
+        // console.log('📊 Sử dụng dữ liệu từ currentPageData:', reportsData.length, 'báo cáo');
     } else {
-        console.log('⚠️ Không có dữ liệu để hiển thị top analytics');
+        // console.log('⚠️ Không có dữ liệu để hiển thị top analytics');
 
         // Vẫn hiển thị biểu đồ trống
         displayTopCustomersChart({ topCustomers: [] }, filters);
@@ -3410,7 +3604,7 @@ function displayTopAnalytics(data, filters) {
     let filteredData = reportsData;
     if (filters && filters.maca) {
         filteredData = reportsData.filter(report => report.ma_ca === filters.maca);
-        console.log('📊 Sau khi lọc theo mã ca:', filteredData.length, 'báo cáo');
+        // console.log('📊 Sau khi lọc theo mã ca:', filteredData.length, 'báo cáo');
     }
 
     // Tính toán top 10 từ dữ liệu đã lọc
@@ -3471,8 +3665,8 @@ function displayTopCustomersChart(data, filters) {
     const labels = data.topCustomers.map(item => item.customer);
     const quantities = data.topCustomers.map(item => item.totalQuantity);
 
-    console.log('📊 Labels:', labels);
-    console.log('📊 Quantities:', quantities);
+    // console.log('📊 Labels:', labels);
+    // console.log('📊 Quantities:', quantities);
 
     try {
         topCustomersChart = new Chart(ctx, {
@@ -3760,20 +3954,20 @@ function createMachineProductionChart(reportData) {
 
     const stackedCanvas = document.getElementById('machineStackedChart');
 
-console.log('🔍 Canvas elements:', { stackedCanvas });
+    console.log('🔍 Canvas elements:', { stackedCanvas });
 
-if (!stackedCanvas) {
-    console.error('❌ Không tìm thấy canvas elements');
-    return;
-}
+    if (!stackedCanvas) {
+        console.error('❌ Không tìm thấy canvas elements');
+        return;
+    }
 
 
 
     // Destroy chart cũ nếu có
-if (window.machineStackedChart && typeof window.machineStackedChart.destroy === 'function') {
-    window.machineStackedChart.destroy();
-}
-window.machineStackedChart = null;
+    if (window.machineStackedChart && typeof window.machineStackedChart.destroy === 'function') {
+        window.machineStackedChart.destroy();
+    }
+    window.machineStackedChart = null;
 
 
 
@@ -3802,96 +3996,96 @@ window.machineStackedChart = null;
     }
 
     // Tạo biểu đồ stacked
-try {
-    window.machineStackedChart = new Chart(stackedCanvas, {
-        type: 'bar',
-        data: {
-            labels: machines,
-            datasets: [{
-                label: 'Thành phẩm in',
-                data: paperData,
-                backgroundColor: 'rgba(174, 207, 188, 0.8)',
-                borderColor: 'rgba(148, 199, 169, 1)',
-                borderWidth: 1
-            }, {
-                label: 'Phế liệu',
-                data: wasteData,
-                backgroundColor: 'rgba(248, 179, 181, 0.8)',
-                borderColor: 'rgba(255, 141, 152, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: {
-                padding: {
-                    top: 30 // THÊM PADDING ĐỂ CHỪA CHỖ CHO LABEL
-                }
+    try {
+        window.machineStackedChart = new Chart(stackedCanvas, {
+            type: 'bar',
+            data: {
+                labels: machines,
+                datasets: [{
+                    label: 'Thành phẩm in',
+                    data: paperData,
+                    backgroundColor: 'rgba(174, 207, 188, 0.8)',
+                    borderColor: 'rgba(148, 199, 169, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Phế liệu',
+                    data: wasteData,
+                    backgroundColor: 'rgba(248, 179, 181, 0.8)',
+                    borderColor: 'rgba(255, 141, 152, 1)',
+                    borderWidth: 1
+                }]
             },
-            scales: {
-                x: {
-                    stacked: true,
-                    title: {
-                        display: true,
-                        // text: 'Máy'
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 30 // THÊM PADDING ĐỂ CHỪA CHỖ CHO LABEL
                     }
                 },
-                y: {
-                    stacked: true,
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Số lượng',
-                        font:{
-                            weight: 'bold'
+                scales: {
+                    x: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            // text: 'Máy'
                         }
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
-                        }
-                    }
-                },
-                datalabels: {
-                    display: true,
-                    anchor: 'center',
-                    align: 'center',
-                    // color: 'white',
-                    font: {
-                        size: 11,
-                        weight: 'bold'
                     },
-                    formatter: function(value, context) {
-                        if (value === 0) return '';
-                        
-                        // Tính tổng cho máy này
-                        const machineIndex = context.dataIndex;
-                        const paperValue = context.chart.data.datasets[0].data[machineIndex];
-                        const wasteValue = context.chart.data.datasets[1].data[machineIndex];
-                        const total = paperValue + wasteValue;
-                        
-                        if (total === 0) return '';
-                        
-                        const percent = ((value / total) * 100).toFixed(1);
-                        return `${formatNumber(value)} (${percent}%)`;
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: 'center',
+                        align: 'center',
+                        // color: 'white',
+                        font: {
+                            size: 11,
+                            weight: 'bold'
+                        },
+                        formatter: function (value, context) {
+                            if (value === 0) return '';
+
+                            // Tính tổng cho máy này
+                            const machineIndex = context.dataIndex;
+                            const paperValue = context.chart.data.datasets[0].data[machineIndex];
+                            const wasteValue = context.chart.data.datasets[1].data[machineIndex];
+                            const total = paperValue + wasteValue;
+
+                            if (total === 0) return '';
+
+                            const percent = ((value / total) * 100).toFixed(1);
+                            return `${formatNumber(value)} (${percent}%)`;
+                        }
                     }
                 }
             }
-        }
-    });
+        });
 
-    console.log('✅ Biểu đồ stacked đã tạo thành công');
-} catch (error) {
-    console.error('❌ Lỗi khi tạo biểu đồ stacked:', error);
-}
+        console.log('✅ Biểu đồ stacked đã tạo thành công');
+    } catch (error) {
+        console.error('❌ Lỗi khi tạo biểu đồ stacked:', error);
+    }
 }
 
 

@@ -18,7 +18,7 @@ router.get('/in/chart-data', async (req, res) => {
         let params = [];
         
         if (fromDate && toDate) {
-            whereConditions.push(`DATE(created_at) BETWEEN ? AND ?`);
+            whereConditions.push(`DATE(ngay_phu) BETWEEN ? AND ?`);
             params.push(fromDate, toDate);
         }
         
@@ -54,7 +54,7 @@ router.get('/in/chart-data', async (req, res) => {
             db.all(`SELECT 
     thanh_pham_in, phe_lieu, phe_lieu_trang, thoi_gian_canh_may,
     thoi_gian_bat_dau, thoi_gian_ket_thuc, khach_hang, ma_sp, id, ws, ma_ca, may,
-    sl_don_hang, so_mau
+    sl_don_hang, so_mau, ngay_phu
 FROM bao_cao_in ${whereClause}
 ORDER BY created_at DESC`,
                 params, (err, rows) => {
@@ -115,12 +115,12 @@ const stopReports = await new Promise((resolve, reject) => {
         return;
     }
     
-    // Xây dựng điều kiện WHERE tương tự như query chính
+    // Xây dựng điều kiện WHERE tương tự như query chính NHƯNG dùng ngày phụ
     let stopWhereConditions = [];
     let stopParams = [];
     
     if (fromDate && toDate) {
-        stopWhereConditions.push(`DATE(b.created_at) BETWEEN ? AND ?`);
+        stopWhereConditions.push(`DATE(b.ngay_phu) BETWEEN ? AND ?`);
         stopParams.push(fromDate, toDate);
     }
     
@@ -150,7 +150,7 @@ const stopReports = await new Promise((resolve, reject) => {
     const stopWhereClause = stopWhereConditions.length > 0 ? 
         'WHERE ' + stopWhereConditions.join(' AND ') : '';
     
-    db.all(`SELECT s.ly_do, s.thoi_gian_dung_may, s.thoi_gian_dung, s.thoi_gian_chay_lai
+    db.all(`SELECT s.ly_do, s.thoi_gian_dung_may, s.thoi_gian_dung, s.thoi_gian_chay_lai, b.ws
             FROM bao_cao_in_dung_may s
             JOIN bao_cao_in b ON s.bao_cao_id = b.id
             ${stopWhereClause}`, 
@@ -172,16 +172,26 @@ console.log('📊 Stop reports từ database:', stopReports);
         // Tính thời gian setup (canh máy)
         let setupTime = reports.reduce((sum, r) => sum + (parseFloat(r.thoi_gian_canh_may) || 0), 0);
         
-// Tính tổng thời gian dừng máy
+// Tính tổng thời gian dừng máy - chỉ lấy của các WS được hiển thị
 let stopTime = 0;
+const validWS = new Set(reports.map(r => r.ws)); // Lấy danh sách WS được hiển thị
+
+console.log('📊 Valid WS for stop time:', Array.from(validWS));
+console.log('📊 Stop reports raw:', stopReports.length);
 
 // Cách 1: Lấy từ cột thoi_gian_dung_may (text)
 stopReports.forEach(stop => {
-    const duration = stop.thoi_gian_dung_may || '';
-    if (duration.includes('giờ') || duration.includes('phút')) {
-        const hours = (duration.match(/(\d+)\s*giờ/) || [0, 0])[1];
-        const minutes = (duration.match(/(\d+)\s*phút/) || [0, 0])[1];
-        stopTime += parseInt(hours) * 60 + parseInt(minutes);
+    // Chỉ tính nếu WS này có trong danh sách báo cáo được hiển thị
+    if (validWS.has(stop.ws)) {
+        const duration = stop.thoi_gian_dung_may || '';
+        if (duration.includes('giờ') || duration.includes('phút')) {
+            const hours = (duration.match(/(\d+)\s*giờ/) || [0, 0])[1];
+            const minutes = (duration.match(/(\d+)\s*phút/) || [0, 0])[1];
+            stopTime += parseInt(hours) * 60 + parseInt(minutes);
+            console.log(`📊 Cộng thời gian dừng máy WS ${stop.ws}: ${duration}`);
+        }
+    } else {
+        console.log(`📊 Bỏ qua WS ${stop.ws} (không trong danh sách hiển thị)`);
     }
 });
 
@@ -201,24 +211,28 @@ if (stopTime === 0 && stopReports.length > 0) {
 
 
 
-// Tạo mảng stopReasons từ dữ liệu dừng máy với lý do cụ thể
+// Tạo mảng stopReasons - chỉ lấy của các WS được hiển thị
 const stopReasonsRaw = [];
 stopReports.forEach(stop => {
-    const duration = stop.thoi_gian_dung_may || '';
-    const reason = stop.ly_do || 'Không rõ lý do';
-    
-    if (duration.includes('giờ') || duration.includes('phút')) {
-        const hours = (duration.match(/(\d+)\s*giờ/) || [0, 0])[1];
-        const minutes = (duration.match(/(\d+)\s*phút/) || [0, 0])[1];
-        const totalMinutes = parseInt(hours) * 60 + parseInt(minutes);
-        if (totalMinutes > 0) {
-            stopReasonsRaw.push({
-                reason: reason,
-                duration: totalMinutes
-            });
+    // Chỉ tính nếu WS này có trong danh sách báo cáo được hiển thị
+    if (validWS.has(stop.ws)) {
+        const duration = stop.thoi_gian_dung_may || '';
+        const reason = stop.ly_do || 'Không rõ lý do';
+        
+        if (duration.includes('giờ') || duration.includes('phút')) {
+            const hours = (duration.match(/(\d+)\s*giờ/) || [0, 0])[1];
+            const minutes = (duration.match(/(\d+)\s*phút/) || [0, 0])[1];
+            const totalMinutes = parseInt(hours) * 60 + parseInt(minutes);
+            if (totalMinutes > 0) {
+                stopReasonsRaw.push({
+                    reason: reason,
+                    duration: totalMinutes
+                });
+            }
         }
     }
 });
+
 
 // Hợp nhất các lý do giống nhau
 const stopReasonsMap = {};
