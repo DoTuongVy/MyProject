@@ -3240,17 +3240,33 @@ async function fetchInReportList(filters) {
 
 // Render bảng chi tiết
 function renderDetailTable(container, data, filters) {
+
     if (!data || data.length === 0) {
         const noDataMessage = filters && filters.maca ?
             `Không có dữ liệu chi tiết cho mã ca ${filters.maca}` :
             'Không có dữ liệu chi tiết';
-        container.innerHTML = `
+        
+        // Chỉ thay thế phần sau filter, giữ nguyên phần filter
+        const existingFilter = container.querySelector('.row.mb-3');
+        let tableHTML = `
             <div class="text-center text-muted p-4">
                 <i class="fas fa-table fa-2x mb-3"></i>
                 <h6>${noDataMessage}</h6>
-                <p>Vui lòng kiểm tra lại điều kiện lọc.</p>
+                <p>Vui lòng chọn lại điều kiện lọc.</p>
             </div>
         `;
+        
+        if (existingFilter) {
+            // Nếu đã có filter, chỉ thay phần sau filter
+            const afterFilter = existingFilter.nextSibling;
+            if (afterFilter) {
+                container.removeChild(afterFilter);
+            }
+            container.insertAdjacentHTML('beforeend', tableHTML);
+        } else {
+            // Nếu chưa có filter, hiển thị filter + thông báo
+            container.innerHTML = filterHtml + tableHTML;
+        }
         return;
     }
 
@@ -3277,7 +3293,6 @@ function renderDetailTable(container, data, filters) {
                                     </div>
                                     <div class="mb-2">
                                         <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('soMau')">Tất cả</button>
-                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllFilter('soMau')">Bỏ chọn</button>
                                     </div>
                                     <div class="filter-options" id="soMauOptions" style="max-height: 200px; overflow-y: auto;">
                                         <!-- Sẽ được tạo động -->
@@ -3296,7 +3311,6 @@ function renderDetailTable(container, data, filters) {
                                     </div>
                                     <div class="mb-2">
                                         <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('maSp')">Tất cả</button>
-                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllFilter('maSp')">Bỏ chọn</button>
                                     </div>
                                     <div class="filter-options" id="maSpOptions" style="max-height: 200px; overflow-y: auto;">
                                         <!-- Sẽ được tạo động -->
@@ -3315,7 +3329,6 @@ function renderDetailTable(container, data, filters) {
                                     </div>
                                     <div class="mb-2">
                                         <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('khachHang')">Tất cả</button>
-                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllFilter('khachHang')">Bỏ chọn</button>
                                     </div>
                                     <div class="filter-options" id="khachHangOptions" style="max-height: 200px; overflow-y: auto;">
                                         <!-- Sẽ được tạo động -->
@@ -3331,7 +3344,6 @@ function renderDetailTable(container, data, filters) {
                                 <div class="dropdown-menu p-2" style="min-width: 200px;">
                                     <div class="mb-2">
                                         <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('may')">Tất cả</button>
-                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllFilter('may')">Bỏ chọn</button>
                                     </div>
                                     <div class="filter-options" id="mayOptions" style="max-height: 200px; overflow-y: auto;">
                                         <!-- Sẽ được tạo động -->
@@ -3347,7 +3359,6 @@ function renderDetailTable(container, data, filters) {
                                 <div class="dropdown-menu p-2" style="min-width: 150px;">
                                     <div class="mb-2">
                                         <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('maCa')">Tất cả</button>
-                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllFilter('maCa')">Bỏ chọn</button>
                                     </div>
                                     <div class="filter-options" id="maCaOptions" style="max-height: 200px; overflow-y: auto;">
                                         <!-- Sẽ được tạo động -->
@@ -3362,17 +3373,17 @@ function renderDetailTable(container, data, filters) {
                                 </button>
                                 <div class="dropdown-menu p-2" style="min-width: 200px;">
                                     <div class="mb-2">
-                                        <select class="form-select form-select-sm" id="speedFilterType">
-                                            <option value="range">Khoảng</option>
-                                            <option value="greater">Lớn hơn</option>
-                                            <option value="less">Nhỏ hơn</option>
-                                            <option value="equal">Bằng</option>
-                                        </select>
-                                    </div>
-                                    <div class="input-group input-group-sm">
-                                        <input type="number" class="form-control" id="speedMin" placeholder="Từ">
-                                        <input type="number" class="form-control" id="speedMax" placeholder="Đến">
-                                    </div>
+    <select class="form-select form-select-sm" id="speedFilterType" onclick="event.stopPropagation()">
+        <option value="range">Khoảng</option>
+        <option value="greater">Lớn hơn</option>
+        <option value="less">Nhỏ hơn</option>
+        <option value="equal">Bằng</option>
+    </select>
+</div>
+<div class="input-group input-group-sm">
+    <input type="number" class="form-control" id="speedMin" placeholder="Từ" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation()">
+    <input type="number" class="form-control" id="speedMax" placeholder="Đến" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation()">
+</div>
                                 </div>
                             </div>
                         </div>
@@ -3385,17 +3396,17 @@ function renderDetailTable(container, data, filters) {
                                 </button>
                                 <div class="dropdown-menu p-2" style="min-width: 200px;">
                                     <div class="mb-2">
-                                        <select class="form-select form-select-sm" id="orderFilterType">
-                                            <option value="range">Khoảng</option>
-                                            <option value="greater">Lớn hơn</option>
-                                            <option value="less">Nhỏ hơn</option>
-                                            <option value="equal">Bằng</option>
-                                        </select>
-                                    </div>
-                                    <div class="input-group input-group-sm">
-                                        <input type="number" class="form-control" id="orderMin" placeholder="Từ">
-                                        <input type="number" class="form-control" id="orderMax" placeholder="Đến">
-                                    </div>
+    <select class="form-select form-select-sm" id="orderFilterType" onclick="event.stopPropagation()">
+        <option value="range">Khoảng</option>
+        <option value="greater">Lớn hơn</option>
+        <option value="less">Nhỏ hơn</option>
+        <option value="equal">Bằng</option>
+    </select>
+</div>
+<div class="input-group input-group-sm">
+    <input type="number" class="form-control" id="orderMin" placeholder="Từ" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation()">
+    <input type="number" class="form-control" id="orderMax" placeholder="Đến" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation()">
+</div>
                                 </div>
                             </div>
                         </div>
@@ -3410,17 +3421,26 @@ function renderDetailTable(container, data, filters) {
         </div>
     </div>`;
 
+
+    
     // Lưu dữ liệu gốc
-    currentPageData = data;
-originalTableData = data; 
-filteredTableData = data; 
+currentPageData = data;
+// Chỉ set originalTableData một lần khi load dữ liệu lần đầu
+if (originalTableData.length === 0) {
+    originalTableData = data;
+}
+// Chỉ cập nhật filteredTableData nếu đang load dữ liệu mới, không phải đang filter
+if (arguments.length > 3 || !filteredTableData || filteredTableData.length === 0) {
+    filteredTableData = data;
+}
 totalItems = data.length;
+
 
     // Tính toán phân trang
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const paginatedData = data.slice(startIndex, endIndex);
+    const paginatedData = filteredTableData.slice(startIndex, endIndex);
 
 
     let html = `
@@ -4586,7 +4606,6 @@ function calculateSpeed(thanhPham, runTimeMinutes) {
 
 
 
-
 // ====================================================================================================================================
 // HÀM XỬ LÝ FILTER CHO BẢNG CHI TIẾT
 // ====================================================================================================================================
@@ -4609,7 +4628,7 @@ Object.keys(options).forEach(key => {
         container.innerHTML = options[key].map(value => `
             <div class="form-check">
                 <input class="form-check-input filter-checkbox" type="checkbox" 
-                       value="${value}" id="${key}_${value}" data-filter="${key}" checked>
+       value="${value}" id="${key}_${value}" data-filter="${key}">
                 <label class="form-check-label" for="${key}_${value}">
                     ${value}
                 </label>
@@ -4649,16 +4668,29 @@ document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
                 toggleFilterInputs(inputId.replace('FilterType', ''), this.value);
             }
             updateNumericFilterButtons();
-            // Chỉ apply filter cho number inputs, không apply cho select type
-            if (element.type === 'number') {
-                autoApplyFilters();
-            }
+            
         });
         
         if (element.type === 'number') {
-            element.addEventListener('input', function() {
+            // Ngăn dropdown đóng khi nhập
+            element.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            element.addEventListener('input', function(e) {
+                e.stopPropagation(); // Ngăn dropdown đóng
                 updateNumericFilterButtons();
-                autoApplyFilters();
+                // autoApplyFilters();
+            });
+
+            // Thêm event blur để apply filter khi người dùng nhập xong
+element.addEventListener('blur', function(e) {
+    e.stopPropagation();
+    autoApplyFilters();
+});
+            
+            element.addEventListener('keydown', function(e) {
+                e.stopPropagation(); // Ngăn dropdown đóng khi nhấn phím
             });
         }
     }
@@ -4674,6 +4706,20 @@ document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
 });
 
 
+
+// Ngăn dropdown đóng khi click vào input
+document.querySelectorAll('.dropdown-menu input, .dropdown-menu select').forEach(input => {
+    input.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    input.addEventListener('keydown', function(e) {
+        e.stopPropagation();
+    });
+});
+
+
+
 }
 
 
@@ -4682,6 +4728,15 @@ document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
 // Tự động áp dụng filter
 function autoApplyFilters() {
     console.log('🔍 Auto applying filters...');
+
+    // Thu thập checkbox filters từ UI
+['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
+    const container = document.getElementById(`${filterType}Options`);
+    if (container) {
+        const checkedBoxes = container.querySelectorAll('.filter-checkbox:checked');
+        currentDetailFilters[filterType] = Array.from(checkedBoxes).map(cb => cb.value);
+    }
+});
     
     // Thu thập speed và order filters (numeric)
     const speedFilterType = document.getElementById('speedFilterType')?.value || 'range';
@@ -4715,6 +4770,18 @@ function autoApplyFilters() {
     
     // Reset về trang đầu
     currentPage = 1;
+
+
+    // Render lại bảng với dữ liệu đã lọc
+const container = document.getElementById('detailTableContainer');
+if (container) {
+    const filters = collectFilters();
+    // Tạm thời lưu dữ liệu đã lọc
+    const tempFilteredData = filteredTableData;
+    renderDetailTable(container, tempFilteredData, filters);
+    // Khôi phục lại sau khi render
+    filteredTableData = tempFilteredData;
+}
 
 
     // Lưu trạng thái filter hiện tại trước khi render
@@ -4779,28 +4846,18 @@ function updateNumericFilterButtons() {
 
 // Format input số khi người dùng nhập
 function formatNumberInput(inputElement) {
-    inputElement.addEventListener('input', function() {
-        let value = this.value.replace(/[^\d]/g, ''); // Chỉ giữ lại số
+    // Chỉ format khi blur, không format khi input
+    inputElement.addEventListener('blur', function() {
+        let value = this.value.replace(/[^\d]/g, '');
         if (value) {
-            // Thêm dấu phẩy cho dễ đọc (nhưng giá trị thực vẫn là số)
-            this.setAttribute('data-value', value);
             this.value = parseInt(value).toLocaleString('en-US');
         }
     });
     
-    inputElement.addEventListener('blur', function() {
-        // Khi mất focus, chuyển về số thuần để xử lý
-        const rawValue = this.getAttribute('data-value') || '';
-        if (rawValue) {
-            this.value = rawValue;
-        }
-    });
-    
     inputElement.addEventListener('focus', function() {
-        // Khi focus, hiển thị số có format
-        const rawValue = this.value.replace(/[^\d]/g, '');
-        if (rawValue) {
-            this.value = parseInt(rawValue).toLocaleString('en-US');
+        let value = this.value.replace(/[^\d]/g, '');
+        if (value) {
+            this.value = value; // Hiển thị số thuần khi focus
         }
     });
 }
@@ -4972,49 +5029,34 @@ for (let filterType of ['soMau', 'maSp', 'khachHang', 'may', 'maCa']) {
         maCa: 'ma_ca'
     };
     
-    // Lấy danh sách các giá trị được chọn từ UI
-    const container = document.getElementById(`${filterType}Options`);
-    if (container) {
-        const allBoxes = container.querySelectorAll('.filter-checkbox');
-        const checkedBoxes = container.querySelectorAll('.filter-checkbox:checked');
-        const selectedValues = Array.from(checkedBoxes).map(cb => cb.value);
-        
-        console.log(`🔍 Filter ${filterType}:`, {
-            total: allBoxes.length,
-            selected: selectedValues.length,
-            values: selectedValues
-        });
-        
-        // Nếu không có gì được chọn -> loại bỏ tất cả
-        if (selectedValues.length === 0) {
-            console.log(`❌ ${filterType}: Không có gì được chọn -> loại bỏ record`);
-            return false;
-        }
-        
-        // Nếu chọn tất cả -> không filter
-        if (selectedValues.length === allBoxes.length) {
-            console.log(`✅ ${filterType}: Chọn tất cả -> bỏ qua filter`);
-            continue;
-        }
-        
-        // Nếu chọn một phần -> kiểm tra giá trị
-        const itemValue = item[fieldMap[filterType]];
-        if (!itemValue || !selectedValues.includes(itemValue.toString())) {
-            console.log(`❌ ${filterType}: "${itemValue}" không trong danh sách được chọn`);
-            return false;
-        }
+    // Lấy từ filters parameter thay vì UI
+    const selectedValues = filters[filterType] || [];
+    
+    // Nếu không có gì được chọn -> loại bỏ tất cả
+    if (selectedValues.length === 0) {
+        return false;
+    }
+    
+    // Nếu chọn một phần -> kiểm tra giá trị
+    const itemValue = item[fieldMap[filterType]];
+    if (!itemValue || !selectedValues.includes(itemValue.toString())) {
+        return false;
     }
 }
         
-        // Filter tốc độ
-        if (filters.speedFilter.min || filters.speedFilter.max) {
-            const runTime = calculateRunTimeForRecord(item);
-            const speed = runTime > 0 ? Math.round((item.thanh_pham_in || 0) / (runTime / 60)) : 0;
-            
-            if (!applyNumericFilter(speed, filters.speedFilter)) {
-                return false;
-            }
-        }
+// Filter tốc độ
+if (filters.speedFilter.min || filters.speedFilter.max) {
+    const runTime = calculateRunTimeForRecord(item);
+    const paper = parseFloat(item.thanh_pham_in) || 0;
+    const speed = (runTime > 0 && paper > 0) ? Math.round(paper / (runTime / 60)) : 0;
+    
+    console.log(`🔍 Speed filter: paper=${paper}, runTime=${runTime}, speed=${speed}, ws=${item.ws}`);
+    
+    if (!applyNumericFilter(speed, filters.speedFilter)) {
+        console.log(`❌ Speed filter rejected: ${item.ws} (speed=${speed})`);
+        return false;
+    }
+}
         
         // Filter số lượng đơn hàng
         if (filters.orderFilter.min || filters.orderFilter.max) {
@@ -5156,6 +5198,17 @@ function resetDetailFilters() {
         orderFilter: { type: 'range', min: '', max: '' }
     };
     
+
+    // Cập nhật currentDetailFilters với tất cả giá trị có sẵn
+['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
+    const container = document.getElementById(`${filterType}Options`);
+    if (container) {
+        const allBoxes = container.querySelectorAll('.filter-checkbox');
+        currentDetailFilters[filterType] = Array.from(allBoxes).map(cb => cb.value);
+    }
+});
+
+    
     // Reset dữ liệu
     filteredTableData = originalTableData;
     currentPage = 1;
@@ -5176,17 +5229,22 @@ function resetDetailFilters() {
 function restoreFilterState() {
     // Khôi phục checkbox filters
     ['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
-        const container = document.getElementById(`${filterType}Options`);
-        if (container) {
-            const checkboxes = container.querySelectorAll('.filter-checkbox');
-            const checkedValues = currentDetailFilters[filterType] || [];
-            
-            checkboxes.forEach(checkbox => {
-                // Mặc định tất cả checkbox được chọn khi khởi tạo
+    const container = document.getElementById(`${filterType}Options`);
+    if (container) {
+        const checkboxes = container.querySelectorAll('.filter-checkbox');
+        const checkedValues = currentDetailFilters[filterType] || [];
+        
+        checkboxes.forEach(checkbox => {
+            // Nếu currentDetailFilters trống, mặc định chọn tất cả
+            // Nếu có giá trị, chỉ chọn những giá trị có trong danh sách
+            if (checkedValues.length === 0) {
                 checkbox.checked = true;
-            });
-        }
-    });
+            } else {
+                checkbox.checked = checkedValues.includes(checkbox.value);
+            }
+        });
+    }
+});
     
     // Khôi phục numeric filters
     if (currentDetailFilters.speedFilter.min) {
