@@ -28,6 +28,21 @@ let totalItems = 0;
 let topCustomersChart = null;
 let topProductsChart = null;
 
+let sampleProductTimeChart = null;
+
+// Biến cho filter bảng chi tiết
+let originalTableData = [];
+let filteredTableData = [];
+let currentDetailFilters = {
+    soMau: [],
+    maSp: [],
+    khachHang: [],
+    may: [],
+    maCa: [],
+    speedFilter: { type: 'range', min: '', max: '' },
+    orderFilter: { type: 'range', min: '', max: '' }
+};
+
 // ====================================================================================================================================
 // KHỞI TẠO HỆ THỐNG
 // ====================================================================================================================================
@@ -357,7 +372,7 @@ function displayYearlyMachineCharts(yearlyData) {
         const paperDatasets = [];
         const wasteDatasets = [];
         const colors = [
-            '#f4cfe0', '#b6d8f3', '#ffdabf', '#b5ead8', '#c7ceea', '#ede9a1'
+            '#e8b0c9', '#accae3', '#e8c3a7', '#a9dbca', '#a3add9', '#dbd89e'
         ];
 
         console.log('🔍 Bắt đầu tạo datasets...');
@@ -366,11 +381,11 @@ function displayYearlyMachineCharts(yearlyData) {
             const machineData = yearlyData[machine] || {};
             const paperData = months.map(month => {
                 const value = machineData[month]?.paper || 0;
-                return value;
+                return value > 0 ? value : null;
             });
             const wasteData = months.map(month => {
                 const value = machineData[month]?.waste || 0;
-                return value;
+                return value > 0 ? value : null;
             });
 
             paperDatasets.push({
@@ -381,7 +396,9 @@ function displayYearlyMachineCharts(yearlyData) {
                 fill: false,
                 tension: 0.1,
                 pointRadius: 4,
-                pointHoverRadius: 6
+                pointHoverRadius: 6,
+                borderWidth: 3,
+                spanGaps: false
             });
 
             wasteDatasets.push({
@@ -392,7 +409,9 @@ function displayYearlyMachineCharts(yearlyData) {
                 fill: false,
                 tension: 0.1,
                 pointRadius: 4,
-                pointHoverRadius: 6
+                pointHoverRadius: 6,
+                borderWidth: 3,
+                spanGaps: false
             });
         });
 
@@ -428,7 +447,17 @@ function displayYearlyMachineCharts(yearlyData) {
                         plugins: {
                             legend: {
                                 display: true,
-                                position: 'bottom'
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    pointStyle: 'line',
+                                    pointStyleWidth: 20,  // Làm đường line dài hơn
+                                    font: {
+                                        weight: 'bold',   // Làm chữ đậm
+                                        size: 12
+                                    },
+                                    padding: 20          // Tăng khoảng cách giữa các legend items
+                                }
 
                             },
                             tooltip: {
@@ -517,7 +546,17 @@ function displayYearlyMachineCharts(yearlyData) {
                         plugins: {
                             legend: {
                                 display: true,
-                                position: 'bottom'
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    pointStyle: 'line',
+                                    pointStyleWidth: 20,  // Làm đường line dài hơn
+                                    font: {
+                                        weight: 'bold',   // Làm chữ đậm
+                                        size: 12
+                                    },
+                                    padding: 20          // Tăng khoảng cách giữa các legend items
+                                }
                             },
                             tooltip: {
                                 callbacks: {
@@ -1233,10 +1272,10 @@ function displaySummaryStats(data, filters) {
 // Hiển thị thống kê thời gian
 function displayTimeStats(data, filters) {
     // Tính thời gian dừng máy (thời gian khác)
-const stopTime = data.stopReasons ?
-    data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
+    const stopTime = data.stopReasons ?
+        data.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
 
-console.log('📊 Thời gian dừng máy từ API:', stopTime, 'phút');
+    console.log('📊 Thời gian dừng máy từ API:', stopTime, 'phút');
 
     // Tính tổng thời gian từ dữ liệu thực tế (thời gian kết thúc - thời gian bắt đầu)
     let totalTime = 0;
@@ -2169,15 +2208,23 @@ function displayTimeCharts(data, filters) {
     }
 
     // Thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
-    const runTime = Math.max(0, totalWorkTime - setupTime - otherTime);
+    let runTime = 0;
+    if (data && data.reports) {
+        const { totalRunTime } = calculateProductionAndSampleTime(data.reports);
+        runTime = totalRunTime;
+    } else {
+        runTime = Math.max(0, totalWorkTime - setupTime - otherTime);
+    }
 
 
-    console.log('🔍 DEBUG thời gian trong displayTimeCharts:');
-    console.log('- Total time:', totalTime, 'phút');
-    console.log('- Setup time:', setupTime, 'phút');
-    console.log('- Other time (dừng máy):', otherTime, 'phút');
-    console.log('- Run time (tính toán):', totalTime - setupTime - otherTime);
-    console.log('- Run time (sau Math.max):', runTime);
+
+    console.log('🔍 Trước khi tạo timeChart:');
+    console.log('- runTime:', runTime);
+    console.log('- setupTime:', setupTime);
+    console.log('- otherTime:', otherTime);
+    console.log('- formatDuration(runTime):', formatDuration(runTime));
+
+
 
     console.log('⏰ Dữ liệu thời gian:', { runTime, setupTime, otherTime, totalTime });
 
@@ -2249,8 +2296,52 @@ function displayTimeCharts(data, filters) {
     updateTimeAnalysisInfo({
         totalTime: totalTime,
         setupTime: setupTime,
-        otherTime: otherTime // Truyền otherTime đã tính toán
+        otherTime: otherTime, // Truyền otherTime đã tính toán
+        runTime: runTime
     });
+
+
+    // Tính toán và hiển thị thời gian sản xuất/chạy mẫu
+    if (data && data.reports) {
+        const { totalRunTime, productionTime, sampleTime } = calculateProductionAndSampleTime(data.reports);
+
+        // Lấy thời gian canh máy và dừng máy giống bên trái
+        const setupTimeRight = setupTime;
+        const stopTimeRight = otherTime;
+
+        // Tính tổng thời gian bên phải = sản xuất + mẫu + canh máy + dừng máy
+        const totalTimeRight = productionTime + sampleTime + setupTimeRight + stopTimeRight;
+
+        // Debug tổng thời gian
+        console.log('🔍 DEBUG tổng thời gian bên phải:');
+        console.log('- productionTime:', productionTime, 'phút');
+        console.log('- sampleTime:', sampleTime, 'phút');
+        console.log('- setupTimeRight:', setupTimeRight, 'phút');
+        console.log('- stopTimeRight:', stopTimeRight, 'phút');
+        console.log('- totalTimeRight (tính toán):', totalTimeRight, 'phút');
+        console.log('- totalTimeRight (format):', formatDuration(totalTimeRight));
+
+        // Cập nhật display bên phải
+        const productionTimeEl = document.getElementById('productionTime');
+        const sampleTimeEl = document.getElementById('sampleTime');
+        const setupTimeRightEl = document.getElementById('setupTimeRight');
+        const stopTimeRightEl = document.getElementById('stopTimeRight');
+        const totalTimeRightEl = document.getElementById('totalTimeRight');
+
+        if (productionTimeEl) productionTimeEl.textContent = formatDuration(productionTime);
+        if (sampleTimeEl) sampleTimeEl.textContent = formatDuration(sampleTime);
+        if (setupTimeRightEl) setupTimeRightEl.textContent = formatDuration(setupTimeRight);
+        if (stopTimeRightEl) stopTimeRightEl.textContent = formatDuration(stopTimeRight);
+        if (totalTimeRightEl) totalTimeRightEl.textContent = formatDuration(totalTimeRight);
+
+        // Tạo biểu đồ chi tiết với thời gian đúng
+        createSampleProductTimeChart(productionTime, sampleTime, setupTimeRight, stopTimeRight);
+
+        console.log('✅ Cập nhật xong bên phải với cách mới');
+    }
+
+
+
 }
 
 
@@ -2384,159 +2475,133 @@ function displayStopReasonChart(data, filters) {
 
 // Cập nhật thông tin thời gian
 function updateTimeAnalysisInfo(timeData) {
-
     console.log('🎯 updateTimeAnalysisInfo được gọi!');
-console.log('🎯 timeData:', timeData);
-console.log('🎯 currentChartData:', currentChartData);
 
-    // Tính tổng thời gian làm việc theo mã ca và ngày cho phân tích thời gian
-    let totalWorkHoursByDay = 0;
-
-    console.log('🔍 DEBUG updateTimeAnalysisInfo - currentChartData:', currentChartData);
-    console.log('🔍 DEBUG currentChartData.reports:', currentChartData?.reports);
-
-    if (currentChartData && currentChartData.reports) {
-        let workTimeByDay = {};
-
-        console.log('🔍 Tính toán tổng thời gian làm việc theo ca và ngày:');
-        console.log('🔍 Số báo cáo:', currentChartData.reports.length);
-
-        currentChartData.reports.forEach((report, index) => {
-            console.log(`🔍 Báo cáo ${index}:`, {
-                thoi_gian_bat_dau: report.thoi_gian_bat_dau,
-                thoi_gian_ket_thuc: report.thoi_gian_ket_thuc,
-                ma_ca: report.ma_ca,
-                may: report.may
-            });
-
-            if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
-                const start = new Date(report.thoi_gian_bat_dau);
-                const end = new Date(report.thoi_gian_ket_thuc);
-
-                console.log(`🔍 Thời gian start:`, start);
-                console.log(`🔍 Thời gian end:`, end);
-
-                // Lấy ngày từ thời gian bắt đầu
-                const workDate = start.toISOString().split('T')[0];
-                const maCa = report.ma_ca || 'Unknown';
-                const may = report.may || 'Unknown';
-
-                let diff = (end - start) / (1000 * 60); // phút
-                console.log(`🔍 Diff ban đầu:`, diff);
-
-                if (diff < 0) {
-                    diff += 24 * 60;
-                    console.log(`🔍 Diff sau khi cộng 24h:`, diff);
-                }
-
-                const dayKey = workDate;
-                const machineShiftKey = `${may}_${maCa}`;
-
-                console.log(`🔍 dayKey:`, dayKey);
-                console.log(`🔍 machineShiftKey:`, machineShiftKey);
-
-                if (!workTimeByDay[dayKey]) {
-                    workTimeByDay[dayKey] = {
-                        date: workDate,
-                        totalMinutes: 0,
-                        shifts: {}
-                    };
-                }
-
-                // Chỉ cộng thời gian nếu ca này của máy này chưa được tính trong ngày
-                if (!workTimeByDay[dayKey].shifts[machineShiftKey]) {
-                    workTimeByDay[dayKey].shifts[machineShiftKey] = {
-                        machine: may,
-                        shift: maCa,
-                        minutes: diff
-                    };
-                    workTimeByDay[dayKey].totalMinutes += diff;
-                    console.log(`📅 ${workDate} - Máy ${may} - Ca ${maCa}: ${Math.round(diff)} phút`);
-                } else {
-                    console.log(`⚠️ Đã tính ca ${machineShiftKey} trong ngày ${dayKey}`);
-                }
-            } else {
-                console.log(`❌ Báo cáo ${index} thiếu thời gian`);
-            }
-        });
-
-        console.log('🔍 workTimeByDay:', workTimeByDay);
-
-        // Cộng tổng thời gian từ tất cả các ngày
-        Object.values(workTimeByDay).forEach(dayData => {
-            totalWorkHoursByDay += dayData.totalMinutes;
-            console.log(`📊 Ngày ${dayData.date}: ${Math.round(dayData.totalMinutes)} phút (${(dayData.totalMinutes / 60).toFixed(1)} giờ)`);
-        });
-
-        console.log(`📊 TỔNG THỜI GIAN LÀM VIỆC THEO CA: ${Math.round(totalWorkHoursByDay)} phút (${(totalWorkHoursByDay / 60).toFixed(1)} giờ)`);
-    } else {
-        console.log('❌ Không có currentChartData hoặc reports');
-    }
-
-    console.log('🔍 Final totalWorkHoursByDay:', totalWorkHoursByDay);
-
+    // Lấy các element DOM
     const runTimeEl = document.getElementById('runTime');
     const setupTimeEl = document.getElementById('setupTime');
     const otherTimeEl = document.getElementById('otherTime');
     const totalTimeEl = document.getElementById('totalTime');
+    const totalWorkHoursEl = document.getElementById('totalWorkHours');
 
-    if (timeData) {
-        const setupTime = timeData.setupTime || 0;
-        const otherTime = timeData.otherTime || 0; // Lấy trực tiếp từ tham số
-        // Tính tổng thời gian từ dữ liệu báo cáo thực tế
-        let totalTime = 0;
-        if (currentChartData && currentChartData.reports) {
-
-            console.log('🔍 DEBUG currentChartData.reports:', currentChartData.reports.length, 'báo cáo');
-            console.log('🔍 DEBUG timeData:', timeData);
-
-
-            totalTime = currentChartData.reports.reduce((sum, report) => {
-                if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
-                    const start = new Date(report.thoi_gian_bat_dau);
-                    const end = new Date(report.thoi_gian_ket_thuc);
-
-                    let diff = (end - start) / (1000 * 60); // phút
-
-                    // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
-                    if (diff < 0) {
-                        diff += 24 * 60; // cộng 24 giờ = 1440 phút
-                    }
-
-                    return sum + diff;
-                }
-                return sum;
-            }, 0);
-        } else {
-            totalTime = timeData?.totalTime || 0;
-        }
-        const runTime = Math.max(0, totalTime - setupTime - otherTime);
-
-        // Debug thời gian
-        console.log('🔍 DEBUG thời gian trong updateTimeAnalysisInfo:');
-        console.log('- Total time:', totalTime, 'phút');
-        console.log('- Setup time:', setupTime, 'phút');
-        console.log('- Other time (dừng máy):', otherTime, 'phút');
-        console.log('- Run time (tính toán):', totalTime - setupTime - otherTime);
-        console.log('- Run time (sau Math.max):', runTime);
-
-        // Cập nhật tổng thời gian làm việc theo ca
-const totalWorkHoursEl = document.getElementById('totalWorkHours');
-console.log('🔍 totalWorkHoursEl element:', totalWorkHoursEl);
-console.log('🔍 Giá trị sẽ set:', formatDuration(totalWorkHoursByDay));
-
-if (totalWorkHoursEl) {
-    totalWorkHoursEl.textContent = formatDuration(totalWorkHoursByDay);
-    console.log('✅ Đã cập nhật totalWorkHours');
-} else {
-    console.log('❌ Không tìm thấy element totalWorkHours');
-}
-
-        if (runTimeEl) runTimeEl.textContent = formatDuration(runTime);
-        if (setupTimeEl) setupTimeEl.textContent = formatDuration(setupTime);
-        if (otherTimeEl) otherTimeEl.textContent = formatDuration(otherTime);
-        if (totalTimeEl) totalTimeEl.textContent = formatDuration(totalTime);
+    if (!timeData) {
+        console.log('❌ Không có timeData');
+        return;
     }
+
+    const setupTime = timeData.setupTime || 0;
+    const otherTime = timeData.otherTime || 0;
+
+    // Tính tổng thời gian từ dữ liệu báo cáo thực tế (GIỐNG CODE CŨ)
+    let totalTime = 0;
+    if (currentChartData && currentChartData.reports) {
+        totalTime = currentChartData.reports.reduce((sum, report) => {
+            if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+                const start = new Date(report.thoi_gian_bat_dau);
+                const end = new Date(report.thoi_gian_ket_thuc);
+
+                let diff = (end - start) / (1000 * 60); // phút
+                if (diff < 0) {
+                    diff += 24 * 60; // cộng 24 giờ = 1440 phút
+                }
+                return sum + diff;
+            }
+            return sum;
+        }, 0);
+    } else {
+        totalTime = timeData?.totalTime || 0;
+    }
+
+    // Tính thời gian chạy máy bằng cách mới
+    let runTime = timeData.runTime || 0;
+    if (runTime === 0) {
+        // Fallback: tính lại nếu không có runTime được truyền vào
+        if (currentChartData && currentChartData.reports) {
+            const { totalRunTime } = calculateProductionAndSampleTime(currentChartData.reports);
+            runTime = totalRunTime;
+        } else {
+            runTime = Math.max(0, totalTime - setupTime - otherTime);
+        }
+    }
+
+    // Cập nhật display bên trái
+    if (runTimeEl) runTimeEl.textContent = formatDuration(runTime);
+    if (setupTimeEl) setupTimeEl.textContent = formatDuration(setupTime);
+    if (otherTimeEl) otherTimeEl.textContent = formatDuration(otherTime);
+    if (totalTimeEl) totalTimeEl.textContent = formatDuration(runTime + setupTime + otherTime); // SỬA: cộng lại thay vì dùng totalTime
+
+    // Tính tổng thời gian làm việc theo ca và ngày (logic định nghĩa ca)
+    let totalWorkHoursByDay = 0;
+
+    // Định nghĩa thời gian chuẩn cho từng mã ca (tính bằng giờ)
+    const shiftHours = {
+        'A': 8,     // 6H - 14H
+        'B': 8,     // 14H - 22H  
+        'C': 8,     // 22H - 6H
+        'D': 12,    // 10H - 22H
+        'A1': 12,   // 6H - 18H
+        'B1': 12,   // 18H - 6H
+        'AB': 9,    // 7H - 16H
+        'AB-': 8,   // 7H - 15H
+        'AB+': 10,  // 7H - 17H
+        'HC': 9     // 8H - 17H
+    };
+
+    if (currentChartData && currentChartData.reports && currentChartData.reports.length > 0) {
+        let workTimeByDay = {};
+
+        console.log('🔍 Tính toán tổng thời gian làm việc theo định nghĩa mã ca:');
+        console.log('🔍 Số báo cáo:', currentChartData.reports.length);
+
+        currentChartData.reports.forEach((report, index) => {
+            const workDate = report.ngay_phu ? new Date(report.ngay_phu).toISOString().split('T')[0] :
+                new Date(report.thoi_gian_bat_dau).toISOString().split('T')[0];
+            const maCa = report.ma_ca || 'Unknown';
+            const may = report.may || 'Unknown';
+
+            // Lấy số giờ chuẩn của ca này
+            const caHours = shiftHours[maCa] || 8; // Mặc định 8 giờ nếu không tìm thấy
+
+            const dayKey = workDate;
+            const machineShiftKey = `${may}_${maCa}`;
+
+            if (!workTimeByDay[dayKey]) {
+                workTimeByDay[dayKey] = {
+                    date: workDate,
+                    totalHours: 0,
+                    shifts: {}
+                };
+            }
+
+            // Chỉ cộng thời gian nếu ca này của máy này chưa được tính trong ngày
+            if (!workTimeByDay[dayKey].shifts[machineShiftKey]) {
+                workTimeByDay[dayKey].shifts[machineShiftKey] = {
+                    machine: may,
+                    shift: maCa,
+                    hours: caHours
+                };
+                workTimeByDay[dayKey].totalHours += caHours;
+                console.log(`📅 ${workDate} - Máy ${may} - Ca ${maCa}: ${caHours} giờ`);
+            }
+        });
+
+        // Cộng tổng thời gian từ tất cả các ngày
+        Object.values(workTimeByDay).forEach(dayData => {
+            totalWorkHoursByDay += dayData.totalHours;
+        });
+
+        console.log(`📊 TỔNG THỜI GIAN LÀM VIỆC THEO CA: ${totalWorkHoursByDay} giờ`);
+    }
+
+    // Cập nhật tổng thời gian làm việc theo ca
+    if (totalWorkHoursEl) {
+        totalWorkHoursEl.textContent = `${totalWorkHoursByDay} giờ`;
+        console.log('✅ Đã cập nhật totalWorkHours:', `${totalWorkHoursByDay} giờ`);
+    } else {
+        console.log('❌ Không tìm thấy element totalWorkHours');
+    }
+
+    console.log('✅ updateTimeAnalysisInfo hoàn thành');
 }
 
 
@@ -2546,92 +2611,90 @@ function displayTimeAnalysis(data, filters) {
     if (!stopReasonsEl) return;
 
 
-// Tính tổng thời gian làm việc theo mã ca và ngày
-let totalWorkHoursByDay = 0;
+    // Tính tổng thời gian làm việc theo mã ca và ngày
+    let totalWorkHoursByDay = 0;
 
-console.log('🎯 displayTimeAnalysis được gọi!');
+    console.log('🎯 displayTimeAnalysis được gọi!');
 
-// Định nghĩa thời gian chuẩn cho từng mã ca (tính bằng giờ)
-const shiftHours = {
-    'A': 8,     // 6H - 14H
-    'B': 8,     // 14H - 22H  
-    'C': 8,     // 22H - 6H
-    'D': 12,    // 10H - 22H
-    'A1': 12,   // 6H - 18H
-    'B1': 12,   // 18H - 6H
-    'AB': 9,    // 7H - 16H
-    'AB-': 8,   // 7H - 15H
-    'AB+': 10,  // 7H - 17H
-    'HC': 9     // 8H - 17H
-};
+    // Định nghĩa thời gian chuẩn cho từng mã ca (tính bằng giờ)
+    const shiftHours = {
+        'A': 8,     // 6H - 14H
+        'B': 8,     // 14H - 22H  
+        'C': 8,     // 22H - 6H
+        'D': 12,    // 10H - 22H
+        'A1': 12,   // 6H - 18H
+        'B1': 12,   // 18H - 6H
+        'AB': 9,    // 7H - 16H
+        'AB-': 8,   // 7H - 15H
+        'AB+': 10,  // 7H - 17H
+        'HC': 9     // 8H - 17H
+    };
 
-if (data && data.reports && data.reports.length > 0) {
-    let workTimeByDay = {};
-    
-    console.log('🔍 Tính toán tổng thời gian làm việc theo định nghĩa mã ca:');
-    console.log('🔍 Số báo cáo:', data.reports.length);
-    
-    data.reports.forEach((report, index) => {
-        const workDate = report.ngay_phu ? new Date(report.ngay_phu).toISOString().split('T')[0] : 
-                  new Date(report.thoi_gian_bat_dau).toISOString().split('T')[0];
-        const maCa = report.ma_ca || 'Unknown';
-        const may = report.may || 'Unknown';
-        
-        // Lấy số giờ chuẩn của ca này
-        const caHours = shiftHours[maCa] || 8; // Mặc định 8 giờ nếu không tìm thấy
-        
-        console.log(`🔍 Báo cáo ${index}: ${workDate} | Máy ${may} | Ca ${maCa} | ${caHours} giờ (chuẩn)`);
-        
-        const dayKey = workDate;
-        const machineShiftKey = `${may}_${maCa}`;
-        
-        if (!workTimeByDay[dayKey]) {
-            workTimeByDay[dayKey] = {
-                date: workDate,
-                totalHours: 0,
-                shifts: {}
-            };
-            console.log(`📅 Tạo mới ngày: ${dayKey}`);
-        }
-        
-        // Chỉ cộng thời gian nếu ca này của máy này chưa được tính trong ngày
-        if (!workTimeByDay[dayKey].shifts[machineShiftKey]) {
-            workTimeByDay[dayKey].shifts[machineShiftKey] = {
-                machine: may,
-                shift: maCa,
-                hours: caHours
-            };
-            workTimeByDay[dayKey].totalHours += caHours;
-            console.log(`✅ CỘNG: ${workDate} - Máy ${may} - Ca ${maCa}: ${caHours} giờ`);
-        } else {
-            console.log(`❌ BỎ QUA (đã tính): ${workDate} - Máy ${may} - Ca ${maCa}: ${caHours} giờ`);
-        }
-        
-        console.log(`    - Tổng ngày ${workDate}: ${workTimeByDay[dayKey].totalHours} giờ`);
-        console.log('---');
-    });
-    
-    console.log('📊 CHI TIẾT TỪNG NGÀY:');
-    Object.values(workTimeByDay).forEach(dayData => {
-        totalWorkHoursByDay += dayData.totalHours;
-        console.log(`📅 ${dayData.date}:`);
-        console.log(`   - Tổng: ${dayData.totalHours} giờ`);
-        console.log('   - Chi tiết ca:');
-        Object.entries(dayData.shifts).forEach(([key, shift]) => {
-            console.log(`     + ${shift.machine}-${shift.shift}: ${shift.hours} giờ`);
+    if (data && data.reports && data.reports.length > 0) {
+        let workTimeByDay = {};
+
+        console.log('🔍 Tính toán tổng thời gian làm việc theo định nghĩa mã ca:');
+        console.log('🔍 Số báo cáo:', data.reports.length);
+
+        data.reports.forEach((report, index) => {
+            const workDate = report.ngay_phu ? new Date(report.ngay_phu).toISOString().split('T')[0] :
+                new Date(report.thoi_gian_bat_dau).toISOString().split('T')[0];
+            const maCa = report.ma_ca || 'Unknown';
+            const may = report.may || 'Unknown';
+
+            // Lấy số giờ chuẩn của ca này
+            const caHours = shiftHours[maCa] || 8; // Mặc định 8 giờ nếu không tìm thấy
+
+            console.log(`🔍 Báo cáo ${index}: ${workDate} | Máy ${may} | Ca ${maCa} | ${caHours} giờ (chuẩn)`);
+
+            const dayKey = workDate;
+            const machineShiftKey = `${may}_${maCa}`;
+
+            if (!workTimeByDay[dayKey]) {
+                workTimeByDay[dayKey] = {
+                    date: workDate,
+                    totalHours: 0,
+                    shifts: {}
+                };
+                console.log(`📅 Tạo mới ngày: ${dayKey}`);
+            }
+
+            // Chỉ cộng thời gian nếu ca này của máy này chưa được tính trong ngày
+            if (!workTimeByDay[dayKey].shifts[machineShiftKey]) {
+                workTimeByDay[dayKey].shifts[machineShiftKey] = {
+                    machine: may,
+                    shift: maCa,
+                    hours: caHours
+                };
+                workTimeByDay[dayKey].totalHours += caHours;
+
+            }
+
+            console.log(`    - Tổng ngày ${workDate}: ${workTimeByDay[dayKey].totalHours} giờ`);
+            console.log('---');
         });
-        console.log('---');
-    });
-    
-    console.log(`📊 TỔNG THỜI GIAN LÀM VIỆC THEO CA: ${totalWorkHoursByDay} giờ`);
-}
 
-// Cập nhật hiển thị (chuyển giờ thành phút để dùng formatDuration)
-const totalWorkHoursEl = document.getElementById('totalWorkHours');
-if (totalWorkHoursEl) {
-    totalWorkHoursEl.textContent = `${totalWorkHoursByDay} giờ`;
-    console.log('✅ Đã cập nhật totalWorkHours:', `${totalWorkHoursByDay} giờ`);
-}
+        console.log('📊 CHI TIẾT TỪNG NGÀY:');
+        Object.values(workTimeByDay).forEach(dayData => {
+            totalWorkHoursByDay += dayData.totalHours;
+            console.log(`📅 ${dayData.date}:`);
+            console.log(`   - Tổng: ${dayData.totalHours} giờ`);
+            console.log('   - Chi tiết ca:');
+            Object.entries(dayData.shifts).forEach(([key, shift]) => {
+                console.log(`     + ${shift.machine}-${shift.shift}: ${shift.hours} giờ`);
+            });
+            console.log('---');
+        });
+
+        console.log(`📊 TỔNG THỜI GIAN LÀM VIỆC THEO CA: ${totalWorkHoursByDay} giờ`);
+    }
+
+    // Cập nhật hiển thị (chuyển giờ thành phút để dùng formatDuration)
+    const totalWorkHoursEl = document.getElementById('totalWorkHours');
+    if (totalWorkHoursEl) {
+        totalWorkHoursEl.textContent = `${totalWorkHoursByDay} giờ`;
+        console.log('✅ Đã cập nhật totalWorkHours:', `${totalWorkHoursByDay} giờ`);
+    }
 
 
     let html = '';
@@ -2709,6 +2772,121 @@ if (totalWorkHoursEl) {
 
     stopReasonsEl.innerHTML = html;
 }
+
+
+
+
+// Tính toán thời gian sản xuất và chạy mẫu
+function calculateProductionAndSampleTime(reports) {
+    let totalRunTime = 0;      // Thêm dòng này
+    let productionTime = 0;
+    let sampleTime = 0;
+
+    reports.forEach((report, index) => {
+        const ws = report.ws || '';
+
+        if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+            const start = new Date(report.thoi_gian_bat_dau);
+            const end = new Date(report.thoi_gian_ket_thuc);
+
+            let totalMinutes = (end - start) / (1000 * 60);
+            if (totalMinutes < 0) totalMinutes += 24 * 60;
+
+            const setupMinutes = parseFloat(report.thoi_gian_canh_may) || 0;
+            const stopMinutes = report.stopTime || 0;
+            const actualTime = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+
+            // Tất cả báo cáo đều tính vào thời gian chạy máy
+            totalRunTime += actualTime;  // Thêm dòng này
+
+            if (ws.includes('M')) {
+                sampleTime += actualTime;
+            } else {
+                productionTime += actualTime;
+            }
+        }
+    });
+
+    return { totalRunTime, productionTime, sampleTime }; // Thêm totalRunTime
+}
+
+
+
+// Tạo biểu đồ thời gian chi tiết
+function createSampleProductTimeChart(productionTime, sampleTime, setupTime, stopTime) {
+    if (sampleProductTimeChart) {
+        sampleProductTimeChart.destroy();
+        sampleProductTimeChart = null;
+    }
+
+    const detailTimeCtx = document.getElementById('sampleProductTimeChart');
+    if (!detailTimeCtx) return;
+
+    sampleProductTimeChart = new Chart(detailTimeCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Thời gian sản xuất', 'Thời gian chạy mẫu', 'Thời gian canh máy', 'Thời gian dừng máy'],
+            datasets: [{
+                data: [productionTime, sampleTime, setupTime, stopTime],
+                backgroundColor: [
+                    'rgb(119, 191, 220)',  // Xanh da trời nhạt cho sản xuất
+                    'rgb(119, 195, 141)',  // Vàng kem cho canh máy
+                    'rgb(247, 208, 173)',  // Cam nhạt cho chạy mẫu
+                    'rgb(241, 171, 171)'   // Hồng nhạt cho dừng máy
+                ],
+                borderColor: [
+                    'rgb(113, 176, 201)',  // Xanh da trời nhạt cho sản xuất
+                    'rgb(107, 174, 126)',  // Vàng kem cho canh máy
+                    'rgb(196, 164, 135)',  // Cam nhạt cho chạy mẫu
+                    'rgb(218, 156, 156)'   // Hồng nhạt cho dừng máy
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            elements: {
+                arc: {
+                    hoverOffset: 0
+                }
+            },
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            return `${context.label}: ${formatDuration(context.parsed)} (${percent}%)`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    color: 'white',
+                    font: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    formatter: function (value, context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        return percent + '%';
+                    }
+                }
+            }
+        }
+    });
+}
+
+
 
 
 // Reset filters
@@ -2886,6 +3064,12 @@ function destroyAllCharts() {
     if (stopReasonChart) {
         stopReasonChart.destroy();
         stopReasonChart = null;
+    }
+
+
+    if (sampleProductTimeChart) {
+        sampleProductTimeChart.destroy();
+        sampleProductTimeChart = null;
     }
 
 
@@ -3070,9 +3254,167 @@ function renderDetailTable(container, data, filters) {
         return;
     }
 
+
+
+    // Tạo filter HTML
+    const filterHtml = `
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-filter me-2"></i>Bộ lọc chi tiết</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary btn-sm dropdown-toggle w-100" type="button" id="filterSoMau" data-bs-toggle="dropdown">
+                                    Số màu
+                                </button>
+                                <div class="dropdown-menu p-2" style="min-width: 250px;">
+                                    <div class="mb-2">
+                                        <input type="text" class="form-control form-control-sm" id="searchSoMau" placeholder="Tìm kiếm...">
+                                    </div>
+                                    <div class="mb-2">
+                                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('soMau')">Tất cả</button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllFilter('soMau')">Bỏ chọn</button>
+                                    </div>
+                                    <div class="filter-options" id="soMauOptions" style="max-height: 200px; overflow-y: auto;">
+                                        <!-- Sẽ được tạo động -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary btn-sm dropdown-toggle w-100" type="button" id="filterMaSp" data-bs-toggle="dropdown">
+                                    Mã SP
+                                </button>
+                                <div class="dropdown-menu p-2" style="min-width: 250px;">
+                                    <div class="mb-2">
+                                        <input type="text" class="form-control form-control-sm" id="searchMaSp" placeholder="Tìm kiếm...">
+                                    </div>
+                                    <div class="mb-2">
+                                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('maSp')">Tất cả</button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllFilter('maSp')">Bỏ chọn</button>
+                                    </div>
+                                    <div class="filter-options" id="maSpOptions" style="max-height: 200px; overflow-y: auto;">
+                                        <!-- Sẽ được tạo động -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary btn-sm dropdown-toggle w-100" type="button" id="filterKhachHang" data-bs-toggle="dropdown">
+                                    Khách hàng
+                                </button>
+                                <div class="dropdown-menu p-2" style="min-width: 250px;">
+                                    <div class="mb-2">
+                                        <input type="text" class="form-control form-control-sm" id="searchKhachHang" placeholder="Tìm kiếm...">
+                                    </div>
+                                    <div class="mb-2">
+                                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('khachHang')">Tất cả</button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllFilter('khachHang')">Bỏ chọn</button>
+                                    </div>
+                                    <div class="filter-options" id="khachHangOptions" style="max-height: 200px; overflow-y: auto;">
+                                        <!-- Sẽ được tạo động -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary btn-sm dropdown-toggle w-100" type="button" id="filterMay" data-bs-toggle="dropdown">
+                                    Máy
+                                </button>
+                                <div class="dropdown-menu p-2" style="min-width: 200px;">
+                                    <div class="mb-2">
+                                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('may')">Tất cả</button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllFilter('may')">Bỏ chọn</button>
+                                    </div>
+                                    <div class="filter-options" id="mayOptions" style="max-height: 200px; overflow-y: auto;">
+                                        <!-- Sẽ được tạo động -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary btn-sm dropdown-toggle w-100" type="button" id="filterMaCa" data-bs-toggle="dropdown">
+                                    Mã ca
+                                </button>
+                                <div class="dropdown-menu p-2" style="min-width: 150px;">
+                                    <div class="mb-2">
+                                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('maCa')">Tất cả</button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllFilter('maCa')">Bỏ chọn</button>
+                                    </div>
+                                    <div class="filter-options" id="maCaOptions" style="max-height: 200px; overflow-y: auto;">
+                                        <!-- Sẽ được tạo động -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-success btn-sm dropdown-toggle w-100" type="button" id="filterTocDo" data-bs-toggle="dropdown">
+                                    Tốc độ
+                                </button>
+                                <div class="dropdown-menu p-2" style="min-width: 200px;">
+                                    <div class="mb-2">
+                                        <select class="form-select form-select-sm" id="speedFilterType">
+                                            <option value="range">Khoảng</option>
+                                            <option value="greater">Lớn hơn</option>
+                                            <option value="less">Nhỏ hơn</option>
+                                            <option value="equal">Bằng</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control" id="speedMin" placeholder="Từ">
+                                        <input type="number" class="form-control" id="speedMax" placeholder="Đến">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-2">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-warning btn-sm dropdown-toggle w-100" type="button" id="filterDonHang" data-bs-toggle="dropdown">
+                                    SL đơn hàng
+                                </button>
+                                <div class="dropdown-menu p-2" style="min-width: 200px;">
+                                    <div class="mb-2">
+                                        <select class="form-select form-select-sm" id="orderFilterType">
+                                            <option value="range">Khoảng</option>
+                                            <option value="greater">Lớn hơn</option>
+                                            <option value="less">Nhỏ hơn</option>
+                                            <option value="equal">Bằng</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control" id="orderMin" placeholder="Từ">
+                                        <input type="number" class="form-control" id="orderMax" placeholder="Đến">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-secondary btn-sm w-100" onclick="resetDetailFilters()">
+                                <i class="fas fa-undo"></i> Reset tất cả
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
     // Lưu dữ liệu gốc
     currentPageData = data;
-    totalItems = data.length;
+originalTableData = data; 
+filteredTableData = data; 
+totalItems = data.length;
 
     // Tính toán phân trang
     const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -3082,27 +3424,7 @@ function renderDetailTable(container, data, filters) {
 
 
     let html = `
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <div class="d-flex align-items-center">
-                <label class="me-2">Hiển thị:</label>
-                <select class="form-select form-select-sm w-auto" id="itemsPerPageSelect">
-                    <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10</option>
-                    <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20</option>
-                    <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
-                    <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100</option>
-                </select>
-                <span class="ms-2 text-muted">mục</span>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="text-end">
-                <small class="text-muted">
-                    Hiển thị ${startIndex + 1} - ${Math.min(endIndex, totalItems)} trong tổng số ${totalItems} mục
-                </small>
-            </div>
-        </div>
-    </div>
+    
         <div class="table-responsive" style="overflow-x: auto;">
     <table class="table table-striped table-hover text-center" style="white-space: nowrap; min-width: 1200px;">
                 <thead class="table-dark sticky-top" id="detailTableHeader">
@@ -3200,6 +3522,28 @@ function renderDetailTable(container, data, filters) {
                 </tbody>
             </table>
         </div>
+
+        <div class="row my-3 ">
+        <div class="col-md-6">
+            <div class="d-flex align-items-center">
+                <label class="me-2">Hiển thị:</label>
+                <select class="form-select form-select-sm w-auto" id="itemsPerPageSelect">
+                    <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10</option>
+                    <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20</option>
+                    <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
+                    <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100</option>
+                </select>
+                <span class="ms-2 text-muted">mục</span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="text-end">
+                <small class="text-muted">
+                    Hiển thị ${startIndex + 1} - ${Math.min(endIndex, totalItems)} trong tổng số ${totalItems} mục
+                </small>
+            </div>
+        </div>
+    </div>
     `;
 
     // Thêm thống kê tổng
@@ -3325,7 +3669,19 @@ function renderDetailTable(container, data, filters) {
 </div>
 `;
 
-    container.innerHTML = html;
+container.innerHTML = filterHtml + html;
+
+
+// Tạo filter options sau khi render HTML
+setTimeout(() => {
+    const filterContainer = document.getElementById('soMauOptions');
+    if (!filterContainer || filterContainer.children.length === 0) {
+        // Chỉ tạo options khi chưa có
+        createFilterOptions(originalTableData);
+        // Khôi phục trạng thái filter chỉ khi tạo mới
+        restoreFilterState();
+    }
+}, 100);
 
 
     // Thiết lập sticky header sau khi render
@@ -3343,6 +3699,132 @@ function renderDetailTable(container, data, filters) {
         });
     }
 }
+
+
+
+
+// Render bảng chi tiết nhưng không tạo lại filter (để tránh dropdown bị đóng)
+function renderDetailTableWithoutFilters(container, data, filters) {
+    if (!data || data.length === 0) {
+        const noDataMessage = filters && filters.maca ?
+            `Không có dữ liệu chi tiết cho mã ca ${filters.maca}` :
+            'Không có dữ liệu chi tiết';
+        container.innerHTML = `
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-table fa-2x mb-3"></i>
+                <h6>${noDataMessage}</h6>
+                <p>Vui lòng kiểm tra lại điều kiện lọc.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Lưu filter HTML hiện tại
+    const existingFilter = container.querySelector('.row.mb-3');
+    
+    // Lưu dữ liệu gốc
+    totalItems = data.length;
+
+    // Tính toán phân trang
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = data.slice(startIndex, endIndex);
+
+    // Tạo HTML bảng (giống renderDetailTable nhưng không có filterHtml)
+    let html = `
+        <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table table-striped table-hover text-center" style="white-space: nowrap; min-width: 1200px;">
+                <thead class="table-dark sticky-top" id="detailTableHeader">
+                    <tr>
+                        <th>STT</th>
+                        <th>WS</th>
+                        <th>Mã Ca</th>
+                        <th>Máy</th>
+                        <th>Khách hàng</th>
+                        <th>Mã sản phẩm</th>
+                        <th>SL Đơn hàng</th>
+                        <th>Số màu</th>    
+                        <th>Thành phẩm in</th>
+                        <th>Phế liệu</th>
+                        <th>Tốc độ (s/h)</th>
+                        <th>Thời gian</th>
+                        <th>Thời gian chạy máy</th>
+                        <th>Thời gian canh máy</th>
+                        <th>Thời gian dừng máy</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    // Tạo nội dung bảng giống hệt renderDetailTable
+    paginatedData.forEach((record, index) => {
+        const ws = record.ws || '-';
+        const maca = record.ma_ca || '-';
+        const may = record.may || '-';
+        const customer = record.khach_hang || '-';
+        const product = record.ma_sp || '-';
+        const paper = formatNumber(record.thanh_pham_in || 0);
+        const waste = formatNumber((parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0));
+        const timeRange = formatTimeRangeWithDuration(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
+        const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
+        let stopTimeForRecord = record.stopTime || 0;
+        const stopTimeDisplay = formatDuration(stopTimeForRecord);
+
+        let runTimeForRecord = 0;
+        if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
+            const start = new Date(record.thoi_gian_bat_dau);
+            const end = new Date(record.thoi_gian_ket_thuc);
+            let totalMinutes = (end - start) / (1000 * 60);
+            if (totalMinutes < 0) totalMinutes += 24 * 60;
+            const setupMinutes = record.thoi_gian_canh_may || 0;
+            const stopMinutes = stopTimeForRecord || 0;
+            runTimeForRecord = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+        }
+        const runTimeDisplay = formatDuration(runTimeForRecord);
+
+        html += `
+            <tr>
+                <td><strong>${startIndex + index + 1}</strong></td>
+                <td><span class="badge bg-primary">${ws}</span></td>
+                <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
+                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
+                <td>${customer}</td>
+                <td>${product}</td>
+                <td>${record.sl_don_hang || 0}</td>
+                <td>${record.so_mau || 0}</td>
+                <td class="text-center text-success"><strong>${paper}</strong></td>
+                <td class="text-center text-danger"><strong>${waste}</strong></td>
+                <td class="text-center">
+                    <span>${calculateSpeed(record.thanh_pham_in, runTimeForRecord)}</span>
+                </td>
+                <td>${timeRange}</td>
+                <td class="text-center">${runTimeDisplay}</td>
+                <td class="text-center">${setupTime}</td>
+                <td class="text-center">${stopTimeDisplay}</td>
+            </tr>
+        `;
+    });
+
+    // Phần còn lại giống hệt renderDetailTable (pagination, thống kê, etc.)
+    // Copy từ renderDetailTable từ dòng `html += ` đến hết
+
+    // Chỉ thay thế phần sau filter, giữ nguyên filter
+    if (existingFilter) {
+        // Tìm phần sau filter và thay thế
+        const tableSection = container.querySelector('.table-responsive');
+        if (tableSection) {
+            const newContent = document.createElement('div');
+            newContent.innerHTML = html + '...'; // Thêm phần còn lại
+            
+            // Thay thế chỉ phần bảng
+            tableSection.parentNode.replaceChild(newContent.firstChild, tableSection);
+        }
+    } else {
+        container.innerHTML = html;
+    }
+}
+
 
 
 
@@ -3473,7 +3955,6 @@ function resetPagination() {
 
 // Tính toán top 10 khách hàng từ dữ liệu bảng chi tiết
 function calculateTopCustomersFromTable(reports) {
-    console.log('🔍 calculateTopCustomersFromTable với', reports.length, 'báo cáo');
 
     if (!reports || reports.length === 0) {
         console.log('❌ Không có báo cáo để tính toán');
@@ -4100,4 +4581,651 @@ function calculateSpeed(thanhPham, runTimeMinutes) {
 
     const speed = Math.round(paper / timeHours);
     return formatNumber(speed);
+}
+
+
+
+
+
+// ====================================================================================================================================
+// HÀM XỬ LÝ FILTER CHO BẢNG CHI TIẾT
+// ====================================================================================================================================
+
+// Tạo filter options cho dropdown
+function createFilterOptions(data) {
+    // Luôn lấy từ dữ liệu gốc để hiển thị đầy đủ options
+    const options = {
+        soMau: [...new Set(originalTableData.map(item => item.so_mau).filter(v => v))].sort(),
+        maSp: [...new Set(originalTableData.map(item => item.ma_sp).filter(v => v))].sort(),
+        khachHang: [...new Set(originalTableData.map(item => item.khach_hang).filter(v => v))].sort(),
+        may: [...new Set(originalTableData.map(item => item.may).filter(v => v))].sort(),
+        maCa: [...new Set(originalTableData.map(item => item.ma_ca).filter(v => v))].sort()
+    };
+    
+    // Tạo HTML cho từng filter
+Object.keys(options).forEach(key => {
+    const container = document.getElementById(`${key}Options`);
+    if (container) {
+        container.innerHTML = options[key].map(value => `
+            <div class="form-check">
+                <input class="form-check-input filter-checkbox" type="checkbox" 
+                       value="${value}" id="${key}_${value}" data-filter="${key}" checked>
+                <label class="form-check-label" for="${key}_${value}">
+                    ${value}
+                </label>
+            </div>
+        `).join('');
+    }
+});
+    
+    // Gắn sự kiện tìm kiếm
+    ['soMau', 'maSp', 'khachHang'].forEach(filterType => {
+        const searchInput = document.getElementById(`search${filterType.charAt(0).toUpperCase() + filterType.slice(1)}`);
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                filterSearchOptions(filterType, this.value);
+            });
+        }
+    });
+    
+
+    // Gắn sự kiện cho checkbox - tự động apply filter
+document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        updateFilterButtons();
+        // Chỉ apply filter khi thực sự có thay đổi
+        setTimeout(() => {
+            autoApplyFilters();
+        }, 50);
+    });
+});
+    
+    // Gắn sự kiện cho filter type và inputs
+['speedFilterType', 'speedMin', 'speedMax', 'orderFilterType', 'orderMin', 'orderMax'].forEach(inputId => {
+    const element = document.getElementById(inputId);
+    if (element) {
+        element.addEventListener('change', function() {
+            if (inputId.includes('FilterType')) {
+                toggleFilterInputs(inputId.replace('FilterType', ''), this.value);
+            }
+            updateNumericFilterButtons();
+            // Chỉ apply filter cho number inputs, không apply cho select type
+            if (element.type === 'number') {
+                autoApplyFilters();
+            }
+        });
+        
+        if (element.type === 'number') {
+            element.addEventListener('input', function() {
+                updateNumericFilterButtons();
+                autoApplyFilters();
+            });
+        }
+    }
+});
+
+
+// Format input số
+['speedMin', 'speedMax', 'orderMin', 'orderMax'].forEach(inputId => {
+    const input = document.getElementById(inputId);
+    if (input) {
+        formatNumberInput(input);
+    }
+});
+
+
+}
+
+
+
+
+// Tự động áp dụng filter
+function autoApplyFilters() {
+    console.log('🔍 Auto applying filters...');
+    
+    // Thu thập speed và order filters (numeric)
+    const speedFilterType = document.getElementById('speedFilterType')?.value || 'range';
+    const speedMin = document.getElementById('speedMin')?.value || '';
+    const speedMax = document.getElementById('speedMax')?.value || '';
+    
+    currentDetailFilters.speedFilter = {
+        type: speedFilterType,
+        min: speedMin,
+        max: speedMax
+    };
+    
+    const orderFilterType = document.getElementById('orderFilterType')?.value || 'range';
+    const orderMin = document.getElementById('orderMin')?.value || '';
+    const orderMax = document.getElementById('orderMax')?.value || '';
+    
+    currentDetailFilters.orderFilter = {
+        type: orderFilterType,
+        min: orderMin,
+        max: orderMax
+    };
+    
+    // Console log để debug
+    console.log('🔍 Applying filters...');
+    console.log('🔍 Original data length:', originalTableData.length);
+    
+    // Áp dụng filter - hàm applyFiltersToData sẽ tự lấy checkbox từ UI
+    filteredTableData = applyFiltersToData(originalTableData, currentDetailFilters);
+    
+    console.log('🔍 Filtered data length:', filteredTableData.length);
+    
+    // Reset về trang đầu
+    currentPage = 1;
+
+
+    // Lưu trạng thái filter hiện tại trước khi render
+const currentFilterState = {};
+['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
+    const container = document.getElementById(`${filterType}Options`);
+    if (container) {
+        const checkboxes = container.querySelectorAll('.filter-checkbox');
+        currentFilterState[filterType] = {};
+        checkboxes.forEach(checkbox => {
+            currentFilterState[filterType][checkbox.value] = checkbox.checked;
+        });
+    }
+});
+    
+
+    // Khôi phục trạng thái filter sau khi render
+setTimeout(() => {
+    restoreSpecificFilterState(currentFilterState);
+}, 150);
+}
+
+
+
+// Cập nhật text button cho numeric filters
+function updateNumericFilterButtons() {
+    // Cập nhật button tốc độ
+    const speedType = document.getElementById('speedFilterType')?.value;
+    const speedMin = document.getElementById('speedMin')?.value;
+    const speedMax = document.getElementById('speedMax')?.value;
+    const speedButton = document.getElementById('filterTocDo');
+    
+    if (speedButton) {
+        if (speedMin || speedMax) {
+            speedButton.textContent = 'Tốc độ (*)';
+            speedButton.className = 'btn btn-success btn-sm dropdown-toggle w-100';
+        } else {
+            speedButton.textContent = 'Tốc độ';
+            speedButton.className = 'btn btn-outline-success btn-sm dropdown-toggle w-100';
+        }
+    }
+    
+    // Cập nhật button đơn hàng
+    const orderType = document.getElementById('orderFilterType')?.value;
+    const orderMin = document.getElementById('orderMin')?.value;
+    const orderMax = document.getElementById('orderMax')?.value;
+    const orderButton = document.getElementById('filterDonHang');
+    
+    if (orderButton) {
+        if (orderMin || orderMax) {
+            orderButton.textContent = 'SL đơn hàng (*)';
+            orderButton.className = 'btn btn-warning btn-sm dropdown-toggle w-100';
+        } else {
+            orderButton.textContent = 'SL đơn hàng';
+            orderButton.className = 'btn btn-outline-warning btn-sm dropdown-toggle w-100';
+        }
+    }
+}
+
+
+
+
+// Format input số khi người dùng nhập
+function formatNumberInput(inputElement) {
+    inputElement.addEventListener('input', function() {
+        let value = this.value.replace(/[^\d]/g, ''); // Chỉ giữ lại số
+        if (value) {
+            // Thêm dấu phẩy cho dễ đọc (nhưng giá trị thực vẫn là số)
+            this.setAttribute('data-value', value);
+            this.value = parseInt(value).toLocaleString('en-US');
+        }
+    });
+    
+    inputElement.addEventListener('blur', function() {
+        // Khi mất focus, chuyển về số thuần để xử lý
+        const rawValue = this.getAttribute('data-value') || '';
+        if (rawValue) {
+            this.value = rawValue;
+        }
+    });
+    
+    inputElement.addEventListener('focus', function() {
+        // Khi focus, hiển thị số có format
+        const rawValue = this.value.replace(/[^\d]/g, '');
+        if (rawValue) {
+            this.value = parseInt(rawValue).toLocaleString('en-US');
+        }
+    });
+}
+
+
+
+// Tìm kiếm trong filter options
+function filterSearchOptions(filterType, searchValue) {
+    const container = document.getElementById(`${filterType}Options`);
+    const checkboxes = container.querySelectorAll('.form-check');
+    
+    checkboxes.forEach(checkbox => {
+        const label = checkbox.querySelector('label').textContent.toLowerCase();
+        const matches = label.includes(searchValue.toLowerCase());
+        checkbox.style.display = matches ? 'block' : 'none';
+    });
+}
+
+// Chọn tất cả filter
+function selectAllFilter(filterType) {
+    const container = document.getElementById(`${filterType}Options`);
+    const checkboxes = container.querySelectorAll('.filter-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    
+    updateFilterButtons();
+    setTimeout(() => {
+        autoApplyFilters();
+    }, 50);
+}
+
+// Bỏ chọn tất cả filter
+function clearAllFilter(filterType) {
+    const container = document.getElementById(`${filterType}Options`);
+    const checkboxes = container.querySelectorAll('.filter-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    updateFilterButtons();
+    setTimeout(() => {
+        autoApplyFilters();
+    }, 50);
+}
+
+// Cập nhật text button filter
+function updateFilterButtons() {
+    ['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
+        const container = document.getElementById(`${filterType}Options`);
+        if (!container) return;
+        
+        const allBoxes = container.querySelectorAll('.filter-checkbox');
+        const checkedBoxes = container.querySelectorAll('.filter-checkbox:checked');
+        const button = document.getElementById(`filter${filterType.charAt(0).toUpperCase() + filterType.slice(1)}`);
+        
+        if (button) {
+            const filterNames = {
+                soMau: 'Số màu',
+                maSp: 'Mã SP',
+                khachHang: 'Khách hàng',
+                may: 'Máy',
+                maCa: 'Mã ca'
+            };
+            
+            if (checkedBoxes.length === 0) {
+                // Không có gì được chọn - LOẠI BỎ TẤT CẢ
+                button.textContent = `${filterNames[filterType]} (Ẩn tất cả)`;
+                button.className = 'btn btn-danger btn-sm dropdown-toggle w-100';
+            } else if (checkedBoxes.length === allBoxes.length) {
+                // Chọn tất cả - TRẠNG THÁI BÌNH THƯỜNG
+                button.textContent = filterNames[filterType];
+                button.className = 'btn btn-outline-primary btn-sm dropdown-toggle w-100';
+            } else {
+                // Chọn một phần - ĐANG LỌC
+                button.textContent = `${filterNames[filterType]} (${checkedBoxes.length}/${allBoxes.length})`;
+                button.className = 'btn btn-primary btn-sm dropdown-toggle w-100';
+            }
+        }
+    });
+}
+
+
+
+// Toggle filter inputs dựa trên type
+function toggleFilterInputs(filterName, type) {
+    const minInput = document.getElementById(`${filterName}Min`);
+    const maxInput = document.getElementById(`${filterName}Max`);
+    
+    if (type === 'range') {
+        minInput.style.display = 'block';
+        maxInput.style.display = 'block';
+        minInput.placeholder = 'Từ';
+        maxInput.placeholder = 'Đến';
+    } else if (type === 'greater') {
+        minInput.style.display = 'block';
+        maxInput.style.display = 'none';
+        minInput.placeholder = 'Lớn hơn';
+    } else if (type === 'less') {
+        minInput.style.display = 'block';
+        maxInput.style.display = 'none';
+        minInput.placeholder = 'Nhỏ hơn';
+    } else if (type === 'equal') {
+        minInput.style.display = 'block';
+        maxInput.style.display = 'none';
+        minInput.placeholder = 'Bằng';
+    }
+}
+
+
+
+// Áp dụng filter
+function applyDetailFilters() {
+    // Thu thập filter values
+    ['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
+        const container = document.getElementById(`${filterType}Options`);
+        const checkedBoxes = container.querySelectorAll('.filter-checkbox:checked');
+        currentDetailFilters[filterType] = Array.from(checkedBoxes).map(cb => cb.value);
+    });
+    
+    // Thu thập speed filter
+    const speedFilterType = document.getElementById('speedFilterType').value;
+    const speedMin = document.getElementById('speedMin').value;
+    const speedMax = document.getElementById('speedMax').value;
+    
+    currentDetailFilters.speedFilter = {
+        type: speedFilterType,
+        min: speedMin,
+        max: speedMax
+    };
+    
+    // Thu thập order filter
+    const orderFilterType = document.getElementById('orderFilterType').value;
+    const orderMin = document.getElementById('orderMin').value;
+    const orderMax = document.getElementById('orderMax').value;
+    
+    currentDetailFilters.orderFilter = {
+        type: orderFilterType,
+        min: orderMin,
+        max: orderMax
+    };
+    
+    // Áp dụng filter
+    filteredTableData = applyFiltersToData(originalTableData, currentDetailFilters);
+    
+    // Reset về trang đầu
+    currentPage = 1;
+    
+    // Render lại bảng
+    const container = document.getElementById('detailTableContainer');
+    const filters = collectFilters();
+    renderDetailTable(container, filteredTableData, filters);
+}
+
+// Hàm thực hiện filter dữ liệu
+function applyFiltersToData(data, filters) {
+    let filtered = data.filter(item => {
+        // Filter checkbox - Logic đơn giản: chỉ giữ lại những gì ĐƯỢC CHỌN
+        // Filter checkbox - Logic: chỉ giữ lại những gì ĐƯỢC CHỌN
+// Filter checkbox - Logic: chỉ giữ lại những record có giá trị ĐƯỢC CHỌN
+for (let filterType of ['soMau', 'maSp', 'khachHang', 'may', 'maCa']) {
+    const fieldMap = {
+        soMau: 'so_mau',
+        maSp: 'ma_sp', 
+        khachHang: 'khach_hang',
+        may: 'may',
+        maCa: 'ma_ca'
+    };
+    
+    // Lấy danh sách các giá trị được chọn từ UI
+    const container = document.getElementById(`${filterType}Options`);
+    if (container) {
+        const allBoxes = container.querySelectorAll('.filter-checkbox');
+        const checkedBoxes = container.querySelectorAll('.filter-checkbox:checked');
+        const selectedValues = Array.from(checkedBoxes).map(cb => cb.value);
+        
+        console.log(`🔍 Filter ${filterType}:`, {
+            total: allBoxes.length,
+            selected: selectedValues.length,
+            values: selectedValues
+        });
+        
+        // Nếu không có gì được chọn -> loại bỏ tất cả
+        if (selectedValues.length === 0) {
+            console.log(`❌ ${filterType}: Không có gì được chọn -> loại bỏ record`);
+            return false;
+        }
+        
+        // Nếu chọn tất cả -> không filter
+        if (selectedValues.length === allBoxes.length) {
+            console.log(`✅ ${filterType}: Chọn tất cả -> bỏ qua filter`);
+            continue;
+        }
+        
+        // Nếu chọn một phần -> kiểm tra giá trị
+        const itemValue = item[fieldMap[filterType]];
+        if (!itemValue || !selectedValues.includes(itemValue.toString())) {
+            console.log(`❌ ${filterType}: "${itemValue}" không trong danh sách được chọn`);
+            return false;
+        }
+    }
+}
+        
+        // Filter tốc độ
+        if (filters.speedFilter.min || filters.speedFilter.max) {
+            const runTime = calculateRunTimeForRecord(item);
+            const speed = runTime > 0 ? Math.round((item.thanh_pham_in || 0) / (runTime / 60)) : 0;
+            
+            if (!applyNumericFilter(speed, filters.speedFilter)) {
+                return false;
+            }
+        }
+        
+        // Filter số lượng đơn hàng
+        if (filters.orderFilter.min || filters.orderFilter.max) {
+            const orderQty = parseFloat(item.sl_don_hang) || 0;
+            
+            if (!applyNumericFilter(orderQty, filters.orderFilter)) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
+    
+    return filtered;
+}
+
+
+
+// Hàm áp dụng filter numeric
+function applyNumericFilter(value, filter) {
+    // Xử lý input - loại bỏ dấu phẩy và chuyển thành số
+    const parseValue = (str) => {
+        if (!str || str === '') return null;
+        // Loại bỏ dấu phẩy và khoảng trắng
+        const cleaned = str.toString().replace(/[,\s]/g, '');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? null : num;
+    };
+    
+    const min = parseValue(filter.min);
+    const max = parseValue(filter.max);
+    
+    // Nếu không có giá trị nào được nhập thì không filter
+    if (min === null && max === null) {
+        return true;
+    }
+    
+    switch (filter.type) {
+        case 'range':
+            if (min !== null && value < min) return false;
+            if (max !== null && value > max) return false;
+            break;
+        case 'greater':
+            if (min !== null && value <= min) return false;
+            break;
+        case 'less':
+            if (min !== null && value >= min) return false;
+            break;
+        case 'equal':
+            if (min !== null && value !== min) return false;
+            break;
+    }
+    
+    return true;
+}
+
+
+
+// Tính run time cho record
+function calculateRunTimeForRecord(record) {
+    if (!record.thoi_gian_bat_dau || !record.thoi_gian_ket_thuc) return 0;
+    
+    const start = new Date(record.thoi_gian_bat_dau);
+    const end = new Date(record.thoi_gian_ket_thuc);
+    
+    let totalMinutes = (end - start) / (1000 * 60);
+    if (totalMinutes < 0) totalMinutes += 24 * 60;
+    
+    const setupMinutes = record.thoi_gian_canh_may || 0;
+    const stopMinutes = record.stopTime || 0;
+    
+    return Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+}
+
+// Sắp xếp dữ liệu bảng
+function sortTableData(data, sortField, sortOrder) {
+    return data.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch (sortField) {
+            case 'tocDo':
+                const aRunTime = calculateRunTimeForRecord(a);
+                const bRunTime = calculateRunTimeForRecord(b);
+                aValue = aRunTime > 0 ? (a.thanh_pham_in || 0) / (aRunTime / 60) : 0;
+                bValue = bRunTime > 0 ? (b.thanh_pham_in || 0) / (bRunTime / 60) : 0;
+                break;
+            case 'slDonHang':
+                aValue = parseFloat(a.sl_don_hang) || 0;
+                bValue = parseFloat(b.sl_don_hang) || 0;
+                break;
+            case 'thanhPham':
+                aValue = parseFloat(a.thanh_pham_in) || 0;
+                bValue = parseFloat(b.thanh_pham_in) || 0;
+                break;
+            case 'pheLieu':
+                aValue = (parseFloat(a.phe_lieu) || 0) + (parseFloat(a.phe_lieu_trang) || 0);
+                bValue = (parseFloat(b.phe_lieu) || 0) + (parseFloat(b.phe_lieu_trang) || 0);
+                break;
+            default:
+                return 0;
+        }
+        
+        if (sortOrder === 'desc') {
+            return bValue - aValue;
+        } else {
+            return aValue - bValue;
+        }
+    });
+}
+
+// Reset filters
+function resetDetailFilters() {
+    // Reset checkbox filters
+    document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    
+    // Reset search inputs
+    document.querySelectorAll('[id^="search"]').forEach(input => {
+        input.value = '';
+    });
+    
+    // Reset numeric filters
+    document.getElementById('speedFilterType').value = 'range';
+    document.getElementById('speedMin').value = '';
+    document.getElementById('speedMax').value = '';
+    document.getElementById('orderFilterType').value = 'range';
+    document.getElementById('orderMin').value = '';
+    document.getElementById('orderMax').value = '';
+    
+    // Reset filter object
+    currentDetailFilters = {
+        soMau: [],
+        maSp: [],
+        khachHang: [],
+        may: [],
+        maCa: [],
+        speedFilter: { type: 'range', min: '', max: '' },
+        orderFilter: { type: 'range', min: '', max: '' }
+    };
+    
+    // Reset dữ liệu
+    filteredTableData = originalTableData;
+    currentPage = 1;
+    
+    // Update button text
+    updateFilterButtons();
+    updateNumericFilterButtons();
+    
+    // Render lại bảng
+    const container = document.getElementById('detailTableContainer');
+    const filters = collectFilters();
+    renderDetailTable(container, filteredTableData, filters);
+}
+
+
+
+// Khôi phục trạng thái filter
+function restoreFilterState() {
+    // Khôi phục checkbox filters
+    ['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
+        const container = document.getElementById(`${filterType}Options`);
+        if (container) {
+            const checkboxes = container.querySelectorAll('.filter-checkbox');
+            const checkedValues = currentDetailFilters[filterType] || [];
+            
+            checkboxes.forEach(checkbox => {
+                // Mặc định tất cả checkbox được chọn khi khởi tạo
+                checkbox.checked = true;
+            });
+        }
+    });
+    
+    // Khôi phục numeric filters
+    if (currentDetailFilters.speedFilter.min) {
+        document.getElementById('speedMin').value = currentDetailFilters.speedFilter.min;
+    }
+    if (currentDetailFilters.speedFilter.max) {
+        document.getElementById('speedMax').value = currentDetailFilters.speedFilter.max;
+    }
+    document.getElementById('speedFilterType').value = currentDetailFilters.speedFilter.type || 'range';
+    
+    if (currentDetailFilters.orderFilter.min) {
+        document.getElementById('orderMin').value = currentDetailFilters.orderFilter.min;
+    }
+    if (currentDetailFilters.orderFilter.max) {
+        document.getElementById('orderMax').value = currentDetailFilters.orderFilter.max;
+    }
+    document.getElementById('orderFilterType').value = currentDetailFilters.orderFilter.type || 'range';
+    
+    // Cập nhật button text
+    updateFilterButtons();
+    updateNumericFilterButtons();
+}
+
+
+
+// Khôi phục trạng thái filter cụ thể
+function restoreSpecificFilterState(filterState) {
+    ['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
+        const container = document.getElementById(`${filterType}Options`);
+        if (container && filterState[filterType]) {
+            const checkboxes = container.querySelectorAll('.filter-checkbox');
+            checkboxes.forEach(checkbox => {
+                if (filterState[filterType][checkbox.value] !== undefined) {
+                    checkbox.checked = filterState[filterType][checkbox.value];
+                }
+            });
+        }
+    });
+    
+    // Cập nhật button text
+    updateFilterButtons();
 }
