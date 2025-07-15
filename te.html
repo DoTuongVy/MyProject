@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Tracking</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Order Tracking</title>
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+            rel="stylesheet">
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+            rel="stylesheet">
+        <style>
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -242,318 +246,252 @@
             }
         }
     </style>
-</head>
-<body>
-    <div class="container">
-        <!-- Search Section -->
-        <div class="search-container d-flex align-items-center">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-input" placeholder="Tìm kiếm WS" value="">
+    </head>
+    <body>
+        <div class="row d-flex justify-content-between align-items-center">
+<div class="col"></div>
+<div class="col"></div>
         </div>
-        
-        <!-- Order Number -->
-        <div class="order-number">
-            SỐ WS: 2139221-O
-        </div>
-        
-        <!-- Stages -->
-        <div class="stage-container">
-            <!-- SCL Stage -->
-            <div class="stage-card">
-                <div class="stage-connector "></div>
-                <div class="stage-header scl-header">SCL</div>
-                
-                <div class="mb-3">
-                    <div class="fw-bold mb-2" style="font-size: 13px;">SL (Kg):</div>
-                    <div class="quantity-row">
-                        <div class="quantity-item">
-                            <div class="quantity-label">NK1</div>
-                            <div class="quantity-value">200</div>
-                        </div>
-                        <div class="quantity-item">
-                            <div class="quantity-label">NK2</div>
-                            <div class="quantity-value">120</div>
-                        </div>
-                        <div class="quantity-item">
-                            <div class="quantity-label">NK3</div>
-                            <div class="quantity-value">321</div>
+
+                    <div class="card-body mt-2">
+                        <div class="row g-2 d-flex align-items-center">
+                            <div class="col-md-1">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterSoMau"
+                                        data-bs-toggle="dropdown">
+                                        Số màu
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 250px;">
+                                        <div class="mb-2">
+                                            <input type="text"
+                                                class="form-control form-control-sm"
+                                                id="searchSoMau"
+                                                placeholder="Tìm kiếm...">
+                                        </div>
+                                        <div class="mb-2">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary me-1"
+                                                onclick="selectAllFilter('soMau')">Tất
+                                                cả</button>
+                                        </div>
+                                        <div class="filter-options"
+                                            id="soMauOptions"
+                                            style="max-height: 200px; overflow-y: auto;">
+                                            <!-- Sẽ được tạo động -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterMaSp"
+                                        data-bs-toggle="dropdown">
+                                        Mã SP
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 250px;">
+                                        <div class="mb-2">
+                                            <input type="text"
+                                                class="form-control form-control-sm"
+                                                id="searchMaSp"
+                                                placeholder="Tìm kiếm...">
+                                        </div>
+                                        <div class="mb-2">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary me-1"
+                                                onclick="selectAllFilter('maSp')">Tất
+                                                cả</button>
+                                        </div>
+                                        <div class="filter-options"
+                                            id="maSpOptions"
+                                            style="max-height: 200px; overflow-y: auto;">
+                                            <!-- Sẽ được tạo động -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterKhachHang"
+                                        data-bs-toggle="dropdown">
+                                        Khách hàng
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 250px;">
+                                        <div class="mb-2">
+                                            <input type="text"
+                                                class="form-control form-control-sm"
+                                                id="searchKhachHang"
+                                                placeholder="Tìm kiếm...">
+                                        </div>
+                                        <div class="mb-2">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary me-1"
+                                                onclick="selectAllFilter('khachHang')">Tất
+                                                cả</button>
+                                        </div>
+                                        <div class="filter-options"
+                                            id="khachHangOptions"
+                                            style="max-height: 200px; overflow-y: auto;">
+                                            <!-- Sẽ được tạo động -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-1">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterMay"
+                                        data-bs-toggle="dropdown">
+                                        Máy
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 200px;">
+                                        <div class="mb-2">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary me-1"
+                                                onclick="selectAllFilter('may')">Tất
+                                                cả</button>
+                                        </div>
+                                        <div class="filter-options"
+                                            id="mayOptions"
+                                            style="max-height: 200px; overflow-y: auto;">
+                                            <!-- Sẽ được tạo động -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-1">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterMaCa"
+                                        data-bs-toggle="dropdown">
+                                        Mã ca
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 150px;">
+                                        <div class="mb-2">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary me-1"
+                                                onclick="selectAllFilter('maCa')">Tất
+                                                cả</button>
+                                        </div>
+                                        <div class="filter-options"
+                                            id="maCaOptions"
+                                            style="max-height: 200px; overflow-y: auto;">
+                                            <!-- Sẽ được tạo động -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-success btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterTocDo"
+                                        data-bs-toggle="dropdown">
+                                        Tốc độ
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 200px;">
+                                        <div class="mb-2">
+                                            <select
+                                                class="form-select form-select-sm"
+                                                id="speedFilterType"
+                                                onclick="event.stopPropagation()">
+                                                <option
+                                                    value="range">Khoảng</option>
+                                                <option value="greater">Lớn
+                                                    hơn</option>
+                                                <option value="less">Nhỏ
+                                                    hơn</option>
+                                                <option
+                                                    value="equal">Bằng</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number"
+                                                class="form-control"
+                                                id="speedMin" placeholder="Từ"
+                                                onclick="event.stopPropagation()"
+                                                onkeydown="event.stopPropagation()"
+                                                oninput="event.stopPropagation()">
+                                            <input type="number"
+                                                class="form-control"
+                                                id="speedMax" placeholder="Đến"
+                                                onclick="event.stopPropagation()"
+                                                onkeydown="event.stopPropagation()"
+                                                oninput="event.stopPropagation()">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-warning btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterDonHang"
+                                        data-bs-toggle="dropdown">
+                                        SL đơn hàng
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 200px;">
+                                        <div class="mb-2">
+                                            <select
+                                                class="form-select form-select-sm"
+                                                id="orderFilterType"
+                                                onclick="event.stopPropagation()">
+                                                <option
+                                                    value="range">Khoảng</option>
+                                                <option value="greater">Lớn
+                                                    hơn</option>
+                                                <option value="less">Nhỏ
+                                                    hơn</option>
+                                                <option
+                                                    value="equal">Bằng</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number"
+                                                class="form-control"
+                                                id="orderMin" placeholder="Từ"
+                                                onclick="event.stopPropagation()"
+                                                onkeydown="event.stopPropagation()"
+                                                oninput="event.stopPropagation()">
+                                            <input type="number"
+                                                class="form-control"
+                                                id="orderMax" placeholder="Đến"
+                                                onclick="event.stopPropagation()"
+                                                onkeydown="event.stopPropagation()"
+                                                oninput="event.stopPropagation()">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-1">
+                                <button class="btn btn-secondary btn-sm w-100"
+                                    onclick="resetDetailFilters()">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="time-info">
-                    Thời gian bắt đầu: 04:49:21
-                </div>
-                <div class="time-info">
-                    Thời gian kết thúc: 22:33:11
-                </div>
-                
-                <div class="text-center mt-auto">
-                    <button class="btn detail-btn" onclick="showDetail('scl')">Xem chi tiết</button>
-                </div>
-            </div>
-            
-            <!-- GMC Stage -->
-            <div class="stage-card">
-                <div class="stage-header gmc-header">GMC</div>
-                
-                <div class="mb-3">
-                    <div class="fw-bold mb-2" style="font-size: 13px;">SL (Kg):</div>
-                    <div class="text-center">
-                        <div class="quantity-value">641</div>
-                    </div>
-                </div>
-                
-                <div class="time-info">
-                    Thời gian bắt đầu: 05:49:01
-                </div>
-                <div class="time-info">
-                    Thời gian kết thúc:
-                </div>
-                
-                <div class="text-center mt-auto">
-                    <button class="btn detail-btn" onclick="showDetail('gmc')">Xem chi tiết</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Detail Table Container -->
-        <div id="detailContainer" class="detail-table-container">
-            <div class="detail-table-header">
-                <h5 id="detailTitle" class="detail-table-title">CHI TIẾT CÔNG ĐOẠN SCL</h5>
-                <button class="close-btn" onclick="closeDetail()">ĐÓNG</button>
-            </div>
-            
-            <div class="filter-dropdown">
-                <select class="filter-select">
-                    <option>LỌC THEO MÁY</option>
-                    <option>SCL1</option>
-                    <option>SCL2</option>
-                </select>
-            </div>
-            
-            <div class="table-responsive">
-                <table class="table detail-table mb-0">
-                    <thead>
-                        <tr>
-                            <th>MÁY</th>
-                            <th>SỐ PHIẾU</th>
-                            <th>TLN</th>
-                            <th>KHỔ 1</th>
-                            <th>KHỔ 2</th>
-                            <th>KHỔ 3</th>
-                            <th>NHẬP KHO 1</th>
-                            <th>NHẬP KHO 2</th>
-                            <th>NHẬP KHO 3</th>
-                            <th>TG BẮT ĐẦU</th>
-                            <th>TG KẾT THÚC</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detailTableBody">
-                        <tr>
-                            <td>SCL1</td>
-                            <td>PSC0001</td>
-                            <td>200</td>
-                            <td>564</td>
-                            <td>123</td>
-                            <td>231</td>
-                            <td>324</td>
-                            <td>324</td>
-                            <td>352</td>
-                            <td>11:02:34</td>
-                            <td>21:04:41</td>
-                        </tr>
-                        <tr>
-                            <td>SCL1</td>
-                            <td>PSC0001</td>
-                            <td>200</td>
-                            <td>564</td>
-                            <td>123</td>
-                            <td>231</td>
-                            <td>324</td>
-                            <td>324</td>
-                            <td>352</td>
-                            <td>11:02:34</td>
-                            <td>21:04:41</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+        <script>
 
-
-    <!-- Nút mở modal -->
-<button id="openModal" class="btn btn-primary">Mở Modal</button>
-
-<!-- Modal -->
-<div class="modal fade" id="customModal" tabindex="-1" role="dialog">
-  <div class="modal-dialog">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h5 class="modal-title">Tiêu đề Modal</h5>
-        <!-- Nút đóng mặc định (nếu muốn ẩn thì xóa đi) -->
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-
-      <div class="modal-body">
-        <p>Nội dung modal ở đây...</p>
-      </div>
-
-      <div class="modal-footer">
-        <button id="customClose" class="btn btn-danger">Đóng modal (custom JS)</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-<script>
-    document.getElementById('openModal').addEventListener('click', function () {
-      const modal = new bootstrap.Modal(document.getElementById('customModal'));
-      modal.show();
-  
-      // Gán modal instance để dùng lại khi bấm đóng
-      window.currentModalInstance = modal;
-    });
-  
-    document.getElementById('customClose').addEventListener('click', function () {
-      if (window.currentModalInstance) {
-        window.currentModalInstance.hide();
-      }
-    });
-  </script>
-  
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Sample data for different stages
-        const stageData = {
-            scl: {
-                title: 'CHI TIẾT CÔNG ĐOẠN SCL',
-                data: [
-                    {
-                        may: 'SCL1',
-                        soPhieu: 'PSC0001',
-                        tln: '200',
-                        kho1: '564',
-                        kho2: '123',
-                        kho3: '231',
-                        nhapKho1: '324',
-                        nhapKho2: '324',
-                        nhapKho3: '352',
-                        tgBatDau: '11:02:34',
-                        tgKetThuc: '21:04:41'
-                    },
-                    {
-                        may: 'SCL1',
-                        soPhieu: 'PSC0001',
-                        tln: '200',
-                        kho1: '564',
-                        kho2: '123',
-                        kho3: '231',
-                        nhapKho1: '324',
-                        nhapKho2: '324',
-                        nhapKho3: '352',
-                        tgBatDau: '11:02:34',
-                        tgKetThuc: '21:04:41'
-                    }
-                ]
-            },
-            gmc: {
-                title: 'CHI TIẾT CÔNG ĐOẠN GMC',
-                data: [
-                    {
-                        may: 'GMC1',
-                        soPhieu: 'GMC0001',
-                        tln: '180',
-                        kho1: '432',
-                        kho2: '156',
-                        kho3: '278',
-                        nhapKho1: '289',
-                        nhapKho2: '298',
-                        nhapKho3: '310',
-                        tgBatDau: '05:49:01',
-                        tgKetThuc: '18:22:15'
-                    },
-                    {
-                        may: 'GMC2',
-                        soPhieu: 'GMC0002',
-                        tln: '165',
-                        kho1: '398',
-                        kho2: '142',
-                        kho3: '255',
-                        nhapKho1: '276',
-                        nhapKho2: '285',
-                        nhapKho3: '293',
-                        tgBatDau: '06:15:30',
-                        tgKetThuc: '19:45:22'
-                    }
-                ]
-            }
-        };
-
-        function showDetail(stage) {
-            const detailContainer = document.getElementById('detailContainer');
-            const detailTitle = document.getElementById('detailTitle');
-            const detailTableBody = document.getElementById('detailTableBody');
-            
-            // Update title
-            detailTitle.textContent = stageData[stage].title;
-            
-            // Clear and populate table
-            detailTableBody.innerHTML = '';
-            stageData[stage].data.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${row.may}</td>
-                    <td>${row.soPhieu}</td>
-                    <td>${row.tln}</td>
-                    <td>${row.kho1}</td>
-                    <td>${row.kho2}</td>
-                    <td>${row.kho3}</td>
-                    <td>${row.nhapKho1}</td>
-                    <td>${row.nhapKho2}</td>
-                    <td>${row.nhapKho3}</td>
-                    <td>${row.tgBatDau}</td>
-                    <td>${row.tgKetThuc}</td>
-                `;
-                detailTableBody.appendChild(tr);
-            });
-            
-            // Show detail container with animation
-            detailContainer.style.display = 'block';
-            setTimeout(() => {
-                detailContainer.style.opacity = '1';
-                detailContainer.style.transform = 'translateY(0)';
-            }, 10);
-        }
-
-        function closeDetail() {
-            const detailContainer = document.getElementById('detailContainer');
-            detailContainer.style.opacity = '0';
-            detailContainer.style.transform = 'translateY(20px)';
-            setTimeout(() => {
-                detailContainer.style.display = 'none';
-            }, 300);
-        }
-
-        // Initialize detail container styles
-        document.addEventListener('DOMContentLoaded', function() {
-            const detailContainer = document.getElementById('detailContainer');
-            detailContainer.style.opacity = '0';
-            detailContainer.style.transform = 'translateY(20px)';
-            detailContainer.style.transition = 'all 0.3s ease';
-        });
-
-        // Search functionality
-        document.querySelector('.search-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                // Add search functionality here
-                console.log('Searching for:', this.value);
-            }
-        });
     </script>
-</body>
+    </body>
 </html>

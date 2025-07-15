@@ -18,6 +18,8 @@ let macaChart = null;      // Thêm dòng này
 let timeChart = null;
 let stopReasonChart = null;
 
+let leaderShiftStackedChartInstance = null;
+
 // Biến phân trang
 let currentPageData = [];
 let currentPage = 1;
@@ -395,8 +397,8 @@ function displayYearlyMachineCharts(yearlyData) {
                 backgroundColor: colors[index % colors.length] + '20',
                 fill: false,
                 tension: 0.1,
-                pointRadius: 4,
-                pointHoverRadius: 6,
+                pointRadius: 0,
+                pointHoverRadius: 4,
                 borderWidth: 3,
                 spanGaps: false
             });
@@ -408,8 +410,8 @@ function displayYearlyMachineCharts(yearlyData) {
                 backgroundColor: colors[index % colors.length] + '20',
                 fill: false,
                 tension: 0.1,
-                pointRadius: 4,
-                pointHoverRadius: 6,
+                pointRadius: 0,
+                pointHoverRadius: 4,
                 borderWidth: 3,
                 spanGaps: false
             });
@@ -470,15 +472,48 @@ function displayYearlyMachineCharts(yearlyData) {
                             datalabels: {
                                 display: true,
                                 anchor: 'end',
-                                align: 'top',
-                                // color: 'black',
+                                align: function(context) {
+                                    const datasetIndex = context.datasetIndex;
+                                    const totalDatasets = context.chart.data.datasets.length;
+                                    
+                                    // Phân bổ vị trí để tránh overlap
+                                    if (totalDatasets <= 3) {
+                                        return datasetIndex === 0 ? 'top' : (datasetIndex === 1 ? 'bottom' : 'right');
+                                    } else {
+                                        // Với nhiều dataset, xoay vòng các vị trí
+                                        const positions = ['top', 'bottom', 'right', 'left', 'center'];
+                                        return positions[datasetIndex % positions.length];
+                                    }
+                                },
+                                color: function(context) {
+                                    // Sử dụng màu đậm hơn của đường line
+                                    const originalColor = context.dataset.borderColor || context.dataset.backgroundColor;
+                                    
+                                    // Chuyển màu thành đậm hơn
+                                    if (originalColor.includes('rgb(')) {
+                                        // Giảm độ sáng xuống 30%
+                                        return originalColor.replace(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/, function(match, r, g, b) {
+                                            const newR = Math.max(0, Math.floor(r * 0.7));
+                                            const newG = Math.max(0, Math.floor(g * 0.7));
+                                            const newB = Math.max(0, Math.floor(b * 0.7));
+                                            return `rgb(${newR}, ${newG}, ${newB})`;
+                                        });
+                                    }
+                                    
+                                    return originalColor;
+                                },
                                 font: {
-                                    size: 10,
+                                    size: 9,
                                     weight: 'bold'
                                 },
-                                formatter: function (value) {
+                                formatter: function(value) {
                                     return value > 0 ? formatNumber(value) : '';
-                                }
+                                },
+                                padding: 4,
+                                textAlign: 'center',
+                                // Thêm stroke để label nổi bật hơn
+                                textStrokeColor: 'white',
+                                textStrokeWidth: 1
                             }
                         },
                         scales: {
@@ -568,15 +603,48 @@ function displayYearlyMachineCharts(yearlyData) {
                             datalabels: {
                                 display: true,
                                 anchor: 'end',
-                                align: 'top',
-                                // color: 'black',
+                                align: function(context) {
+                                    const datasetIndex = context.datasetIndex;
+                                    const totalDatasets = context.chart.data.datasets.length;
+                                    
+                                    // Phân bổ vị trí để tránh overlap
+                                    if (totalDatasets <= 3) {
+                                        return datasetIndex === 0 ? 'top' : (datasetIndex === 1 ? 'bottom' : 'right');
+                                    } else {
+                                        // Với nhiều dataset, xoay vòng các vị trí
+                                        const positions = ['top', 'bottom', 'right', 'left', 'center'];
+                                        return positions[datasetIndex % positions.length];
+                                    }
+                                },
+                                color: function(context) {
+                                    // Sử dụng màu đậm hơn của đường line
+                                    const originalColor = context.dataset.borderColor || context.dataset.backgroundColor;
+                                    
+                                    // Chuyển màu thành đậm hơn
+                                    if (originalColor.includes('rgb(')) {
+                                        // Giảm độ sáng xuống 30%
+                                        return originalColor.replace(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/, function(match, r, g, b) {
+                                            const newR = Math.max(0, Math.floor(r * 0.7));
+                                            const newG = Math.max(0, Math.floor(g * 0.7));
+                                            const newB = Math.max(0, Math.floor(b * 0.7));
+                                            return `rgb(${newR}, ${newG}, ${newB})`;
+                                        });
+                                    }
+                                    
+                                    return originalColor;
+                                },
                                 font: {
-                                    size: 10,
+                                    size: 9,
                                     weight: 'bold'
                                 },
-                                formatter: function (value) {
+                                formatter: function(value) {
                                     return value > 0 ? formatNumber(value) : '';
-                                }
+                                },
+                                padding: 4,
+                                textAlign: 'center',
+                                // Thêm stroke để label nổi bật hơn
+                                textStrokeColor: 'white',
+                                textStrokeWidth: 1
                             }
                         },
                         scales: {
@@ -1746,36 +1814,27 @@ function createMultipleShiftCharts(canvas, shiftData) {
 
     let html = '<div class="row justify-content-center">';
 
-    shiftData.forEach((shift, index) => {
-        const canvasId = `shiftChart_${index}`;
-        const colClass = 'col-md-4';
-
-        html += `
-            <div class="${colClass} mb-3">
-                <div class="text-center">
-                    <h6 class="mb-2">Ca ${shift.shift}</h6>
-                    <div style="height: 200px; position: relative;">
-                        <canvas id="${canvasId}"></canvas>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
+    html += `
+    <div class="col-12">
+        <div class="text-start mb-3">
+            <h4>Sản xuất theo mã ca</h4>
+        </div>
+        <div style="height: 400px; position: relative;">
+            <canvas id="shiftStackedChart"></canvas>
+        </div>
+    </div>
+`;
 
     html += '</div>';
 
     multiContainer.innerHTML = html;
     cardBody.appendChild(multiContainer);
 
-    // Tạo biểu đồ cho từng ca
-    shiftData.forEach((shift, index) => {
-        const canvasId = `shiftChart_${index}`;
-        const canvasElement = document.getElementById(canvasId);
-
-        if (canvasElement) {
-            createSingleShiftPieChart(canvasElement, shift);
-        }
-    });
+    // Tạo biểu đồ stacked cho tất cả ca
+const stackedCanvas = document.getElementById('shiftStackedChart');
+if (stackedCanvas) {
+    createShiftStackedChart(stackedCanvas, shiftData);
+}
 }
 
 
@@ -1846,6 +1905,140 @@ function createSingleShiftPieChart(canvas, shiftData) {
                         const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                         return percent + '%';
                     }
+                }
+            }
+        }
+    });
+}
+
+
+
+function createShiftStackedChart(canvas, shiftData) {
+    // Lọc bỏ mục "Tổng" nếu có
+    const filteredData = shiftData.filter(shift => !shift.isTotal);
+    
+    if (filteredData.length === 0) {
+        const container = canvas.parentElement;
+        container.innerHTML = `
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h6>Không có dữ liệu ca</h6>
+            </div>
+        `;
+        return;
+    }
+
+    const labels = filteredData.map(shift => `Ca ${shift.shift}`);
+    const paperData = filteredData.map(shift => shift.paper || 0);
+    const wasteData = filteredData.map(shift => shift.waste || 0);
+
+    new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Thành phẩm',
+                data: paperData,
+                backgroundColor: 'rgba(174, 207, 188, 0.8)',
+                borderColor: 'rgba(148, 199, 169, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Phế liệu',
+                data: wasteData,
+                backgroundColor: 'rgba(248, 179, 181, 0.8)',
+                borderColor: 'rgba(255, 141, 152, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 40
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    title: {
+                        display: true,
+                        // text: 'Mã ca',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Số lượng',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    anchor: function(context) {
+                        return context.datasetIndex === 1 ? 'end' : 'center';
+                    },
+                    align: function(context) {
+                        return context.datasetIndex === 1 ? 'top' : 'center';
+                    },
+                    color: function(context) {
+                        return context.datasetIndex === 1 ? '#8b2635' : 'black';
+                    },
+                    font: {
+                        size: 11,
+                        weight: 'bold'
+                    },
+                    formatter: function(value, context) {
+                        if (!value || value === 0) return '';
+                        
+                        const dataIndex = context.dataIndex;
+                        const datasets = context.chart.data.datasets;
+                        const paperValue = datasets[0]?.data[dataIndex] || 0;
+                        const wasteValue = datasets[1]?.data[dataIndex] || 0;
+                        const total = paperValue + wasteValue;
+                        
+                        if (total === 0) return '';
+                        
+                        const percent = ((value / total) * 100).toFixed(1);
+                        
+                        if (context.datasetIndex === 1) {
+                            return `${formatNumber(value)}\n(${percent}%)`;
+                        }
+                        
+                        if (value < 1000) {
+                            return `${percent}%`;
+                        } else {
+                            return `${formatNumber(value)}\n(${percent}%)`;
+                        }
+                    },
+                    padding: {
+                        top: 4,
+                        bottom: 4
+                    },
+                    textAlign: 'center'
                 }
             }
         }
@@ -1972,9 +2165,12 @@ function displayQuantityAnalysis(data, filters) {
                 return aShift.localeCompare(bShift);
             });
             html += `
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-dark">
+            <button class="btn btn-outline-info btn-sm mb-2 " onclick="switchToShiftLeaderTable()">
+                <i class="fas fa-user-tie me-1"></i>Chuyển bảng trưởng máy
+            </button>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
+        <table class="table table-striped table-hover" style="min-width: 700px;">
+                    <thead class="table-dark sticky-top" style="position: sticky; top: 0; z-index: 10;">
                         <tr>
                             <th>Mã Ca</th>
                             <th>Máy</th>
@@ -2008,7 +2204,7 @@ function displayQuantityAnalysis(data, filters) {
                         </span>
                     </td>
                     <td class="text-end">
-                        <span class="badge" style="background-color: rgb(128, 186, 151); color: white;">
+                        <span class="badge" style="background-color: rgba(223, 140, 143, 0.8); color: white;">
                             ${wasteRate}%
                         </span>
                     </td>
@@ -3087,6 +3283,24 @@ function destroyAllCharts() {
     }
     window.machineStackedChart = null;
 
+    if (window.leaderShiftStackedChartInstance) {
+        window.leaderShiftStackedChartInstance.destroy();
+        window.leaderShiftStackedChartInstance = null;
+    }
+
+
+    // Destroy biểu đồ stacked trưởng máy
+if (window.machineLeaderStackedChartInstance) {
+    window.machineLeaderStackedChartInstance.destroy();
+    window.machineLeaderStackedChartInstance = null;
+}
+
+// Xóa container
+const stackedContainer = document.getElementById('machineLeaderStackedContainer');
+if (stackedContainer) {
+    stackedContainer.remove();
+}
+
     // Destroy tất cả chart con được tạo động
     Chart.helpers.each(Chart.instances, function (instance) {
         if (instance.canvas && instance.canvas.id && instance.canvas.id.startsWith('shiftChart_')) {
@@ -3153,15 +3367,23 @@ function displayDetailTable(data, filters) {
     // Reset phân trang khi load dữ liệu mới
     resetPagination();
 
-    // Gọi API lấy dữ liệu báo cáo In theo filters
+    // Gọi API lấy dữ liệu báo cáo In theo filters (điều kiện lọc 1)
     fetchInReportList(filters)
         .then(detailData => {
-            // Lọc dữ liệu theo mã ca nếu có
-            let filteredData = detailData;
+            console.log('📋 Dữ liệu từ API theo điều kiện lọc 1:', detailData.length, 'records');
+
+            // Lọc dữ liệu theo mã ca nếu có (vẫn thuộc điều kiện lọc 1)
+            let filteredByCondition1 = detailData;
             if (filters && filters.maca) {
-                filteredData = detailData.filter(record => record.ma_ca === filters.maca);
+                filteredByCondition1 = detailData.filter(record => record.ma_ca === filters.maca);
+                console.log('📋 Sau khi lọc theo mã ca:', filteredByCondition1.length, 'records');
             }
-            renderDetailTable(container, filteredData, filters);
+
+            // QUAN TRỌNG: Lưu dữ liệu đã lọc theo điều kiện 1 làm dữ liệu gốc
+            originalTableData = filteredByCondition1;
+            filteredTableData = filteredByCondition1;
+
+            renderDetailTable(container, filteredByCondition1, filters);
         })
         .catch(error => {
             console.error('Lỗi khi lấy dữ liệu chi tiết:', error);
@@ -3240,201 +3462,338 @@ async function fetchInReportList(filters) {
 
 // Render bảng chi tiết
 function renderDetailTable(container, data, filters) {
+    // Tạo filter HTML NGAY ĐẦU HÀM
+    const filterHtml = `
+            <div class="row d-flex align-items-center">
+<div class="col-10">
+<div class="card-body">
+            <div class="row g-2 d-flex align-items-center">
+                <div class="col-md-1">
+                    <div class="dropdown">
+                        <button
+                            class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                            type="button" id="filterSoMau"
+                            data-bs-toggle="dropdown">
+                            Số màu
+                        </button>
+                        <div class="dropdown-menu p-2"
+                            style="min-width: 250px;">
+                            <div class="mb-2">
+                                <input type="text"
+                                    class="form-control form-control-sm"
+                                    id="searchSoMau"
+                                    placeholder="Tìm kiếm...">
+                            </div>
+                            <div class="mb-2">
+                                <button
+                                    class="btn btn-sm btn-outline-secondary me-1"
+                                    onclick="selectAllFilter('soMau')">Tất
+                                    cả</button>
+                            </div>
+                            <div class="filter-options"
+                                id="soMauOptions"
+                                style="max-height: 200px; overflow-y: auto;">
+                                <!-- Sẽ được tạo động -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <div class="dropdown">
+                        <button
+                            class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                            type="button" id="filterMaSp"
+                            data-bs-toggle="dropdown">
+                            Mã SP
+                        </button>
+                        <div class="dropdown-menu p-2"
+                            style="min-width: 250px;">
+                            <div class="mb-2">
+                                <input type="text"
+                                    class="form-control form-control-sm"
+                                    id="searchMaSp"
+                                    placeholder="Tìm kiếm...">
+                            </div>
+                            <div class="mb-2">
+                                <button
+                                    class="btn btn-sm btn-outline-secondary me-1"
+                                    onclick="selectAllFilter('maSp')">Tất
+                                    cả</button>
+                            </div>
+                            <div class="filter-options"
+                                id="maSpOptions"
+                                style="max-height: 200px; overflow-y: auto;">
+                                <!-- Sẽ được tạo động -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <div class="dropdown">
+                        <button
+                            class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                            type="button" id="filterKhachHang"
+                            data-bs-toggle="dropdown">
+                            Khách hàng
+                        </button>
+                        <div class="dropdown-menu p-2"
+                            style="min-width: 250px;">
+                            <div class="mb-2">
+                                <input type="text"
+                                    class="form-control form-control-sm"
+                                    id="searchKhachHang"
+                                    placeholder="Tìm kiếm...">
+                            </div>
+                            <div class="mb-2">
+                                <button
+                                    class="btn btn-sm btn-outline-secondary me-1"
+                                    onclick="selectAllFilter('khachHang')">Tất
+                                    cả</button>
+                            </div>
+                            <div class="filter-options"
+                                id="khachHangOptions"
+                                style="max-height: 200px; overflow-y: auto;">
+                                <!-- Sẽ được tạo động -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <div class="dropdown">
+                        <button
+                            class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                            type="button" id="filterMay"
+                            data-bs-toggle="dropdown">
+                            Máy
+                        </button>
+                        <div class="dropdown-menu p-2"
+                            style="min-width: 200px;">
+                            <div class="mb-2">
+                                <button
+                                    class="btn btn-sm btn-outline-secondary me-1"
+                                    onclick="selectAllFilter('may')">Tất
+                                    cả</button>
+                            </div>
+                            <div class="filter-options"
+                                id="mayOptions"
+                                style="max-height: 200px; overflow-y: auto;">
+                                <!-- Sẽ được tạo động -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <div class="dropdown">
+                        <button
+                            class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                            type="button" id="filterMaCa"
+                            data-bs-toggle="dropdown">
+                            Mã ca
+                        </button>
+                        <div class="dropdown-menu p-2"
+                            style="min-width: 150px;">
+                            <div class="mb-2">
+                                <button
+                                    class="btn btn-sm btn-outline-secondary me-1"
+                                    onclick="selectAllFilter('maCa')">Tất
+                                    cả</button>
+                            </div>
+                            <div class="filter-options"
+                                id="maCaOptions"
+                                style="max-height: 200px; overflow-y: auto;">
+                                <!-- Sẽ được tạo động -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+<div class="col-md-1">
+    <div class="dropdown">
+        <button class="btn btn-outline-success btn-sm dropdown-toggle w-100" type="button" id="filterTocDo" data-bs-toggle="dropdown">
+            Tốc độ
+        </button>
+        <div class="dropdown-menu p-3" style="min-width: 220px;" onclick="event.stopPropagation()">
+            <div class="mb-2">
+                <select class="form-select form-select-sm" id="speedFilterType">
+                    <option value="range">Khoảng</option>
+                    <option value="greater">Lớn hơn</option>
+                    <option value="less">Nhỏ hơn</option>
+                    <option value="greaterEqual">Lớn hơn bằng</option>
+                    <option value="lessEqual">Nhỏ hơn bằng</option>
+                    <option value="equal">Bằng</option>
+                </select>
+            </div>
+            <div id="speedInputs">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" id="speedMin" placeholder="Từ">
+                    <input type="text" class="form-control" id="speedMax" placeholder="Đến">
+                </div>
+            </div>
+            <div class="mt-2 text-end">
+                <button class="btn btn-sm btn-outline-secondary me-1" onclick="clearSpeedFilter()">Xóa</button>
+                <button class="btn btn-sm btn-primary" onclick="applySpeedFilter()">Áp dụng</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="col-md-1">
+    <div class="dropdown">
+        <button class="btn btn-outline-warning btn-sm dropdown-toggle w-100" type="button" id="filterDonHang" data-bs-toggle="dropdown">
+            SL đơn hàng
+        </button>
+        <div class="dropdown-menu p-3" style="min-width: 220px;" onclick="event.stopPropagation()">
+            <div class="mb-2">
+                <select class="form-select form-select-sm" id="orderFilterType">
+                    <option value="range">Khoảng</option>
+                    <option value="greater">Lớn hơn</option>
+                    <option value="less">Nhỏ hơn</option>
+                    <option value="greaterEqual">Lớn hơn bằng</option>
+                    <option value="lessEqual">Nhỏ hơn bằng</option>
+                    <option value="equal">Bằng</option>
+                </select>
+            </div>
+            <div id="orderInputs">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" id="orderMin" placeholder="Từ">
+                    <input type="text" class="form-control" id="orderMax" placeholder="Đến">
+                </div>
+            </div>
+            <div class="mt-2 text-end">
+                <button class="btn btn-sm btn-outline-secondary me-1" onclick="clearOrderFilter()">Xóa</button>
+                <button class="btn btn-sm btn-primary" onclick="applyOrderFilter()">Áp dụng</button>
+            </div>
+        </div>
+    </div>
+</div>
+                <div class="col-md-1">
+                    <button class="btn btn-secondary btn-sm w-100"
+                        onclick="resetDetailFilters()">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+</div>
+
+<div class="col-2 text-end">
+<button class="btn btn-outline-warning btn-sm" id="switchToIncompleteBtn" onclick="switchToIncompleteTable()">
+            <i class="fas fa-exclamation-triangle me-1"></i>Xem WS chưa hoàn thành
+        </button>
+</div>
+        </div>
+        `;
+
+
+        const switchButtonHtml = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6><i class="fas fa-table me-2"></i>Bảng chi tiết báo cáo</h6>
+        <button class="btn btn-outline-warning btn-sm" id="switchToIncompleteBtn" onclick="switchToIncompleteTable()">
+            <i class="fas fa-exclamation-triangle me-1"></i>Xem WS chưa hoàn thành
+        </button>
+    </div>
+`;
+
+
 
     if (!data || data.length === 0) {
         const noDataMessage = filters && filters.maca ?
             `Không có dữ liệu chi tiết cho mã ca ${filters.maca}` :
             'Không có dữ liệu chi tiết';
-        
+
         // Chỉ thay thế phần sau filter, giữ nguyên phần filter
-        const existingFilter = container.querySelector('.row.mb-3');
+        const existingFilter = container.querySelector('.card-body');
         let tableHTML = `
             <div class="text-center text-muted p-4">
                 <i class="fas fa-table fa-2x mb-3"></i>
                 <h6>${noDataMessage}</h6>
                 <p>Vui lòng chọn lại điều kiện lọc.</p>
             </div>
-        `;
-        
-        if (existingFilter) {
-            // Nếu đã có filter, chỉ thay phần sau filter
-            const afterFilter = existingFilter.nextSibling;
-            if (afterFilter) {
-                container.removeChild(afterFilter);
-            }
-            container.insertAdjacentHTML('beforeend', tableHTML);
-        } else {
-            // Nếu chưa có filter, hiển thị filter + thông báo
-            container.innerHTML = filterHtml + tableHTML;
-        }
-        return;
-    }
-
-
-
-    // Tạo filter HTML
-    const filterHtml = `
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h6><i class="fas fa-filter me-2"></i>Bộ lọc chi tiết</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row g-2">
-                        <div class="col-md-2">
-                            <div class="dropdown">
-                                <button class="btn btn-outline-primary btn-sm dropdown-toggle w-100" type="button" id="filterSoMau" data-bs-toggle="dropdown">
-                                    Số màu
-                                </button>
-                                <div class="dropdown-menu p-2" style="min-width: 250px;">
-                                    <div class="mb-2">
-                                        <input type="text" class="form-control form-control-sm" id="searchSoMau" placeholder="Tìm kiếm...">
-                                    </div>
-                                    <div class="mb-2">
-                                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('soMau')">Tất cả</button>
-                                    </div>
-                                    <div class="filter-options" id="soMauOptions" style="max-height: 200px; overflow-y: auto;">
-                                        <!-- Sẽ được tạo động -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="dropdown">
-                                <button class="btn btn-outline-primary btn-sm dropdown-toggle w-100" type="button" id="filterMaSp" data-bs-toggle="dropdown">
-                                    Mã SP
-                                </button>
-                                <div class="dropdown-menu p-2" style="min-width: 250px;">
-                                    <div class="mb-2">
-                                        <input type="text" class="form-control form-control-sm" id="searchMaSp" placeholder="Tìm kiếm...">
-                                    </div>
-                                    <div class="mb-2">
-                                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('maSp')">Tất cả</button>
-                                    </div>
-                                    <div class="filter-options" id="maSpOptions" style="max-height: 200px; overflow-y: auto;">
-                                        <!-- Sẽ được tạo động -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="dropdown">
-                                <button class="btn btn-outline-primary btn-sm dropdown-toggle w-100" type="button" id="filterKhachHang" data-bs-toggle="dropdown">
-                                    Khách hàng
-                                </button>
-                                <div class="dropdown-menu p-2" style="min-width: 250px;">
-                                    <div class="mb-2">
-                                        <input type="text" class="form-control form-control-sm" id="searchKhachHang" placeholder="Tìm kiếm...">
-                                    </div>
-                                    <div class="mb-2">
-                                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('khachHang')">Tất cả</button>
-                                    </div>
-                                    <div class="filter-options" id="khachHangOptions" style="max-height: 200px; overflow-y: auto;">
-                                        <!-- Sẽ được tạo động -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="dropdown">
-                                <button class="btn btn-outline-primary btn-sm dropdown-toggle w-100" type="button" id="filterMay" data-bs-toggle="dropdown">
-                                    Máy
-                                </button>
-                                <div class="dropdown-menu p-2" style="min-width: 200px;">
-                                    <div class="mb-2">
-                                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('may')">Tất cả</button>
-                                    </div>
-                                    <div class="filter-options" id="mayOptions" style="max-height: 200px; overflow-y: auto;">
-                                        <!-- Sẽ được tạo động -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="dropdown">
-                                <button class="btn btn-outline-primary btn-sm dropdown-toggle w-100" type="button" id="filterMaCa" data-bs-toggle="dropdown">
-                                    Mã ca
-                                </button>
-                                <div class="dropdown-menu p-2" style="min-width: 150px;">
-                                    <div class="mb-2">
-                                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="selectAllFilter('maCa')">Tất cả</button>
-                                    </div>
-                                    <div class="filter-options" id="maCaOptions" style="max-height: 200px; overflow-y: auto;">
-                                        <!-- Sẽ được tạo động -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="dropdown">
-                                <button class="btn btn-outline-success btn-sm dropdown-toggle w-100" type="button" id="filterTocDo" data-bs-toggle="dropdown">
-                                    Tốc độ
-                                </button>
-                                <div class="dropdown-menu p-2" style="min-width: 200px;">
-                                    <div class="mb-2">
-    <select class="form-select form-select-sm" id="speedFilterType" onclick="event.stopPropagation()">
-        <option value="range">Khoảng</option>
-        <option value="greater">Lớn hơn</option>
-        <option value="less">Nhỏ hơn</option>
-        <option value="equal">Bằng</option>
-    </select>
-</div>
-<div class="input-group input-group-sm">
-    <input type="number" class="form-control" id="speedMin" placeholder="Từ" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation()">
-    <input type="number" class="form-control" id="speedMax" placeholder="Đến" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation()">
-</div>
-                                </div>
-                            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-2">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Tổng WS</h6>
+                            <h4 class="text-primary">0</h4>
                         </div>
                     </div>
-                    <div class="row mt-2">
-                        <div class="col-md-2">
-                            <div class="dropdown">
-                                <button class="btn btn-outline-warning btn-sm dropdown-toggle w-100" type="button" id="filterDonHang" data-bs-toggle="dropdown">
-                                    SL đơn hàng
-                                </button>
-                                <div class="dropdown-menu p-2" style="min-width: 200px;">
-                                    <div class="mb-2">
-    <select class="form-select form-select-sm" id="orderFilterType" onclick="event.stopPropagation()">
-        <option value="range">Khoảng</option>
-        <option value="greater">Lớn hơn</option>
-        <option value="less">Nhỏ hơn</option>
-        <option value="equal">Bằng</option>
-    </select>
-</div>
-<div class="input-group input-group-sm">
-    <input type="number" class="form-control" id="orderMin" placeholder="Từ" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation()">
-    <input type="number" class="form-control" id="orderMax" placeholder="Đến" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation()">
-</div>
-                                </div>
-                            </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Tổng thành phẩm</h6>
+                            <h4 class="text-success">0</h4>
                         </div>
-                        <div class="col-md-2">
-                            <button class="btn btn-secondary btn-sm w-100" onclick="resetDetailFilters()">
-                                <i class="fas fa-undo"></i> Reset tất cả
-                            </button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Tổng phế liệu</h6>
+                            <h4 class="text-danger">0</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Tổng TG chạy máy</h6>
+                            <h4 class="text-success">0 phút</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Tổng TG canh máy</h6>
+                            <h4 class="text-warning">0 phút</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Tổng TG dừng máy</h6>
+                            <h4 class="text-danger">0 phút</h4>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>`;
+        `;
 
+        if (existingFilter) {
+            // Nếu đã có filter, xóa phần sau filter và thêm mới
+            const afterFilter = existingFilter.nextElementSibling;
+            while (afterFilter) {
+                const nextSibling = afterFilter.nextElementSibling;
+                container.removeChild(afterFilter);
+                afterFilter = nextSibling;
+            }
+            container.insertAdjacentHTML('beforeend', tableHTML);
+        } else {
+            // Nếu chưa có filter, hiển thị filter + thông báo
+            container.innerHTML = filterHtml + switchButtonHtml + html;
+        }
 
-    
+        // Tạo filter options sau khi render HTML
+        setTimeout(() => {
+            const filterContainer = document.getElementById('soMauOptions');
+            if (!filterContainer || filterContainer.children.length === 0) {
+                createFilterOptions(originalTableData);
+                restoreFilterState();
+            }
+        }, 100);
+
+        return;
+    }
+
     // Lưu dữ liệu gốc
-currentPageData = data;
-// Chỉ set originalTableData một lần khi load dữ liệu lần đầu
-if (originalTableData.length === 0) {
-    originalTableData = data;
-}
-// Chỉ cập nhật filteredTableData nếu đang load dữ liệu mới, không phải đang filter
-if (arguments.length > 3 || !filteredTableData || filteredTableData.length === 0) {
-    filteredTableData = data;
-}
-totalItems = data.length;
+    currentPageData = data;
+    totalItems = data.length;
 
+    // Đảm bảo filteredTableData luôn sync với data hiện tại
+    if (filteredTableData.length === 0 || filteredTableData === originalTableData) {
+        filteredTableData = data;
+    }
 
     // Tính toán phân trang
     const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -3442,11 +3801,9 @@ totalItems = data.length;
     const endIndex = startIndex + itemsPerPage;
     const paginatedData = filteredTableData.slice(startIndex, endIndex);
 
-
     let html = `
-    
         <div class="table-responsive" style="overflow-x: auto;">
-    <table class="table table-striped table-hover text-center" style="white-space: nowrap; min-width: 1200px;">
+            <table class="table table-striped table-hover text-center" style="white-space: nowrap; min-width: 1200px;">
                 <thead class="table-dark sticky-top" id="detailTableHeader">
                     <tr>
                         <th>STT</th>
@@ -3455,15 +3812,16 @@ totalItems = data.length;
                         <th>Máy</th>
                         <th>Khách hàng</th>
                         <th>Mã sản phẩm</th>
-                        <th style="">SL Đơn hàng</th>
-                        <th style="">Số màu</th>    
-                        <th >Thành phẩm in</th>
-                        <th >Phế liệu</th>
-                        <th >Tốc độ (s/h)</th>
+                        <th>SL Đơn hàng</th>
+                        <th>Số con</th>
+                        <th>Số màu</th>    
+                        <th>Thành phẩm in</th>
+                        <th>Phế liệu</th>
+                        <th>Tốc độ (s/h)</th>
                         <th>Thời gian</th>
-                        <th >Thời gian chạy máy</th>
-<th >Thời gian canh máy</th>
-                        <th >Thời gian dừng máy</th>
+                        <th>Thời gian chạy máy</th>
+                        <th>Thời gian canh máy</th>
+                        <th>Thời gian dừng máy</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -3477,18 +3835,12 @@ totalItems = data.length;
         const product = record.ma_sp || '-';
         const paper = formatNumber(record.thanh_pham_in || 0);
         const waste = formatNumber((parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0));
-        // const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
-
-        // Format thời gian với chênh lệch
         const timeRange = formatTimeRangeWithDuration(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
-
-
         const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
 
         // Tính thời gian dừng máy cho record này từ dữ liệu stopReasons
         let stopTimeForRecord = record.stopTime || 0;
         if (currentChartData && currentChartData.reports) {
-            // Tìm record trong dữ liệu chi tiết
             const detailRecord = currentChartData.reports.find(r => r.id === record.id);
             if (detailRecord && detailRecord.stopReasons) {
                 stopTimeForRecord = detailRecord.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0);
@@ -3510,30 +3862,26 @@ totalItems = data.length;
         }
         const runTimeDisplay = formatDuration(runTimeForRecord);
 
-
-
-
         html += `
             <tr>
                 <td><strong>${startIndex + index + 1}</strong></td>
                 <td><span class="badge bg-primary">${ws}</span></td>
-                <td><span class="badge " style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
-                <td><span class="badge " style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
+                <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
+                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
                 <td>${customer}</td>
                 <td>${product}</td>
-                <td style="">${record.sl_don_hang || 0}</td>
-                <td style="">${record.so_mau || 0}</td>
+                <td>${record.sl_don_hang || 0}</td>
+                <td>${record.so_con || 0}</td>
+                <td>${record.so_mau || 0}</td>
                 <td class="text-center text-success"><strong>${paper}</strong></td>
                 <td class="text-center text-danger"><strong>${waste}</strong></td>
                 <td class="text-center">
-    <span class="">
-        ${calculateSpeed(record.thanh_pham_in, runTimeForRecord)}
-    </span>
-</td>
+                    <span>${calculateSpeed(record.thanh_pham_in, runTimeForRecord)}</span>
+                </td>
                 <td>${timeRange}</td>
                 <td class="text-center">${runTimeDisplay}</td>
                 <td class="text-center">${setupTime}</td>
-<td class="text-center">${stopTimeDisplay}</td>
+                <td class="text-center">${stopTimeDisplay}</td>
             </tr>
         `;
     });
@@ -3543,36 +3891,35 @@ totalItems = data.length;
             </table>
         </div>
 
-        <div class="row my-3 ">
-        <div class="col-md-6">
-            <div class="d-flex align-items-center">
-                <label class="me-2">Hiển thị:</label>
-                <select class="form-select form-select-sm w-auto" id="itemsPerPageSelect">
-                    <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10</option>
-                    <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20</option>
-                    <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
-                    <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100</option>
-                </select>
-                <span class="ms-2 text-muted">mục</span>
+        <div class="row my-3">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                    <label class="me-2">Hiển thị:</label>
+                    <select class="form-select form-select-sm w-auto" id="itemsPerPageSelect">
+                        <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10</option>
+                        <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20</option>
+                        <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
+                        <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100</option>
+                    </select>
+                    <span class="ms-2 text-muted">mục</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-end">
+                    <small class="text-muted">
+                        Hiển thị ${startIndex + 1} - ${Math.min(endIndex, totalItems)} trong tổng số ${totalItems} mục
+                    </small>
+                </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="text-end">
-                <small class="text-muted">
-                    Hiển thị ${startIndex + 1} - ${Math.min(endIndex, totalItems)} trong tổng số ${totalItems} mục
-                </small>
-            </div>
-        </div>
-    </div>
     `;
 
-    // Thêm thống kê tổng
+    // Tính thống kê tổng
     const totalPaper = data.reduce((sum, record) => sum + (parseFloat(record.thanh_pham_in) || 0), 0);
     const totalWaste = data.reduce((sum, record) =>
         sum + (parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0), 0);
     const totalSetupTime = data.reduce((sum, record) => sum + (parseFloat(record.thoi_gian_canh_may) || 0), 0);
 
-    // Tính tổng thời gian chạy máy và dừng máy
     const totalRunTime = data.reduce((sum, record) => {
         if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
             const start = new Date(record.thoi_gian_bat_dau);
@@ -3581,23 +3928,16 @@ totalItems = data.length;
             if (totalMinutes < 0) totalMinutes += 24 * 60;
 
             const setupMinutes = record.thoi_gian_canh_may || 0;
-            const stopMinutes = 0; // Tạm thời set 0, có thể tính từ currentChartData
+            const stopMinutes = 0;
             const runMinutes = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
             return sum + runMinutes;
         }
         return sum;
     }, 0);
 
-
-
-    // Đếm số WS không trùng lặp
     const uniqueWS = new Set(data.map(record => record.ws).filter(ws => ws && ws !== '-')).size;
-
-    // Tính tổng thời gian dừng máy từ currentChartData
     const totalStopTime = currentChartData && currentChartData.stopReasons ?
         currentChartData.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
-
-
 
     // Phân trang
     if (totalPages > 1) {
@@ -3609,7 +3949,7 @@ totalItems = data.length;
                         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
                             <a class="page-link" href="javascript:void(0)" onclick="changeTablePage(${currentPage - 1}); return false;">Trước</a>
                         </li>
-    `;
+        `;
 
         for (let i = 1; i <= totalPages; i++) {
             if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
@@ -3631,78 +3971,72 @@ totalItems = data.length;
                 </nav>
             </div>
         </div>
-    `;
+        `;
     }
-
-
 
     html += `
-<div class="row mt-3">
-    <div class="col-md-2">
-        <div class="card bg-light">
-            <div class="card-body text-center">
-                <h6>Tổng WS</h6>
-                <h4 class="text-primary">${uniqueWS}</h4>
+        <div class="row mt-3">
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng WS</h6>
+                        <h4 class="text-primary">${uniqueWS}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng thành phẩm</h6>
+                        <h4 class="text-success">${formatNumber(totalPaper)}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng phế liệu</h6>
+                        <h4 class="text-danger">${formatNumber(totalWaste)}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng TG chạy máy</h6>
+                        <h4 class="text-success">${formatDuration(totalRunTime)}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng TG canh máy</h6>
+                        <h4 class="text-warning">${formatDuration(totalSetupTime)}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng TG dừng máy</h6>
+                        <h4 class="text-danger">${formatDuration(totalStopTime)}</h4>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card bg-light">
-            <div class="card-body text-center">
-                <h6>Tổng thành phẩm</h6>
-                <h4 class="text-success">${formatNumber(totalPaper)}</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card bg-light">
-            <div class="card-body text-center">
-                <h6>Tổng phế liệu</h6>
-                <h4 class="text-danger">${formatNumber(totalWaste)}</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-    <div class="card bg-light">
-        <div class="card-body text-center">
-            <h6>Tổng TG chạy máy</h6>
-            <h4 class="text-success">${formatDuration(totalRunTime)}</h4>
-        </div>
-    </div>
-</div>
-<div class="col-md-2">
-    <div class="card bg-light">
-        <div class="card-body text-center">
-            <h6>Tổng TG canh máy</h6>
-            <h4 class="text-warning">${formatDuration(totalSetupTime)}</h4>
-        </div>
-    </div>
-</div>
-<div class="col-md-2">
-    <div class="card bg-light">
-        <div class="card-body text-center">
-            <h6>Tổng TG dừng máy</h6>
-            <h4 class="text-danger">${formatDuration(totalStopTime)}</h4>
-        </div>
-    </div>
-</div>
-</div>
-`;
+    `;
 
-container.innerHTML = filterHtml + html;
+    container.innerHTML = filterHtml + html;
 
-
-// Tạo filter options sau khi render HTML
-setTimeout(() => {
-    const filterContainer = document.getElementById('soMauOptions');
-    if (!filterContainer || filterContainer.children.length === 0) {
-        // Chỉ tạo options khi chưa có
-        createFilterOptions(originalTableData);
-        // Khôi phục trạng thái filter chỉ khi tạo mới
-        restoreFilterState();
-    }
-}, 100);
-
+    // Tạo filter options sau khi render HTML
+    setTimeout(() => {
+        const filterContainer = document.getElementById('soMauOptions');
+        if (!filterContainer || filterContainer.children.length === 0) {
+            createFilterOptions(originalTableData);
+            restoreFilterState();
+        }
+    }, 100);
 
     // Thiết lập sticky header sau khi render
     setTimeout(() => {
@@ -3714,7 +4048,7 @@ setTimeout(() => {
     if (itemsSelect) {
         itemsSelect.addEventListener('change', function () {
             itemsPerPage = parseInt(this.value);
-            currentPage = 1; // Reset về trang đầu
+            currentPage = 1;
             renderDetailTable(container, currentPageData, filters);
         });
     }
@@ -3725,124 +4059,134 @@ setTimeout(() => {
 
 // Render bảng chi tiết nhưng không tạo lại filter (để tránh dropdown bị đóng)
 function renderDetailTableWithoutFilters(container, data, filters) {
-    if (!data || data.length === 0) {
-        const noDataMessage = filters && filters.maca ?
-            `Không có dữ liệu chi tiết cho mã ca ${filters.maca}` :
-            'Không có dữ liệu chi tiết';
-        container.innerHTML = `
-            <div class="text-center text-muted p-4">
-                <i class="fas fa-table fa-2x mb-3"></i>
-                <h6>${noDataMessage}</h6>
-                <p>Vui lòng kiểm tra lại điều kiện lọc.</p>
-            </div>
-        `;
-        return;
-    }
-
-    // Lưu filter HTML hiện tại
-    const existingFilter = container.querySelector('.row.mb-3');
-    
-    // Lưu dữ liệu gốc
-    totalItems = data.length;
-
-    // Tính toán phân trang
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedData = data.slice(startIndex, endIndex);
-
-    // Tạo HTML bảng (giống renderDetailTable nhưng không có filterHtml)
-    let html = `
-        <div class="table-responsive" style="overflow-x: auto;">
-            <table class="table table-striped table-hover text-center" style="white-space: nowrap; min-width: 1200px;">
-                <thead class="table-dark sticky-top" id="detailTableHeader">
-                    <tr>
-                        <th>STT</th>
-                        <th>WS</th>
-                        <th>Mã Ca</th>
-                        <th>Máy</th>
-                        <th>Khách hàng</th>
-                        <th>Mã sản phẩm</th>
-                        <th>SL Đơn hàng</th>
-                        <th>Số màu</th>    
-                        <th>Thành phẩm in</th>
-                        <th>Phế liệu</th>
-                        <th>Tốc độ (s/h)</th>
-                        <th>Thời gian</th>
-                        <th>Thời gian chạy máy</th>
-                        <th>Thời gian canh máy</th>
-                        <th>Thời gian dừng máy</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    // Tạo nội dung bảng giống hệt renderDetailTable
-    paginatedData.forEach((record, index) => {
-        const ws = record.ws || '-';
-        const maca = record.ma_ca || '-';
-        const may = record.may || '-';
-        const customer = record.khach_hang || '-';
-        const product = record.ma_sp || '-';
-        const paper = formatNumber(record.thanh_pham_in || 0);
-        const waste = formatNumber((parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0));
-        const timeRange = formatTimeRangeWithDuration(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
-        const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
-        let stopTimeForRecord = record.stopTime || 0;
-        const stopTimeDisplay = formatDuration(stopTimeForRecord);
-
-        let runTimeForRecord = 0;
-        if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
-            const start = new Date(record.thoi_gian_bat_dau);
-            const end = new Date(record.thoi_gian_ket_thuc);
-            let totalMinutes = (end - start) / (1000 * 60);
-            if (totalMinutes < 0) totalMinutes += 24 * 60;
-            const setupMinutes = record.thoi_gian_canh_may || 0;
-            const stopMinutes = stopTimeForRecord || 0;
-            runTimeForRecord = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+    // Lưu trạng thái filter hiện tại TRƯỚC KHI render
+    const currentFilterState = {};
+    ['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
+        const filterContainer = document.getElementById(`${filterType}Options`);
+        if (filterContainer) {
+            const checkboxes = filterContainer.querySelectorAll('.filter-checkbox');
+            currentFilterState[filterType] = {};
+            checkboxes.forEach(checkbox => {
+                currentFilterState[filterType][checkbox.value] = checkbox.checked;
+            });
         }
-        const runTimeDisplay = formatDuration(runTimeForRecord);
-
-        html += `
-            <tr>
-                <td><strong>${startIndex + index + 1}</strong></td>
-                <td><span class="badge bg-primary">${ws}</span></td>
-                <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
-                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
-                <td>${customer}</td>
-                <td>${product}</td>
-                <td>${record.sl_don_hang || 0}</td>
-                <td>${record.so_mau || 0}</td>
-                <td class="text-center text-success"><strong>${paper}</strong></td>
-                <td class="text-center text-danger"><strong>${waste}</strong></td>
-                <td class="text-center">
-                    <span>${calculateSpeed(record.thanh_pham_in, runTimeForRecord)}</span>
-                </td>
-                <td>${timeRange}</td>
-                <td class="text-center">${runTimeDisplay}</td>
-                <td class="text-center">${setupTime}</td>
-                <td class="text-center">${stopTimeDisplay}</td>
-            </tr>
-        `;
     });
 
-    // Phần còn lại giống hệt renderDetailTable (pagination, thống kê, etc.)
-    // Copy từ renderDetailTable từ dòng `html += ` đến hết
+    // Lưu trạng thái numeric filter
+    const speedFilterType = document.getElementById('speedFilterType')?.value || 'range';
+    const speedMin = document.getElementById('speedMin')?.value || '';
+    const speedMax = document.getElementById('speedMax')?.value || '';
+    const orderFilterType = document.getElementById('orderFilterType')?.value || 'range';
+    const orderMin = document.getElementById('orderMin')?.value || '';
+    const orderMax = document.getElementById('orderMax')?.value || '';
 
-    // Chỉ thay thế phần sau filter, giữ nguyên filter
-    if (existingFilter) {
-        // Tìm phần sau filter và thay thế
-        const tableSection = container.querySelector('.table-responsive');
-        if (tableSection) {
-            const newContent = document.createElement('div');
-            newContent.innerHTML = html + '...'; // Thêm phần còn lại
-            
-            // Thay thế chỉ phần bảng
-            tableSection.parentNode.replaceChild(newContent.firstChild, tableSection);
+    // Gọi renderDetailTable để tạo lại toàn bộ (bao gồm filter)
+    renderDetailTable(container, data, filters);
+
+    // Khôi phục trạng thái filter SAU KHI render
+    setTimeout(() => {
+        // Khôi phục checkbox
+        Object.keys(currentFilterState).forEach(filterType => {
+            const filterContainer = document.getElementById(`${filterType}Options`);
+            if (filterContainer && currentFilterState[filterType]) {
+                const checkboxes = filterContainer.querySelectorAll('.filter-checkbox');
+                checkboxes.forEach(checkbox => {
+                    if (currentFilterState[filterType][checkbox.value] !== undefined) {
+                        checkbox.checked = currentFilterState[filterType][checkbox.value];
+                    }
+                });
+            }
+        });
+
+        // Khôi phục numeric filter
+        if (document.getElementById('speedFilterType')) {
+            document.getElementById('speedFilterType').value = speedFilterType;
+            if (document.getElementById('speedMin')) document.getElementById('speedMin').value = speedMin;
+            if (document.getElementById('speedMax')) document.getElementById('speedMax').value = speedMax;
         }
-    } else {
-        container.innerHTML = html;
-    }
+        if (document.getElementById('orderFilterType')) {
+            document.getElementById('orderFilterType').value = orderFilterType;
+            if (document.getElementById('orderMin')) document.getElementById('orderMin').value = orderMin;
+            if (document.getElementById('orderMax')) document.getElementById('orderMax').value = orderMax;
+        }
+
+        // Cập nhật button text
+        updateFilterButtons();
+        updateNumericFilterButtons();
+
+        // Gắn lại sự kiện cho checkbox
+        document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+            // Xóa event listener cũ trước khi gắn mới
+            checkbox.removeEventListener('change', handleCheckboxChange);
+            checkbox.addEventListener('change', handleCheckboxChange);
+        });
+
+        // Gắn lại sự kiện cho numeric filter
+        ['speedFilterType', 'speedMin', 'speedMax', 'orderFilterType', 'orderMin', 'orderMax'].forEach(inputId => {
+            const element = document.getElementById(inputId);
+            if (element) {
+                element.addEventListener('change', function () {
+                    if (inputId.includes('FilterType')) {
+                        toggleFilterInputs(inputId.replace('FilterType', ''), this.value);
+                    }
+                    updateNumericFilterButtons();
+                    autoApplyFilters();
+                });
+
+                if (element.type === 'number') {
+                    element.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                    });
+
+                    element.addEventListener('input', function (e) {
+                        e.stopPropagation();
+                        updateNumericFilterButtons();
+                    });
+
+                    element.addEventListener('blur', function (e) {
+                        e.stopPropagation();
+                        autoApplyFilters();
+                    });
+
+                    element.addEventListener('keydown', function (e) {
+                        e.stopPropagation();
+                    });
+                }
+            }
+        });
+
+        // Gắn lại sự kiện tìm kiếm
+        ['soMau', 'maSp', 'khachHang'].forEach(filterType => {
+            const searchInput = document.getElementById(`search${filterType.charAt(0).toUpperCase() + filterType.slice(1)}`);
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    filterSearchOptions(filterType, this.value);
+                });
+            }
+        });
+
+        // Ngăn dropdown đóng khi click vào input
+        document.querySelectorAll('.dropdown-menu input, .dropdown-menu select').forEach(input => {
+            input.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+
+            input.addEventListener('keydown', function (e) {
+                e.stopPropagation();
+            });
+        });
+
+        // Gắn sự kiện cho itemsPerPage select
+        const itemsSelect = document.getElementById('itemsPerPageSelect');
+        if (itemsSelect) {
+            itemsSelect.addEventListener('change', function () {
+                itemsPerPage = parseInt(this.value);
+                currentPage = 1;
+                renderDetailTableWithoutFilters(container, filteredTableData, filters);
+            });
+        }
+
+    }, 100);
 }
 
 
@@ -3952,8 +4296,13 @@ function changeTablePage(page) {
     const container = document.getElementById('detailTableContainer');
     const filters = collectFilters();
 
-    if (container && currentPageData.length > 0) {
-        renderDetailTable(container, currentPageData, filters);
+    if (container && filteredTableData.length > 0) {
+        // THÊM ĐIỀU KIỆN KIỂM TRA CHẾ ĐỘ HIỆN TẠI:
+        if (currentTableMode === 'incomplete') {
+            changeIncompleteTablePage(page);
+        } else {
+            renderDetailTableWithoutFilters(container, filteredTableData, filters);
+        }
     }
 }
 
@@ -4557,27 +4906,49 @@ function createMachineProductionChart(reportData) {
                     },
                     datalabels: {
                         display: true,
-                        anchor: 'center',
-                        align: 'center',
-                        // color: 'white',
+                        anchor: function(context) {
+                            return context.datasetIndex === 1 ? 'end' : 'center';
+                        },
+                        align: function(context) {
+                            return context.datasetIndex === 1 ? 'top' : 'center';
+                        },
+                        color: function(context) {
+                            return context.datasetIndex === 1 ? '#8b2635' : 'black';
+                        },
                         font: {
-                            size: 11,
+                            size: 10,
                             weight: 'bold'
                         },
-                        formatter: function (value, context) {
-                            if (value === 0) return '';
-
-                            // Tính tổng cho máy này
-                            const machineIndex = context.dataIndex;
-                            const paperValue = context.chart.data.datasets[0].data[machineIndex];
-                            const wasteValue = context.chart.data.datasets[1].data[machineIndex];
+                        formatter: function(value, context) {
+                            if (!value || value === 0) return '';
+                            
+                            const dataIndex = context.dataIndex;
+                            const datasets = context.chart.data.datasets;
+                            const paperValue = datasets[0]?.data[dataIndex] || 0;
+                            const wasteValue = datasets[1]?.data[dataIndex] || 0;
                             const total = paperValue + wasteValue;
-
+                            
                             if (total === 0) return '';
-
+                            
                             const percent = ((value / total) * 100).toFixed(1);
-                            return `${formatNumber(value)} (${percent}%)`;
-                        }
+                            
+                            // Với phế liệu (dataset 1), hiển thị cả số liệu + %
+                            if (context.datasetIndex === 1) {
+                                return `${formatNumber(value)}\n(${percent}%)`;
+                            }
+                            
+                            // Với thành phẩm (dataset 0)
+                            if (value < 1000) {
+                                return `${percent}%`;
+                            } else {
+                                return `${formatNumber(value)}\n(${percent}%)`;
+                            }
+                        },
+                        padding: {
+                            top: 4,
+                            bottom: 4
+                        },
+                        textAlign: 'center'
                     }
                 }
             }
@@ -4620,12 +4991,12 @@ function createFilterOptions(data) {
         may: [...new Set(originalTableData.map(item => item.may).filter(v => v))].sort(),
         maCa: [...new Set(originalTableData.map(item => item.ma_ca).filter(v => v))].sort()
     };
-    
+
     // Tạo HTML cho từng filter
-Object.keys(options).forEach(key => {
-    const container = document.getElementById(`${key}Options`);
-    if (container) {
-        container.innerHTML = options[key].map(value => `
+    Object.keys(options).forEach(key => {
+        const container = document.getElementById(`${key}Options`);
+        if (container) {
+            container.innerHTML = options[key].map(value => `
             <div class="form-check">
                 <input class="form-check-input filter-checkbox" type="checkbox" 
        value="${value}" id="${key}_${value}" data-filter="${key}">
@@ -4634,89 +5005,79 @@ Object.keys(options).forEach(key => {
                 </label>
             </div>
         `).join('');
-    }
-});
-    
+        }
+    });
+
     // Gắn sự kiện tìm kiếm
     ['soMau', 'maSp', 'khachHang'].forEach(filterType => {
         const searchInput = document.getElementById(`search${filterType.charAt(0).toUpperCase() + filterType.slice(1)}`);
         if (searchInput) {
-            searchInput.addEventListener('input', function() {
+            searchInput.addEventListener('input', function () {
                 filterSearchOptions(filterType, this.value);
             });
         }
     });
-    
+
 
     // Gắn sự kiện cho checkbox - tự động apply filter
-document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-        updateFilterButtons();
-        // Chỉ apply filter khi thực sự có thay đổi
-        setTimeout(() => {
-            autoApplyFilters();
-        }, 50);
-    });
-});
-    
-    // Gắn sự kiện cho filter type và inputs
-['speedFilterType', 'speedMin', 'speedMax', 'orderFilterType', 'orderMin', 'orderMax'].forEach(inputId => {
-    const element = document.getElementById(inputId);
-    if (element) {
-        element.addEventListener('change', function() {
-            if (inputId.includes('FilterType')) {
-                toggleFilterInputs(inputId.replace('FilterType', ''), this.value);
-            }
-            updateNumericFilterButtons();
-            
-        });
-        
-        if (element.type === 'number') {
-            // Ngăn dropdown đóng khi nhập
-            element.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-            
-            element.addEventListener('input', function(e) {
-                e.stopPropagation(); // Ngăn dropdown đóng
-                updateNumericFilterButtons();
-                // autoApplyFilters();
-            });
+    document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+        // Xóa event listener cũ nếu có
+        checkbox.removeEventListener('change', handleCheckboxChange);
 
-            // Thêm event blur để apply filter khi người dùng nhập xong
-element.addEventListener('blur', function(e) {
-    e.stopPropagation();
-    autoApplyFilters();
-});
-            
-            element.addEventListener('keydown', function(e) {
-                e.stopPropagation(); // Ngăn dropdown đóng khi nhấn phím
+        // Gắn event listener mới
+        checkbox.addEventListener('change', handleCheckboxChange);
+    });
+
+
+    // Gắn sự kiện cho filter type
+    ['speedFilterType', 'orderFilterType'].forEach(selectId => {
+        const element = document.getElementById(selectId);
+        if (element) {
+            element.addEventListener('change', function () {
+                const filterName = selectId.replace('FilterType', '');
+                toggleFilterInputs(filterName, this.value);
             });
         }
-    }
-});
-
-
-// Format input số
-['speedMin', 'speedMax', 'orderMin', 'orderMax'].forEach(inputId => {
-    const input = document.getElementById(inputId);
-    if (input) {
-        formatNumberInput(input);
-    }
-});
-
-
-
-// Ngăn dropdown đóng khi click vào input
-document.querySelectorAll('.dropdown-menu input, .dropdown-menu select').forEach(input => {
-    input.addEventListener('click', function(e) {
-        e.stopPropagation();
     });
-    
-    input.addEventListener('keydown', function(e) {
-        e.stopPropagation();
+
+    // Khởi tạo input ban đầu
+    setTimeout(() => {
+        toggleFilterInputs('speed', 'range');
+        toggleFilterInputs('order', 'range');
+    }, 50);
+
+
+    // Format input số
+    ['speedMin', 'speedMax', 'orderMin', 'orderMax'].forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            formatNumberInput(input);
+        }
     });
-});
+
+
+
+    // Ngăn dropdown đóng khi click vào input
+    document.querySelectorAll('.dropdown-menu input, .dropdown-menu select').forEach(input => {
+        input.addEventListener('click', function (e) {
+            e.stopPropagation();
+        });
+
+        input.addEventListener('keydown', function (e) {
+            e.stopPropagation();
+        });
+    });
+
+
+    // Thêm event listener cho dropdown để apply filter khi đóng
+    document.querySelectorAll('.dropdown').forEach(dropdown => {
+        dropdown.addEventListener('hidden.bs.dropdown', function () {
+            // Chỉ apply filter cho dropdown tốc độ và đơn hàng
+            if (this.querySelector('#filterTocDo') || this.querySelector('#filterDonHang')) {
+                autoApplyFilters();
+            }
+        });
+    });
 
 
 
@@ -4729,79 +5090,79 @@ document.querySelectorAll('.dropdown-menu input, .dropdown-menu select').forEach
 function autoApplyFilters() {
     console.log('🔍 Auto applying filters...');
 
-    // Thu thập checkbox filters từ UI
-['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
-    const container = document.getElementById(`${filterType}Options`);
-    if (container) {
-        const checkedBoxes = container.querySelectorAll('.filter-checkbox:checked');
-        currentDetailFilters[filterType] = Array.from(checkedBoxes).map(cb => cb.value);
-    }
-});
-    
+    // Chỉ cần reset currentDetailFilters
+    currentDetailFilters = {
+        soMau: [],
+        maSp: [],
+        khachHang: [],
+        may: [],
+        maCa: [],
+        speedFilter: { type: 'range', min: '', max: '' },
+        orderFilter: { type: 'range', min: '', max: '' }
+    };
+
     // Thu thập speed và order filters (numeric)
     const speedFilterType = document.getElementById('speedFilterType')?.value || 'range';
     const speedMin = document.getElementById('speedMin')?.value || '';
     const speedMax = document.getElementById('speedMax')?.value || '';
-    
+
     currentDetailFilters.speedFilter = {
         type: speedFilterType,
         min: speedMin,
         max: speedMax
     };
-    
+
     const orderFilterType = document.getElementById('orderFilterType')?.value || 'range';
     const orderMin = document.getElementById('orderMin')?.value || '';
     const orderMax = document.getElementById('orderMax')?.value || '';
-    
+
     currentDetailFilters.orderFilter = {
         type: orderFilterType,
         min: orderMin,
         max: orderMax
     };
-    
+
     // Console log để debug
     console.log('🔍 Applying filters...');
     console.log('🔍 Original data length:', originalTableData.length);
-    
+
     // Áp dụng filter - hàm applyFiltersToData sẽ tự lấy checkbox từ UI
     filteredTableData = applyFiltersToData(originalTableData, currentDetailFilters);
-    
+
     console.log('🔍 Filtered data length:', filteredTableData.length);
-    
+
     // Reset về trang đầu
     currentPage = 1;
 
 
-    // Render lại bảng với dữ liệu đã lọc
-const container = document.getElementById('detailTableContainer');
-if (container) {
-    const filters = collectFilters();
-    // Tạm thời lưu dữ liệu đã lọc
-    const tempFilteredData = filteredTableData;
-    renderDetailTable(container, tempFilteredData, filters);
-    // Khôi phục lại sau khi render
-    filteredTableData = tempFilteredData;
-}
+    // Render lại bảng với dữ liệu đã lọc (điều kiện lọc 2)
+    const container = document.getElementById('detailTableContainer');
+    if (container) {
+        const filters = collectFilters();
+
+        // Sử dụng renderDetailTableWithoutFilters để tránh tạo lại filter UI
+        renderDetailTableWithoutFilters(container, filteredTableData, filters);
+    }
 
 
     // Lưu trạng thái filter hiện tại trước khi render
-const currentFilterState = {};
-['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
-    const container = document.getElementById(`${filterType}Options`);
-    if (container) {
-        const checkboxes = container.querySelectorAll('.filter-checkbox');
-        currentFilterState[filterType] = {};
-        checkboxes.forEach(checkbox => {
-            currentFilterState[filterType][checkbox.value] = checkbox.checked;
-        });
-    }
-});
-    
+    const currentFilterState = {};
+    ['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
+        const container = document.getElementById(`${filterType}Options`);
+        if (container) {
+            const checkboxes = container.querySelectorAll('.filter-checkbox');
+            currentFilterState[filterType] = {};
+            checkboxes.forEach(checkbox => {
+                currentFilterState[filterType][checkbox.value] = checkbox.checked;
+            });
+        }
+    });
+
 
     // Khôi phục trạng thái filter sau khi render
-setTimeout(() => {
-    restoreSpecificFilterState(currentFilterState);
-}, 150);
+    setTimeout(() => {
+        restoreSpecificFilterState(currentFilterState);
+    }, 150);
 }
 
 
@@ -4813,7 +5174,7 @@ function updateNumericFilterButtons() {
     const speedMin = document.getElementById('speedMin')?.value;
     const speedMax = document.getElementById('speedMax')?.value;
     const speedButton = document.getElementById('filterTocDo');
-    
+
     if (speedButton) {
         if (speedMin || speedMax) {
             speedButton.textContent = 'Tốc độ (*)';
@@ -4823,13 +5184,13 @@ function updateNumericFilterButtons() {
             speedButton.className = 'btn btn-outline-success btn-sm dropdown-toggle w-100';
         }
     }
-    
+
     // Cập nhật button đơn hàng
     const orderType = document.getElementById('orderFilterType')?.value;
     const orderMin = document.getElementById('orderMin')?.value;
     const orderMax = document.getElementById('orderMax')?.value;
     const orderButton = document.getElementById('filterDonHang');
-    
+
     if (orderButton) {
         if (orderMin || orderMax) {
             orderButton.textContent = 'SL đơn hàng (*)';
@@ -4846,29 +5207,20 @@ function updateNumericFilterButtons() {
 
 // Format input số khi người dùng nhập
 function formatNumberInput(inputElement) {
-    // Chỉ format khi blur, không format khi input
-    inputElement.addEventListener('blur', function() {
+    inputElement.addEventListener('input', function () {
         let value = this.value.replace(/[^\d]/g, '');
-        if (value) {
+        if (value && value.length > 3) {
             this.value = parseInt(value).toLocaleString('en-US');
         }
     });
-    
-    inputElement.addEventListener('focus', function() {
-        let value = this.value.replace(/[^\d]/g, '');
-        if (value) {
-            this.value = value; // Hiển thị số thuần khi focus
-        }
-    });
 }
-
 
 
 // Tìm kiếm trong filter options
 function filterSearchOptions(filterType, searchValue) {
     const container = document.getElementById(`${filterType}Options`);
     const checkboxes = container.querySelectorAll('.form-check');
-    
+
     checkboxes.forEach(checkbox => {
         const label = checkbox.querySelector('label').textContent.toLowerCase();
         const matches = label.includes(searchValue.toLowerCase());
@@ -4880,11 +5232,11 @@ function filterSearchOptions(filterType, searchValue) {
 function selectAllFilter(filterType) {
     const container = document.getElementById(`${filterType}Options`);
     const checkboxes = container.querySelectorAll('.filter-checkbox');
-    
+
     checkboxes.forEach(checkbox => {
         checkbox.checked = true;
     });
-    
+
     updateFilterButtons();
     setTimeout(() => {
         autoApplyFilters();
@@ -4895,11 +5247,11 @@ function selectAllFilter(filterType) {
 function clearAllFilter(filterType) {
     const container = document.getElementById(`${filterType}Options`);
     const checkboxes = container.querySelectorAll('.filter-checkbox');
-    
+
     checkboxes.forEach(checkbox => {
         checkbox.checked = false;
     });
-    
+
     updateFilterButtons();
     setTimeout(() => {
         autoApplyFilters();
@@ -4911,11 +5263,11 @@ function updateFilterButtons() {
     ['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
         const container = document.getElementById(`${filterType}Options`);
         if (!container) return;
-        
+
         const allBoxes = container.querySelectorAll('.filter-checkbox');
         const checkedBoxes = container.querySelectorAll('.filter-checkbox:checked');
         const button = document.getElementById(`filter${filterType.charAt(0).toUpperCase() + filterType.slice(1)}`);
-        
+
         if (button) {
             const filterNames = {
                 soMau: 'Số màu',
@@ -4924,19 +5276,19 @@ function updateFilterButtons() {
                 may: 'Máy',
                 maCa: 'Mã ca'
             };
-            
-            if (checkedBoxes.length === 0) {
-                // Không có gì được chọn - LOẠI BỎ TẤT CẢ
-                button.textContent = `${filterNames[filterType]} (Ẩn tất cả)`;
-                button.className = 'btn btn-danger btn-sm dropdown-toggle w-100';
-            } else if (checkedBoxes.length === allBoxes.length) {
+
+            if (checkedBoxes.length === allBoxes.length) {
                 // Chọn tất cả - TRẠNG THÁI BÌNH THƯỜNG
                 button.textContent = filterNames[filterType];
                 button.className = 'btn btn-outline-primary btn-sm dropdown-toggle w-100';
-            } else {
+            } else if (checkedBoxes.length > 0) {
                 // Chọn một phần - ĐANG LỌC
                 button.textContent = `${filterNames[filterType]} (${checkedBoxes.length}/${allBoxes.length})`;
                 button.className = 'btn btn-primary btn-sm dropdown-toggle w-100';
+            } else {
+                // Không có gì được chọn - VẪN HIỂN THỊ BÌNH THƯỜNG
+                button.textContent = filterNames[filterType];
+                button.className = 'btn btn-outline-primary btn-sm dropdown-toggle w-100';
             }
         }
     });
@@ -4946,27 +5298,46 @@ function updateFilterButtons() {
 
 // Toggle filter inputs dựa trên type
 function toggleFilterInputs(filterName, type) {
-    const minInput = document.getElementById(`${filterName}Min`);
-    const maxInput = document.getElementById(`${filterName}Max`);
-    
+    const inputsContainer = document.getElementById(`${filterName}Inputs`);
+    const inputGroup = inputsContainer.querySelector('.input-group');
+
+    // Xóa nội dung cũ
+    inputGroup.innerHTML = '';
+
     if (type === 'range') {
-        minInput.style.display = 'block';
-        maxInput.style.display = 'block';
-        minInput.placeholder = 'Từ';
-        maxInput.placeholder = 'Đến';
+        inputGroup.innerHTML = `
+            <input type="text" class="form-control" id="${filterName}Min" placeholder="Từ">
+            <input type="text" class="form-control" id="${filterName}Max" placeholder="Đến">
+        `;
     } else if (type === 'greater') {
-        minInput.style.display = 'block';
-        maxInput.style.display = 'none';
-        minInput.placeholder = 'Lớn hơn';
+        inputGroup.innerHTML = `
+            <input type="text" class="form-control" id="${filterName}Min" placeholder="Lớn hơn">
+        `;
     } else if (type === 'less') {
-        minInput.style.display = 'block';
-        maxInput.style.display = 'none';
-        minInput.placeholder = 'Nhỏ hơn';
+        inputGroup.innerHTML = `
+            <input type="text" class="form-control" id="${filterName}Min" placeholder="Nhỏ hơn">
+        `;
+    } else if (type === 'greaterEqual') {
+        inputGroup.innerHTML = `
+            <input type="text" class="form-control" id="${filterName}Min" placeholder="Lớn hơn bằng">
+        `;
+    } else if (type === 'lessEqual') {
+        inputGroup.innerHTML = `
+            <input type="text" class="form-control" id="${filterName}Min" placeholder="Nhỏ hơn bằng">
+        `;
     } else if (type === 'equal') {
-        minInput.style.display = 'block';
-        maxInput.style.display = 'none';
-        minInput.placeholder = 'Bằng';
+        inputGroup.innerHTML = `
+            <input type="text" class="form-control" id="${filterName}Min" placeholder="Bằng">
+        `;
     }
+
+    // Gắn event cho input mới
+    const inputs = inputGroup.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('input', function () {
+            formatNumberInput(this);
+        });
+    });
 }
 
 
@@ -4979,35 +5350,35 @@ function applyDetailFilters() {
         const checkedBoxes = container.querySelectorAll('.filter-checkbox:checked');
         currentDetailFilters[filterType] = Array.from(checkedBoxes).map(cb => cb.value);
     });
-    
+
     // Thu thập speed filter
     const speedFilterType = document.getElementById('speedFilterType').value;
     const speedMin = document.getElementById('speedMin').value;
     const speedMax = document.getElementById('speedMax').value;
-    
+
     currentDetailFilters.speedFilter = {
         type: speedFilterType,
         min: speedMin,
         max: speedMax
     };
-    
+
     // Thu thập order filter
     const orderFilterType = document.getElementById('orderFilterType').value;
     const orderMin = document.getElementById('orderMin').value;
     const orderMax = document.getElementById('orderMax').value;
-    
+
     currentDetailFilters.orderFilter = {
         type: orderFilterType,
         min: orderMin,
         max: orderMax
     };
-    
+
     // Áp dụng filter
     filteredTableData = applyFiltersToData(originalTableData, currentDetailFilters);
-    
+
     // Reset về trang đầu
     currentPage = 1;
-    
+
     // Render lại bảng
     const container = document.getElementById('detailTableContainer');
     const filters = collectFilters();
@@ -5016,60 +5387,79 @@ function applyDetailFilters() {
 
 // Hàm thực hiện filter dữ liệu
 function applyFiltersToData(data, filters) {
+    console.log('🔍 Applying filters to', data.length, 'records');
     let filtered = data.filter(item => {
-        // Filter checkbox - Logic đơn giản: chỉ giữ lại những gì ĐƯỢC CHỌN
-        // Filter checkbox - Logic: chỉ giữ lại những gì ĐƯỢC CHỌN
-// Filter checkbox - Logic: chỉ giữ lại những record có giá trị ĐƯỢC CHỌN
-for (let filterType of ['soMau', 'maSp', 'khachHang', 'may', 'maCa']) {
-    const fieldMap = {
-        soMau: 'so_mau',
-        maSp: 'ma_sp', 
-        khachHang: 'khach_hang',
-        may: 'may',
-        maCa: 'ma_ca'
-    };
-    
-    // Lấy từ filters parameter thay vì UI
-    const selectedValues = filters[filterType] || [];
-    
-    // Nếu không có gì được chọn -> loại bỏ tất cả
-    if (selectedValues.length === 0) {
-        return false;
-    }
-    
-    // Nếu chọn một phần -> kiểm tra giá trị
-    const itemValue = item[fieldMap[filterType]];
-    if (!itemValue || !selectedValues.includes(itemValue.toString())) {
-        return false;
-    }
-}
-        
-// Filter tốc độ
-if (filters.speedFilter.min || filters.speedFilter.max) {
-    const runTime = calculateRunTimeForRecord(item);
-    const paper = parseFloat(item.thanh_pham_in) || 0;
-    const speed = (runTime > 0 && paper > 0) ? Math.round(paper / (runTime / 60)) : 0;
-    
-    console.log(`🔍 Speed filter: paper=${paper}, runTime=${runTime}, speed=${speed}, ws=${item.ws}`);
-    
-    if (!applyNumericFilter(speed, filters.speedFilter)) {
-        console.log(`❌ Speed filter rejected: ${item.ws} (speed=${speed})`);
-        return false;
-    }
-}
-        
+
+
+        // Filter checkbox - Logic: Lấy trạng thái checkbox TRỰC TIẾP từ UI
+        for (let filterType of ['soMau', 'maSp', 'khachHang', 'may', 'maCa']) {
+            const fieldMap = {
+                soMau: 'so_mau',
+                maSp: 'ma_sp',
+                khachHang: 'khach_hang',
+                may: 'may',
+                maCa: 'ma_ca'
+            };
+
+            // Lấy trạng thái checkbox TRỰC TIẾP từ UI
+            const container = document.getElementById(`${filterType}Options`);
+            if (container) {
+                const allBoxes = container.querySelectorAll('.filter-checkbox');
+                const checkedBoxes = container.querySelectorAll('.filter-checkbox:checked');
+
+                // Nếu không có checkbox nào thì bỏ qua filter này
+                if (allBoxes.length === 0) {
+                    continue;
+                }
+
+                // Nếu chọn tất cả -> không filter
+                if (checkedBoxes.length === allBoxes.length) {
+                    continue;
+                }
+
+                // Nếu không chọn gì -> LOẠI BỎ TẤT CẢ (bảng trống)
+                if (checkedBoxes.length === 0) {
+                    return false;
+                }
+
+                // Nếu chọn một phần -> kiểm tra giá trị
+                const checkedValues = Array.from(checkedBoxes).map(cb => cb.value);
+                const itemValue = item[fieldMap[filterType]];
+                if (!itemValue || !checkedValues.includes(itemValue.toString())) {
+                    return false;
+                }
+            }
+        }
+
+
+
+        // Filter tốc độ
+        if (filters.speedFilter.min || filters.speedFilter.max) {
+            const runTime = calculateRunTimeForRecord(item);
+            const paper = parseFloat(item.thanh_pham_in) || 0;
+            const speed = (runTime > 0 && paper > 0) ? Math.round(paper / (runTime / 60)) : 0;
+
+            console.log(`🔍 Speed filter: paper=${paper}, runTime=${runTime}, speed=${speed}, ws=${item.ws}`);
+
+            if (!applyNumericFilter(speed, filters.speedFilter)) {
+                console.log(`❌ Speed filter rejected: ${item.ws} (speed=${speed})`);
+                return false;
+            }
+        }
+
         // Filter số lượng đơn hàng
         if (filters.orderFilter.min || filters.orderFilter.max) {
             const orderQty = parseFloat(item.sl_don_hang) || 0;
-            
+
             if (!applyNumericFilter(orderQty, filters.orderFilter)) {
                 return false;
             }
         }
-        
+
         return true;
     });
-    
+
+    console.log('🔍 Filtered result:', filtered.length, 'records');
     return filtered;
 }
 
@@ -5085,15 +5475,15 @@ function applyNumericFilter(value, filter) {
         const num = parseFloat(cleaned);
         return isNaN(num) ? null : num;
     };
-    
+
     const min = parseValue(filter.min);
     const max = parseValue(filter.max);
-    
+
     // Nếu không có giá trị nào được nhập thì không filter
     if (min === null && max === null) {
         return true;
     }
-    
+
     switch (filter.type) {
         case 'range':
             if (min !== null && value < min) return false;
@@ -5108,8 +5498,14 @@ function applyNumericFilter(value, filter) {
         case 'equal':
             if (min !== null && value !== min) return false;
             break;
+        case 'greaterEqual':
+            if (min !== null && value < min) return false;
+            break;
+        case 'lessEqual':
+            if (min !== null && value > min) return false;
+            break;
     }
-    
+
     return true;
 }
 
@@ -5118,16 +5514,16 @@ function applyNumericFilter(value, filter) {
 // Tính run time cho record
 function calculateRunTimeForRecord(record) {
     if (!record.thoi_gian_bat_dau || !record.thoi_gian_ket_thuc) return 0;
-    
+
     const start = new Date(record.thoi_gian_bat_dau);
     const end = new Date(record.thoi_gian_ket_thuc);
-    
+
     let totalMinutes = (end - start) / (1000 * 60);
     if (totalMinutes < 0) totalMinutes += 24 * 60;
-    
+
     const setupMinutes = record.thoi_gian_canh_may || 0;
     const stopMinutes = record.stopTime || 0;
-    
+
     return Math.max(0, totalMinutes - setupMinutes - stopMinutes);
 }
 
@@ -5135,7 +5531,7 @@ function calculateRunTimeForRecord(record) {
 function sortTableData(data, sortField, sortOrder) {
     return data.sort((a, b) => {
         let aValue, bValue;
-        
+
         switch (sortField) {
             case 'tocDo':
                 const aRunTime = calculateRunTimeForRecord(a);
@@ -5158,7 +5554,7 @@ function sortTableData(data, sortField, sortOrder) {
             default:
                 return 0;
         }
-        
+
         if (sortOrder === 'desc') {
             return bValue - aValue;
         } else {
@@ -5173,12 +5569,12 @@ function resetDetailFilters() {
     document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
         checkbox.checked = true;
     });
-    
+
     // Reset search inputs
     document.querySelectorAll('[id^="search"]').forEach(input => {
         input.value = '';
     });
-    
+
     // Reset numeric filters
     document.getElementById('speedFilterType').value = 'range';
     document.getElementById('speedMin').value = '';
@@ -5186,7 +5582,7 @@ function resetDetailFilters() {
     document.getElementById('orderFilterType').value = 'range';
     document.getElementById('orderMin').value = '';
     document.getElementById('orderMax').value = '';
-    
+
     // Reset filter object
     currentDetailFilters = {
         soMau: [],
@@ -5197,30 +5593,30 @@ function resetDetailFilters() {
         speedFilter: { type: 'range', min: '', max: '' },
         orderFilter: { type: 'range', min: '', max: '' }
     };
-    
+
 
     // Cập nhật currentDetailFilters với tất cả giá trị có sẵn
-['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
-    const container = document.getElementById(`${filterType}Options`);
-    if (container) {
-        const allBoxes = container.querySelectorAll('.filter-checkbox');
-        currentDetailFilters[filterType] = Array.from(allBoxes).map(cb => cb.value);
-    }
-});
+    ['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
+        const container = document.getElementById(`${filterType}Options`);
+        if (container) {
+            const allBoxes = container.querySelectorAll('.filter-checkbox');
+            currentDetailFilters[filterType] = Array.from(allBoxes).map(cb => cb.value);
+        }
+    });
 
-    
+
     // Reset dữ liệu
     filteredTableData = originalTableData;
     currentPage = 1;
-    
+
     // Update button text
     updateFilterButtons();
     updateNumericFilterButtons();
-    
+
     // Render lại bảng
     const container = document.getElementById('detailTableContainer');
     const filters = collectFilters();
-    renderDetailTable(container, filteredTableData, filters);
+    renderDetailTable(container, originalTableData, filters);
 }
 
 
@@ -5229,23 +5625,22 @@ function resetDetailFilters() {
 function restoreFilterState() {
     // Khôi phục checkbox filters
     ['soMau', 'maSp', 'khachHang', 'may', 'maCa'].forEach(filterType => {
-    const container = document.getElementById(`${filterType}Options`);
-    if (container) {
-        const checkboxes = container.querySelectorAll('.filter-checkbox');
-        const checkedValues = currentDetailFilters[filterType] || [];
-        
-        checkboxes.forEach(checkbox => {
-            // Nếu currentDetailFilters trống, mặc định chọn tất cả
-            // Nếu có giá trị, chỉ chọn những giá trị có trong danh sách
-            if (checkedValues.length === 0) {
-                checkbox.checked = true;
-            } else {
-                checkbox.checked = checkedValues.includes(checkbox.value);
-            }
-        });
-    }
-});
-    
+        const container = document.getElementById(`${filterType}Options`);
+        if (container) {
+            const checkboxes = container.querySelectorAll('.filter-checkbox');
+            const checkedValues = currentDetailFilters[filterType] || [];
+
+            checkboxes.forEach(checkbox => {
+                // Mặc định chọn tất cả, chỉ bỏ chọn khi có filter cụ thể
+                if (checkedValues.length === 0) {
+                    checkbox.checked = true; // Chọn tất cả
+                } else {
+                    checkbox.checked = checkedValues.includes(checkbox.value);
+                }
+            });
+        }
+    });
+
     // Khôi phục numeric filters
     if (currentDetailFilters.speedFilter.min) {
         document.getElementById('speedMin').value = currentDetailFilters.speedFilter.min;
@@ -5254,7 +5649,7 @@ function restoreFilterState() {
         document.getElementById('speedMax').value = currentDetailFilters.speedFilter.max;
     }
     document.getElementById('speedFilterType').value = currentDetailFilters.speedFilter.type || 'range';
-    
+
     if (currentDetailFilters.orderFilter.min) {
         document.getElementById('orderMin').value = currentDetailFilters.orderFilter.min;
     }
@@ -5262,7 +5657,7 @@ function restoreFilterState() {
         document.getElementById('orderMax').value = currentDetailFilters.orderFilter.max;
     }
     document.getElementById('orderFilterType').value = currentDetailFilters.orderFilter.type || 'range';
-    
+
     // Cập nhật button text
     updateFilterButtons();
     updateNumericFilterButtons();
@@ -5283,7 +5678,1115 @@ function restoreSpecificFilterState(filterState) {
             });
         }
     });
-    
+
     // Cập nhật button text
     updateFilterButtons();
+}
+
+
+
+
+// Hàm xử lý sự kiện thay đổi checkbox
+function handleCheckboxChange() {
+    console.log('🔍 Checkbox changed:', this.value, 'checked:', this.checked);
+    updateFilterButtons();
+
+    // Gọi autoApplyFilters với delay nhỏ để đảm bảo UI đã cập nhật
+    setTimeout(() => {
+        autoApplyFilters();
+    }, 10);
+}
+
+
+
+
+// Hàm áp dụng filter tốc độ
+function applySpeedFilter() {
+    const speedFilterType = document.getElementById('speedFilterType').value;
+    const speedMin = document.getElementById('speedMin')?.value || '';
+    const speedMax = document.getElementById('speedMax')?.value || '';
+
+    currentDetailFilters.speedFilter = {
+        type: speedFilterType,
+        min: speedMin,
+        max: speedMax
+    };
+
+    updateNumericFilterButtons();
+    autoApplyFilters();
+
+    // Đóng dropdown
+    const dropdown = document.querySelector('#filterTocDo').closest('.dropdown');
+    const bsDropdown = bootstrap.Dropdown.getInstance(dropdown.querySelector('[data-bs-toggle="dropdown"]'));
+    if (bsDropdown) bsDropdown.hide();
+}
+
+// Hàm áp dụng filter đơn hàng
+function applyOrderFilter() {
+    const orderFilterType = document.getElementById('orderFilterType').value;
+    const orderMin = document.getElementById('orderMin')?.value || '';
+    const orderMax = document.getElementById('orderMax')?.value || '';
+
+    currentDetailFilters.orderFilter = {
+        type: orderFilterType,
+        min: orderMin,
+        max: orderMax
+    };
+
+    updateNumericFilterButtons();
+    autoApplyFilters();
+
+    // Đóng dropdown
+    const dropdown = document.querySelector('#filterDonHang').closest('.dropdown');
+    const bsDropdown = bootstrap.Dropdown.getInstance(dropdown.querySelector('[data-bs-toggle="dropdown"]'));
+    if (bsDropdown) bsDropdown.hide();
+}
+
+// Hàm xóa filter tốc độ
+function clearSpeedFilter() {
+    document.getElementById('speedFilterType').value = 'range';
+    const speedMin = document.getElementById('speedMin');
+    const speedMax = document.getElementById('speedMax');
+    if (speedMin) speedMin.value = '';
+    if (speedMax) speedMax.value = '';
+
+    currentDetailFilters.speedFilter = {
+        type: 'range',
+        min: '',
+        max: ''
+    };
+
+    updateNumericFilterButtons();
+    autoApplyFilters();
+}
+
+// Hàm xóa filter đơn hàng
+function clearOrderFilter() {
+    document.getElementById('orderFilterType').value = 'range';
+    const orderMin = document.getElementById('orderMin');
+    const orderMax = document.getElementById('orderMax');
+    if (orderMin) orderMin.value = '';
+    if (orderMax) orderMax.value = '';
+
+    currentDetailFilters.orderFilter = {
+        type: 'range',
+        min: '',
+        max: ''
+    };
+
+    updateNumericFilterButtons();
+    autoApplyFilters();
+}
+
+
+
+
+
+
+// Biến theo dõi trạng thái bảng hiện tại
+let currentTableMode = 'detail'; // 'detail' hoặc 'incomplete'
+
+// Hàm chuyển sang bảng WS chưa hoàn thành
+function switchToIncompleteTable() {
+    currentTableMode = 'incomplete';
+    const container = document.getElementById('detailTableContainer');
+    const filters = collectFilters();
+    
+    // Lọc dữ liệu WS chưa hoàn thành
+    const incompleteData = filteredTableData.filter(record => {
+        const slDonHang = parseFloat(record.sl_don_hang) || 0;
+        const soCon = parseFloat(record.so_con) || 1; // Tránh chia cho 0
+        const thanhPham = parseFloat(record.thanh_pham_in) || 0;
+        
+        const targetQuantity = slDonHang / soCon;
+        return targetQuantity > thanhPham;
+    });
+    
+    renderIncompleteTable(container, incompleteData, filters);
+}
+
+// Hàm chuyển về bảng chi tiết
+function switchToDetailTable() {
+    currentTableMode = 'detail';
+    const container = document.getElementById('detailTableContainer');
+    const filters = collectFilters();
+    
+    renderDetailTableWithoutFilters(container, filteredTableData, filters);
+}
+
+// Hàm render bảng WS chưa hoàn thành
+function renderIncompleteTable(container, data, filters) {
+    const switchButtonHtml = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6><i class="fas fa-exclamation-triangle me-2"></i>Bảng WS chưa hoàn thành</h6>
+            <button class="btn btn-outline-primary btn-sm" id="switchToDetailBtn" onclick="switchToDetailTable()">
+                <i class="fas fa-table me-1"></i>Xem chi tiết báo cáo
+            </button>
+        </div>
+    `;
+    
+    if (!data || data.length === 0) {
+        container.innerHTML = switchButtonHtml + `
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-check-circle fa-2x mb-3 text-success"></i>
+                <h6>Không có WS chưa hoàn thành</h6>
+                <p>Tất cả WS đều đã hoàn thành theo yêu cầu.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Tính toán phân trang
+    const totalItems = data.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = data.slice(startIndex, endIndex);
+    
+    let html = `
+        <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table table-striped table-hover text-center" style="white-space: nowrap; min-width: 1200px;">
+                <thead class="table-dark sticky-top">
+                    <tr>
+                        <th>STT</th>
+                        <th>WS</th>
+                        <th>Mã Ca</th>
+                        <th>Máy</th>
+                        <th>Khách hàng</th>
+                        <th>Mã sản phẩm</th>
+                        <th>SL Đơn hàng</th>
+                        <th>Số con</th>
+                        <th>Số màu</th>
+                        <th>Thành phẩm in</th>
+                        <th>Phế liệu</th>
+                        <th>Tốc độ (s/h)</th>
+                        <th>Thời gian</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    paginatedData.forEach((record, index) => {
+        const ws = record.ws || '-';
+        const maca = record.ma_ca || '-';
+        const may = record.may || '-';
+        const customer = record.khach_hang || '-';
+        const product = record.ma_sp || '-';
+        const slDonHang = parseFloat(record.sl_don_hang) || 0;
+        const soCon = parseFloat(record.so_con) || 1;
+        const soMau = record.so_mau || 0;
+        const paper = formatNumber(record.thanh_pham_in || 0);
+        const waste = formatNumber((parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0));
+        const timeRange = formatTimeRangeWithDuration(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
+        
+        // Tính thời gian chạy máy
+        let runTimeForRecord = 0;
+        if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
+            const start = new Date(record.thoi_gian_bat_dau);
+            const end = new Date(record.thoi_gian_ket_thuc);
+            let totalMinutes = (end - start) / (1000 * 60);
+            if (totalMinutes < 0) totalMinutes += 24 * 60;
+            const setupMinutes = record.thoi_gian_canh_may || 0;
+            const stopMinutes = record.stopTime || 0;
+            runTimeForRecord = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+        }
+
+        
+        html += `
+            <tr>
+                <td><strong>${startIndex + index + 1}</strong></td>
+                <td><span class="badge bg-primary">${ws}</span></td>
+                <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
+                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
+                <td>${customer}</td>
+                <td>${product}</td>
+                <td>${formatNumber(slDonHang)}</td>
+                <td>${formatNumber(soCon)}</td>
+                <td>${soMau}</td>
+                <td class="text-center text-success"><strong>${paper}</strong></td>
+                <td class="text-center text-danger"><strong>${waste}</strong></td>
+                <td class="text-center">
+                    <span>${calculateSpeed(record.thanh_pham_in, runTimeForRecord)}</span>
+                </td>
+                <td>${timeRange}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="row my-3">
+            <div class="col-md-6">
+                <div class="text-muted">
+                    <small>Hiển thị ${startIndex + 1} - ${Math.min(endIndex, totalItems)} trong tổng số ${totalItems} WS chưa hoàn thành</small>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Phân trang
+    if (totalPages > 1) {
+        html += `
+            <div class="row mt-3">
+                <div class="col-12">
+                    <nav aria-label="Phân trang WS chưa hoàn thành">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                                <a class="page-link" href="javascript:void(0)" onclick="changeIncompleteTablePage(${currentPage - 1}); return false;">Trước</a>
+                            </li>
+        `;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                html += `
+                    <li class="page-item ${currentPage === i ? 'active' : ''}">
+                        <a class="page-link" href="javascript:void(0)" onclick="changeIncompleteTablePage(${i}); return false;">${i}</a>
+                    </li>
+                `;
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+        }
+        
+        html += `
+                            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                                <a class="page-link" href="javascript:void(0)" onclick="changeIncompleteTablePage(${currentPage + 1}); return false;">Sau</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = switchButtonHtml + html;
+    
+    // Thiết lập sticky header
+    setTimeout(() => {
+        setupStickyTableHeader();
+    }, 100);
+}
+
+// Hàm thay đổi trang cho bảng WS chưa hoàn thành
+function changeIncompleteTablePage(page) {
+    const incompleteData = filteredTableData.filter(record => {
+        const slDonHang = parseFloat(record.sl_don_hang) || 0;
+        const soCon = parseFloat(record.so_con) || 1;
+        const thanhPham = parseFloat(record.thanh_pham_in) || 0;
+        
+        const targetQuantity = slDonHang / soCon;
+        return targetQuantity > thanhPham;
+    });
+    
+    const totalPages = Math.ceil(incompleteData.length / itemsPerPage);
+    
+    if (page < 1 || page > totalPages) return;
+    
+    currentPage = page;
+    const container = document.getElementById('detailTableContainer');
+    const filters = collectFilters();
+    
+    renderIncompleteTable(container, incompleteData, filters);
+}
+
+
+
+// Hàm chuyển sang bảng trưởng máy
+function switchToShiftLeaderTable() {
+    const filters = collectFilters();
+    
+    // Group dữ liệu theo trưởng máy từ dữ liệu ĐÃ LỌC
+    const machineLeaderData = groupDataByMachineLeader(filteredTableData);
+    
+    // CHỈ cập nhật bảng phân tích sản xuất thành trưởng máy
+    renderShiftLeaderAnalysis(machineLeaderData, filters);
+    
+    // CHỈ thay đổi biểu đồ số lượng sản xuất thành biểu đồ trưởng máy
+    replaceQuantityChartsWithShiftLeader(machineLeaderData);
+    
+    // KHÔNG THAY ĐỔI bảng chi tiết ở dưới
+}
+
+
+// Hàm chuyển về bảng mã ca trong phân tích sản xuất
+function switchBackToShiftAnalysis() {
+    const filters = collectFilters();
+    
+    // Khôi phục biểu đồ số lượng sản xuất về trạng thái ban đầu
+    if (currentChartData) {
+        // Xóa container trưởng máy nếu có
+        const shiftLeaderContainer = document.querySelector('.shift-leader-charts');
+        if (shiftLeaderContainer) {
+            shiftLeaderContainer.remove();
+        }
+        
+        // XÓA biểu đồ stacked trưởng máy TRONG card
+        const stackedContainer = document.getElementById('machineLeaderStackedContainer');
+        if (stackedContainer) {
+            stackedContainer.remove();
+        }
+        
+        // Destroy chart instance
+        if (window.machineLeaderStackedChartInstance) {
+            window.machineLeaderStackedChartInstance.destroy();
+            window.machineLeaderStackedChartInstance = null;
+        }
+        
+        // Khôi phục title card
+        const cardHeader = document.querySelector('#macaChart').closest('.card').querySelector('.card-header h6');
+        if (cardHeader) {
+            cardHeader.innerHTML = '<i class="fas fa-chart-pie me-2"></i>Số lượng sản xuất';
+        }
+        
+        // Hiển thị lại canvas gốc
+        const macaCanvas = document.getElementById('macaChart');
+        if (macaCanvas) {
+            macaCanvas.style.display = 'block';
+        }
+        
+        // Tạo lại biểu đồ mã ca
+        displayQuantityCharts(currentChartData, filters);
+    }
+    
+    // CHỈ khôi phục bảng phân tích sản xuất về trạng thái mã ca
+    displayQuantityAnalysis(currentChartData, filters);
+}
+
+
+// Group dữ liệu theo trưởng máy từ dữ liệu đã lọc
+function groupDataByMachineLeader(data) {
+    const machineLeaderGroups = {};
+    
+    data.forEach(record => {
+        const maCa = record.ma_ca || 'Unknown';
+        const may = record.may || 'Unknown';
+        const truongMay = record.truong_may || `Trưởng máy ${may}`;
+        
+        const key = `${truongMay}_${maCa}_${may}`;
+        
+        if (!machineLeaderGroups[key]) {
+            machineLeaderGroups[key] = {
+                truongMay: truongMay,
+                maCa: maCa,
+                may: may,
+                paper: 0,
+                waste: 0,
+                recordCount: 0
+            };
+        }
+        
+        machineLeaderGroups[key].paper += parseFloat(record.thanh_pham_in) || 0;
+        machineLeaderGroups[key].waste += (parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0);
+        machineLeaderGroups[key].recordCount++;
+    });
+    
+    return Object.values(machineLeaderGroups);
+}
+
+
+
+
+
+
+
+// Render bảng trưởng máy trong phần phân tích sản xuất
+function renderShiftLeaderAnalysis(shiftLeaderData, filters) {
+    const analysisContainer = document.getElementById('quantityAnalysis');
+    if (!analysisContainer) return;
+
+    let html = '';
+
+    if (!shiftLeaderData || shiftLeaderData.length === 0) {
+        html = `
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-user-tie fa-3x mb-3"></i>
+                <h5>Không có dữ liệu trưởng máy</h5>
+                <p>Không tìm thấy dữ liệu để hiển thị theo trưởng máy.</p>
+            </div>
+        `;
+    } else {
+        // Sắp xếp dữ liệu theo trưởng máy
+        shiftLeaderData.sort((a, b) => {
+            if (a.truongMay !== b.truongMay) return a.truongMay.localeCompare(b.truongMay);
+            if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
+            return a.may.localeCompare(b.may);
+        });
+
+        html += `
+        <button class="btn btn-outline-info btn-sm mb-2" onclick="switchBackToShiftAnalysis()">
+                    <i class="fas fa-chart-pie me-1"></i>Quay lại bảng mã ca
+                </button>
+    <div class="table-responsive" style="max-height: 700px; overflow-y: auto; overflow-x: auto;">
+        <table class="table table-striped table-hover" style="min-width: 800px;">
+                    <thead class="table-dark sticky-top" style="position: sticky; top: 0; z-index: 10;">
+                        <tr>
+                            <th>Trưởng máy</th>
+                            <th>Mã ca</th>
+                            <th>Máy</th>
+                            <th class="text-end">Tổng</th>
+                            <th class="text-end">Thành phẩm</th>
+                            <th class="text-end">Phế liệu</th>
+                            <th class="text-end">Tỷ lệ TP</th>
+                            <th class="text-end">Tỷ lệ PL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        const leaderGroups = {};
+shiftLeaderData.forEach(item => {
+    if (!leaderGroups[item.truongMay]) {
+        leaderGroups[item.truongMay] = {
+            truongMay: item.truongMay,
+            totalPaper: 0,
+            totalWaste: 0,
+            details: []
+        };
+    }
+    leaderGroups[item.truongMay].totalPaper += item.paper;
+    leaderGroups[item.truongMay].totalWaste += item.waste;
+    leaderGroups[item.truongMay].details.push(item);
+});
+
+// Render từng nhóm trưởng máy
+Object.values(leaderGroups).forEach(group => {
+    // Sắp xếp chi tiết theo mã ca -> máy
+    group.details.sort((a, b) => {
+        if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
+        return a.may.localeCompare(b.may);
+    });
+    
+    // Render từng dòng chi tiết
+    group.details.forEach((item, index) => {
+        const total = item.paper + item.waste;
+        const paperRate = total > 0 ? ((item.paper / total) * 100).toFixed(1) : 0;
+        const wasteRate = total > 0 ? ((item.waste / total) * 100).toFixed(1) : 0;
+
+        html += `
+            <tr>
+                <td>${index === 0 ? `<strong>${item.truongMay}</strong>` : ''}</td>
+                <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${item.maCa}</span></td>
+                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${item.may}</span></td>
+                <td class="text-end"><strong>${formatNumber(total)}</strong></td>
+                <td class="text-end text-success"><strong>${formatNumber(item.paper)}</strong></td>
+                <td class="text-end text-danger"><strong>${formatNumber(item.waste)}</strong></td>
+                <td class="text-end">
+                    <span class="badge" style="background-color: rgb(128, 186, 151); color: white;">
+                        ${paperRate}%
+                    </span>
+                </td>
+                <td class="text-end">
+                    <span class="badge" style="background-color: rgb(128, 186, 151); color: white;">
+                        ${wasteRate}%
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+    
+    // Thêm hàng tổng cho trưởng máy này
+    const groupTotal = group.totalPaper + group.totalWaste;
+    const groupPaperRate = groupTotal > 0 ? ((group.totalPaper / groupTotal) * 100).toFixed(1) : 0;
+    const groupWasteRate = groupTotal > 0 ? ((group.totalWaste / groupTotal) * 100).toFixed(1) : 0;
+    
+    html += `
+        <tr style="background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
+            <td><strong style="color: #0066cc;">Tổng cộng</strong></td>
+            <td></td>
+            <td></td>
+            <td class="text-end"><strong style="color: #0066cc; font-size: 1.1em;">${formatNumber(groupTotal)}</strong></td>
+            <td class="text-end"><strong style="color: #28a745; font-size: 1.1em;">${formatNumber(group.totalPaper)}</strong></td>
+            <td class="text-end"><strong style="color: #dc3545; font-size: 1.1em;">${formatNumber(group.totalWaste)}</strong></td>
+            <td class="text-end">
+                <span class="badge bg-success" style="font-size: 0.9em;">
+                    ${groupPaperRate}%
+                </span>
+            </td>
+            <td class="text-end">
+                <span class="badge bg-danger" style="font-size: 0.9em;">
+                    ${groupWasteRate}%
+                </span>
+            </td>
+        </tr>
+    `;
+    
+    // Thêm dòng trắng ngăn cách giữa các trưởng máy
+    html += `<tr style="height: 10px;"><td colspan="8"></td></tr>`;
+});
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        // Thống kê
+        const uniqueLeaders = Object.keys(leaderGroups).length;
+        const totalPaper = shiftLeaderData.reduce((sum, item) => sum + item.paper, 0);
+        const totalWaste = shiftLeaderData.reduce((sum, item) => sum + item.waste, 0);
+        const totalPaperRate = (totalPaper + totalWaste) > 0 ? ((totalPaper / (totalPaper + totalWaste)) * 100).toFixed(1) : 0;
+        const totalWasteRate = (totalPaper + totalWaste) > 0 ? ((totalWaste / (totalPaper + totalWaste)) * 100).toFixed(1) : 0;
+
+        html += `
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Số trưởng máy</h6>
+                            <h4 class="text-primary">${uniqueLeaders}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Tỷ lệ thành phẩm</h6>
+                            <h4 class="text-success">${totalPaperRate}%</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Tỷ lệ phế liệu</h6>
+                            <h4 class="text-danger">${totalWasteRate}%</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+
+    analysisContainer.innerHTML = html;
+}
+
+
+
+
+
+// Tạo biểu đồ stacked so sánh trưởng máy
+function createMachineLeaderStackedChart(shiftLeaderData) {
+    // Tìm card-body chứa biểu đồ mã ca
+    const macaCanvas = document.getElementById('macaChart');
+    const cardBody = macaCanvas.closest('.card-body');
+    
+    // Xóa biểu đồ stacked cũ nếu có
+    const existingChart = cardBody.querySelector('#machineLeaderStackedContainer');
+    if (existingChart) {
+        existingChart.remove();
+    }
+    
+    // Group dữ liệu theo trưởng máy
+    const leaderGroups = {};
+    shiftLeaderData.forEach(item => {
+        if (!leaderGroups[item.truongMay]) {
+            leaderGroups[item.truongMay] = {
+                truongMay: item.truongMay,
+                paper: 0,
+                waste: 0
+            };
+        }
+        leaderGroups[item.truongMay].paper += item.paper;
+        leaderGroups[item.truongMay].waste += item.waste;
+    });
+    
+    // Sắp xếp theo tổng số lượng giảm dần
+    const sortedLeaders = Object.values(leaderGroups).sort((a, b) => {
+        return (b.paper + b.waste) - (a.paper + a.waste);
+    });
+    
+    // Tạo container cho biểu đồ stacked
+    const stackedContainer = document.createElement('div');
+    stackedContainer.id = 'machineLeaderStackedContainer';
+    stackedContainer.className = 'mt-4';
+    
+    stackedContainer.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4><i class="fas fa-chart-line me-2"></i>Sản xuất theo ca - Trưởng máy</h4>
+        <div>
+            
+            <select class="form-select d-inline-block" id="leaderSelect" style="width: 200px;">
+                <option value="">Tất cả trưởng máy</option>
+            </select>
+        </div>
+    </div>
+    <div style="height: 400px; position: relative;">
+        <canvas id="leaderShiftStackedChart"></canvas>
+    </div>
+
+        <hr>
+        <div class="text-start mb-3">
+            <h4><i class="fas fa-chart-bar me-2"></i>So sánh sản xuất theo trưởng máy</h4>
+        </div>
+        <div style="height: 400px; position: relative;">
+            <canvas id="machineLeaderStackedChart"></canvas>
+        </div>
+    `;
+    
+    // Thêm vào cuối card-body (dưới biểu đồ tròn)
+    cardBody.appendChild(stackedContainer);
+    
+   // Tạo biểu đồ sau khi DOM đã được cập nhật
+setTimeout(() => {
+    const canvas = document.getElementById('machineLeaderStackedChart');
+    if (canvas) {
+        createStackedChart(canvas, sortedLeaders);
+    }
+    
+    // Tạo dropdown options cho trưởng máy
+    const leaderSelect = document.getElementById('leaderSelect');
+    if (leaderSelect) {
+        const uniqueLeaders = [...new Set(shiftLeaderData.map(item => item.truongMay))].sort();
+        uniqueLeaders.forEach(leader => {
+            const option = document.createElement('option');
+            option.value = leader;
+            option.textContent = leader;
+            leaderSelect.appendChild(option);
+        });
+        
+        // Gắn sự kiện thay đổi
+        leaderSelect.addEventListener('change', function() {
+            updateLeaderShiftChart(shiftLeaderData, this.value);
+        });
+        
+        // Hiển thị biểu đồ ban đầu (tất cả trưởng máy)
+        updateLeaderShiftChart(shiftLeaderData, '');
+    }
+}, 100);
+}
+
+
+
+
+// Tạo biểu đồ stacked
+function createStackedChart(canvas, leaderData) {
+    const labels = leaderData.map(item => item.truongMay);
+    const paperData = leaderData.map(item => item.paper);
+    const wasteData = leaderData.map(item => item.waste);
+    
+    // Destroy chart cũ nếu có
+    if (window.machineLeaderStackedChartInstance) {
+        window.machineLeaderStackedChartInstance.destroy();
+    }
+    
+    window.machineLeaderStackedChartInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Thành phẩm in',
+                data: paperData,
+                backgroundColor: 'rgba(174, 207, 188, 0.8)',
+                borderColor: 'rgba(148, 199, 169, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Phế liệu',
+                data: wasteData,
+                backgroundColor: 'rgba(248, 179, 181, 0.8)',
+                borderColor: 'rgba(255, 141, 152, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 40 // Để chỗ cho số liệu trên đầu
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    title: {
+                        display: true,
+                        // text: 'Trưởng máy',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 0,
+                        callback: function(value, index, values) {
+                            const label = this.getLabelForValue(value);
+                            // Cắt tên nếu quá dài
+                            if (label.length > 18) {
+                                return label.substring(0, 18) + '...';
+                            }
+                            return label;
+                        }
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Số lượng',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 10
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                        },
+                        footer: function(tooltipItems) {
+                            let total = 0;
+                            tooltipItems.forEach(item => {
+                                total += item.parsed.y;
+                            });
+                            return `Tổng: ${formatNumber(total)}`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    anchor: function(context) {
+                        // Dataset 1 (phế liệu) - hiển thị ở end (trên)
+                        // Dataset 0 (thành phẩm) - hiển thị ở center (giữa)
+                        return context.datasetIndex === 1 ? 'end' : 'center';
+                    },
+                    align: function(context) {
+                        // Dataset 1 (phế liệu) - align top
+                        // Dataset 0 (thành phẩm) - align center
+                        return context.datasetIndex === 1 ? 'top' : 'center';
+                    },
+                    color: function(context) {
+                        // Dataset 1 (phế liệu) - màu đậm để nổi bật khi ở ngoài
+                        // Dataset 0 (thành phẩm) - màu trắng
+                        return context.datasetIndex === 1 ? '#8b2635' : 'black';
+                    },
+                    font: {
+                        size: 10,
+                        weight: 'bold'
+                    },
+                    formatter: function(value, context) {
+                        if (!value || value === 0) return '';
+                        
+                        // Tính tổng cho cột này
+                        const dataIndex = context.dataIndex;
+                        const datasets = context.chart.data.datasets;
+                        const paperValue = datasets[0]?.data[dataIndex] || 0;
+                        const wasteValue = datasets[1]?.data[dataIndex] || 0;
+                        const total = paperValue + wasteValue;
+                        
+                        if (total === 0) return '';
+                        
+                        const percent = ((value / total) * 100).toFixed(1);
+                        
+                        // Với phế liệu (dataset 1), hiển thị cả số liệu + %
+                        if (context.datasetIndex === 1) {
+                            return `${formatNumber(value)}\n(${percent}%)`;
+                        }
+                        
+                        // Với thành phẩm (dataset 0), hiển thị số + %
+                        if (value < 1000) {
+                            return `${percent}%`;
+                        } else {
+                            return `${formatNumber(value)}\n(${percent}%)`;
+                        }
+                    },
+                    // Thêm padding để tránh overlap
+                    padding: {
+                        top: 4,
+                        bottom: 4
+                    },
+                    textAlign: 'center'
+                }
+            }
+        }
+    });
+}
+
+
+
+
+function updateLeaderShiftChart(shiftLeaderData, selectedLeader) {
+    const canvas = document.getElementById('leaderShiftStackedChart');
+    if (!canvas) return;
+    
+    // Destroy chart cũ nếu có
+    if (window.leaderShiftStackedChartInstance) {
+        window.leaderShiftStackedChartInstance.destroy();
+    }
+    
+    // Lọc dữ liệu theo trưởng máy được chọn
+    let filteredData = shiftLeaderData;
+    if (selectedLeader && selectedLeader !== '') {
+        filteredData = shiftLeaderData.filter(item => item.truongMay === selectedLeader);
+    }
+    
+    if (filteredData.length === 0) {
+        const container = canvas.parentElement;
+        container.innerHTML = `
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h6>Không có dữ liệu cho trưởng máy này</h6>
+            </div>
+        `;
+        return;
+    }
+    
+    // Group dữ liệu theo ca và máy
+    const shiftMachineGroups = {};
+    filteredData.forEach(item => {
+        const key = `${item.maCa}_${item.may}`;
+        if (!shiftMachineGroups[key]) {
+            shiftMachineGroups[key] = {
+                label: `Ca ${item.maCa} - Máy ${item.may}`,
+                maCa: item.maCa,
+                may: item.may,
+                truongMay: item.truongMay,
+                paper: 0,
+                waste: 0
+            };
+        }
+        shiftMachineGroups[key].paper += item.paper;
+        shiftMachineGroups[key].waste += item.waste;
+    });
+    
+    // Chuyển thành array và sắp xếp
+    const sortedShiftMachines = Object.values(shiftMachineGroups).sort((a, b) => {
+        if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
+        return a.may.localeCompare(b.may);
+    });
+    
+    const labels = sortedShiftMachines.map(item => item.label);
+    const paperData = sortedShiftMachines.map(item => item.paper);
+    const wasteData = sortedShiftMachines.map(item => item.waste);
+    
+    // Tạo title động
+    const chartTitle = selectedLeader 
+        ? `Sản xuất theo ca - ${selectedLeader}` 
+        : 'Sản xuất theo ca - Tất cả trưởng máy';
+    
+    window.leaderShiftStackedChartInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Thành phẩm',
+                data: paperData,
+                backgroundColor: 'rgba(174, 207, 188, 0.8)',
+                borderColor: 'rgba(148, 199, 169, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Phế liệu',
+                data: wasteData,
+                backgroundColor: 'rgba(248, 179, 181, 0.8)',
+                borderColor: 'rgba(255, 141, 152, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 20
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    title: {
+                        display: true,
+                        // text: 'Ca - Máy',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Số lượng',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: chartTitle,
+                    font: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    padding: {
+                        bottom: 20
+                    }
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                        },
+                        footer: function(tooltipItems) {
+                            let total = 0;
+                            tooltipItems.forEach(item => {
+                                total += item.parsed.y;
+                            });
+                            return `Tổng: ${formatNumber(total)}`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    anchor: function(context) {
+                        return context.datasetIndex === 1 ? 'end' : 'center';
+                    },
+                    align: function(context) {
+                        return context.datasetIndex === 1 ? 'top' : 'center';
+                    },
+                    color: function(context) {
+                        return context.datasetIndex === 1 ? '#8b2635' : 'black';
+                    },
+                    font: {
+                        size: 10,
+                        weight: 'bold'
+                    },
+                    formatter: function(value, context) {
+                        if (!value || value === 0) return '';
+                        
+                        const dataIndex = context.dataIndex;
+                        const datasets = context.chart.data.datasets;
+                        const paperValue = datasets[0]?.data[dataIndex] || 0;
+                        const wasteValue = datasets[1]?.data[dataIndex] || 0;
+                        const total = paperValue + wasteValue;
+                        
+                        if (total === 0) return '';
+                        
+                        const percent = ((value / total) * 100).toFixed(1);
+                        
+                        if (context.datasetIndex === 1) {
+                            return `${formatNumber(value)}\n(${percent}%)`;
+                        }
+                        
+                        if (value < 1000) {
+                            return `${percent}%`;
+                        } else {
+                            return `${formatNumber(value)}\n(${percent}%)`;
+                        }
+                    },
+                    padding: {
+                        top: 4,
+                        bottom: 4
+                    },
+                    textAlign: 'center'
+                }
+            }
+        }
+    });
+}
+
+
+
+// Thay thế biểu đồ số lượng sản xuất bằng biểu đồ trưởng ca
+function replaceQuantityChartsWithShiftLeader(shiftLeaderData) {
+    // Tạo biểu đồ stacked so sánh trưởng máy
+    createMachineLeaderStackedChart(shiftLeaderData);
+}
+
+
+
+
+// Tạo biểu đồ cho trưởng ca
+function createShiftLeaderChart(canvas, leaderData) {
+    const total = leaderData.paper + leaderData.waste;
+    
+    if (total === 0) {
+        const container = canvas.parentElement;
+        container.innerHTML = `
+            <div class="text-center text-muted p-2">
+                <i class="fas fa-exclamation-triangle"></i>
+                <small>Không có dữ liệu</small>
+            </div>
+        `;
+        return;
+    }
+    
+    new Chart(canvas, {
+        type: 'pie',
+        data: {
+            labels: ['Thành phẩm', 'Phế liệu'],
+            datasets: [{
+                data: [leaderData.paper, leaderData.waste],
+                backgroundColor: [
+                    'rgb(174,207,188)',
+                    'rgb(248,179,181)'
+                ],
+                borderColor: [
+                    'rgb(148, 199, 169)',
+                    'rgb(255, 141, 152)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 10,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    color: 'white',
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    },
+                    formatter: function(value, context) {
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        return percent + '%';
+                    }
+                }
+            }
+        }
+    });
 }
