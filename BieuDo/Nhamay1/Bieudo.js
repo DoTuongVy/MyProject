@@ -3237,6 +3237,66 @@ console.log('✅ Hệ thống biểu đồ đã được khởi tạo hoàn tấ
 
 
 
+// Biến lưu chart instance fullscreen
+let fullscreenChart = null;
+
+// Hàm mở fullscreen
+function openFullscreen(canvasId, title) {
+    const originalCanvas = document.getElementById(canvasId);
+    const originalChart = Chart.getChart(originalCanvas);
+    
+    if (!originalChart) return;
+    
+    // Hiển thị modal
+    document.getElementById('fullscreenModal').style.display = 'block';
+    document.getElementById('fullscreenTitle').textContent = title;
+    
+    // Destroy chart cũ nếu có
+    if (fullscreenChart) {
+        fullscreenChart.destroy();
+    }
+    
+    // Copy config từ chart gốc
+    const config = {
+        type: originalChart.config.type,
+        data: JSON.parse(JSON.stringify(originalChart.data)),
+        options: JSON.parse(JSON.stringify(originalChart.options))
+    };
+    
+    // Điều chỉnh cho fullscreen
+    config.options.responsive = true;
+    config.options.maintainAspectRatio = false;
+    
+    // Tạo chart mới
+    const fullscreenCanvas = document.getElementById('fullscreenCanvas');
+    fullscreenChart = new Chart(fullscreenCanvas, config);
+}
+
+// Hàm đóng fullscreen
+function closeFullscreen() {
+    document.getElementById('fullscreenModal').style.display = 'none';
+    if (fullscreenChart) {
+        fullscreenChart.destroy();
+        fullscreenChart = null;
+    }
+}
+
+// Đóng khi click outside
+document.getElementById('fullscreenModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeFullscreen();
+    }
+});
+
+// Đóng khi nhấn ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeFullscreen();
+    }
+});
+
+
+
 // Hàm helper để destroy tất cả chart
 function destroyAllCharts() {
     console.log('🗑️ Destroy tất cả biểu đồ');
@@ -3300,6 +3360,16 @@ const stackedContainer = document.getElementById('machineLeaderStackedContainer'
 if (stackedContainer) {
     stackedContainer.remove();
 }
+
+
+// Destroy fullscreen chart
+if (fullscreenChart) {
+    fullscreenChart.destroy();
+    fullscreenChart = null;
+}
+
+// Ẩn modal nếu đang mở
+document.getElementById('fullscreenModal').style.display = 'none';
 
     // Destroy tất cả chart con được tạo động
     Chart.helpers.each(Chart.instances, function (instance) {

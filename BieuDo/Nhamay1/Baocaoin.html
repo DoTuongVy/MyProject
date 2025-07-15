@@ -33,6 +33,59 @@
         <!-- Custom CSS -->
         <link rel="stylesheet" href="Bieudo.css">
         <link rel="stylesheet" href="../../auth.css">
+
+        <style>
+            .chart-expand-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 3px 6px;
+    cursor: pointer;
+    font-size: 12px;
+    z-index: 100;
+    opacity: 0.8;
+}
+
+.chart-expand-btn:hover {
+    opacity: 1;
+    background: #f8f9fa;
+}
+
+.fullscreen-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.9);
+    z-index: 9999;
+    display: none;
+}
+
+.fullscreen-content {
+    position: relative;
+    width: 95%;
+    height: 90%;
+    margin: 2.5% auto;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.close-fullscreen {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+        </style>
     </head>
 
     <body>
@@ -359,10 +412,11 @@
                                         xuất theo máy</h6>
                                 </div>
                                 <div class="card-body">
-                                    <div
-                                        style="height: 400px; position: relative;">
-                                        <canvas
-                                            id="machineStackedChart"></canvas>
+                                    <div style="height: 400px; position: relative;">
+                                        <button class="chart-expand-btn" onclick="openFullscreen('machineStackedChart', 'Sản xuất theo máy')">
+                                            <i class="fas fa-expand"></i>
+                                        </button>
+                                        <canvas id="machineStackedChart"></canvas>
                                     </div>
                                 </div>
                             </div>
@@ -632,6 +686,20 @@
                 <div class="mt-2">Đang tải dữ liệu...</div>
             </div>
         </div>
+
+
+        <!-- Fullscreen Chart Modal -->
+<div id="fullscreenModal" class="fullscreen-modal">
+    <div class="fullscreen-content">
+        <button class="close-fullscreen" onclick="closeFullscreen()">&times;</button>
+        <div id="fullscreenTitle" style="text-align: center; margin-bottom: 20px; font-size: 18px; font-weight: bold;"></div>
+        <div style="height: calc(100% - 60px); position: relative;">
+            <canvas id="fullscreenCanvas"></canvas>
+        </div>
+    </div>
+</div>
+
+
 
         <!-- Scripts -->
         <script
