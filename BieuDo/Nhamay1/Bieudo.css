@@ -1,5 +1,5 @@
 /* ==============================================
-   CSS cho hệ thống biểu đồ sản xuất
+CSS cho hệ thống biểu đồ sản xuất
    ============================================== */
 
 /* Loading Overlay */
@@ -249,10 +249,7 @@
     font-size: 0.9rem;
 }
 
-#detailTableContainer .table td:nth-child(9) {
-    min-width: 200px; /* Cột thời gian rộng hơn */
-    /* font-family: monospace; Font monospace cho thời gian */
-}
+
 
 /* Responsive cho bảng */
 @media (max-width: 768px) {
@@ -278,3 +275,16 @@
 .fullscreen-content .gap-2 > * {
     margin-right: 10px;
 }
+
+
+.dropdown-menu {
+    /* Ngăn dropdown đóng khi click vào nội dung */
+    pointer-events: auto;
+}
+
+.dropdown-menu * {
+    /* Ngăn bubble up event */
+    pointer-events: auto;
+}
+
+
