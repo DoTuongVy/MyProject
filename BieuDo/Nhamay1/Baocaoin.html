@@ -77,7 +77,7 @@
 
 .close-fullscreen {
     position: absolute;
-    top: 10px;
+    top: -5px;
     right: 15px;
     background: none;
     border: none;
@@ -449,6 +449,9 @@
                                             <h6 >Tổng thời gian</h6>
                                             <div class="chart-container"
                                                 style="height: 300px;">
+                                                <button class="chart-expand-btn" onclick="openFullscreen('timeChart', 'Tổng thời gian')">
+                                                    <i class="fas fa-expand"></i>
+                                                </button>
                                                 <canvas id="timeChart"></canvas>
                                             </div>
                                         </div>
@@ -457,6 +460,9 @@
                                         <div class="text-center">
                                             <h6 >Tổng thời gian</h6>
                                             <div class="chart-container" style="height: 350px;">
+                                                <button class="chart-expand-btn" onclick="openFullscreen('sampleProductTimeChart', 'Tổng thời gian')">
+                                                    <i class="fas fa-expand"></i>
+                                                </button>
                                                 <canvas id="sampleProductTimeChart"></canvas>
                                             </div>
                                         </div>
@@ -467,6 +473,9 @@
                                             <h6 class="mb-2">Lý do dừng máy</h6>
                                             <div class="chart-container"
                                                 style="height: 350px;">
+                                                <button class="chart-expand-btn" onclick="openFullscreen('stopReasonChart', 'Lý do dừng máy')">
+                                                    <i class="fas fa-expand"></i>
+                                                </button>
                                                 <canvas
                                                     id="stopReasonChart"></canvas>
                                             </div>
@@ -626,6 +635,9 @@
                             <div class="card-body">
                                 <div class="chart-container"
                                     style="height: 400px;">
+                                    <button class="chart-expand-btn" onclick="openFullscreen('topCustomersChart', 'Top 10 khách hàng')">
+                                        <i class="fas fa-expand"></i>
+                                    </button>
                                     <canvas id="topCustomersChart"></canvas>
                                 </div>
                             </div>
@@ -643,6 +655,9 @@
                             <div class="card-body">
                                 <div class="chart-container"
                                     style="height: 400px;">
+                                    <button class="chart-expand-btn" onclick="openFullscreen('topProductsChart', 'Top 10 mã sản phẩm')">
+                                        <i class="fas fa-expand"></i>
+                                    </button>
                                     <canvas id="topProductsChart"></canvas>
                                 </div>
                             </div>
@@ -650,6 +665,55 @@
                     </div>
                 </div>
             </div>
+
+
+
+            <div class="row mt-4">
+                <div class="col-6">
+                    <!-- Top 10 Tốc độ máy trái -->
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6><i class="fas fa-tachometer-alt me-2"></i>Top 10 Tốc độ - Máy trái</h6>
+                                <select class="form-select form-select-sm" id="speedMachineSelectLeft" style="width: 150px;">
+                                    <option value="">Chọn máy</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="height: 400px;">
+                                <button class="chart-expand-btn" onclick="openFullscreen('topSpeedLeftChart', 'Top 10 tốc độ máy trái')">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <canvas id="topSpeedLeftChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <!-- Top 10 Tốc độ máy phải -->
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6><i class="fas fa-tachometer-alt me-2"></i>Top 10 Tốc độ - Máy phải</h6>
+                                <select class="form-select form-select-sm" id="speedMachineSelectRight" style="width: 150px;">
+                                    <option value="">Chọn máy</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="height: 400px;">
+                                <button class="chart-expand-btn" onclick="openFullscreen('topSpeedRightChart', 'Top 10 tốc độ máy phải')">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <canvas id="topSpeedRightChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
 
         </div>
 

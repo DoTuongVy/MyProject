@@ -27,8 +27,15 @@ let itemsPerPage = 10;
 let totalItems = 0;
 
 
+let currentLeaderSelections = { left: '', right: '' };
+
+
 let topCustomersChart = null;
 let topProductsChart = null;
+
+let topSpeedLeftChart = null;
+let topSpeedRightChart = null;
+let currentSpeedSelections = { left: '', right: '' };
 
 let sampleProductTimeChart = null;
 
@@ -177,6 +184,14 @@ function initBaoCaoIn() {
     setupInFilters();
     setupInEvents();
     setDefaultDates();
+
+    // Tạo biểu đồ theo năm ngay khi load trang
+const currentYear = new Date().getFullYear();
+setTimeout(() => {
+    loadYearlyLeaderData(null, currentYear);
+}, 1000);
+
+
 }
 
 // Thiết lập bộ lọc báo cáo In
@@ -267,6 +282,12 @@ function setupYearlyCharts() {
 
         // Load biểu đồ cho năm hiện tại
         loadYearlyCharts(currentYear);
+
+        // Đảm bảo tạo biểu đồ trưởng máy ngay khi load
+setTimeout(() => {
+    loadYearlyLeaderData(null, currentYear);
+}, 500);
+
     }
 }
 
@@ -275,11 +296,35 @@ async function loadYearlyCharts(year) {
     try {
         showLoading(true);
 
+        // Destroy các biểu đồ năm cũ
+if (window.yearlyCharts) {
+    window.yearlyCharts.forEach(chart => {
+        if (chart) chart.destroy();
+    });
+    window.yearlyCharts = [];
+}
+
+// Destroy biểu đồ trưởng máy theo năm
+['yearlyLeaderChartLeft', 'yearlyLeaderChartRight', 'yearlyLeaderPaperLineChart', 'yearlyLeaderWasteLineChart'].forEach(canvasId => {
+    const canvas = document.getElementById(canvasId);
+    if (canvas) {
+        const chart = Chart.getChart(canvas);
+        if (chart) {
+            chart.destroy();
+        }
+    }
+});
+
         // Lấy dữ liệu theo năm
         const yearlyData = await fetchYearlyData(year);
 
         // Hiển thị biểu đồ
-        displayYearlyMachineCharts(yearlyData);
+        displayYearlyMachineCharts(yearlyData, year);
+
+        // Tạo biểu đồ trưởng máy cho năm này
+setTimeout(() => {
+    loadYearlyLeaderData(yearlyData, year);
+}, 300);
 
         showLoading(false);
     } catch (error) {
@@ -304,7 +349,7 @@ async function fetchYearlyData(year) {
 }
 
 
-function displayYearlyMachineCharts(yearlyData) {
+function displayYearlyMachineCharts(yearlyData, year) {
     const container = document.getElementById('yearlyChartsContainer');
     if (!container) return;
 
@@ -345,6 +390,9 @@ function displayYearlyMachineCharts(yearlyData) {
                     </div>
                     <div class="card-body">
                         <div style="height: 400px; position: relative;">
+                        <button class="chart-expand-btn" onclick="openFullscreen('yearlyPaperLineChart', 'Biểu đồ thành phẩm theo tháng')">
+                                            <i class="fas fa-expand"></i>
+                                        </button>
                             <canvas id="yearlyPaperLineChart"></canvas>
                         </div>
                     </div>
@@ -357,16 +405,107 @@ function displayYearlyMachineCharts(yearlyData) {
                     </div>
                     <div class="card-body">
                         <div style="height: 400px; position: relative;">
+                        <button class="chart-expand-btn" onclick="openFullscreen('yearlyWasteLineChart', 'Biểu đồ phế liệu theo tháng')">
+                                            <i class="fas fa-expand"></i>
+                                        </button>
                             <canvas id="yearlyWasteLineChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Sản xuất theo trưởng máy - Trái</h6>
+                            <select class="form-select form-select-sm" id="leaderSelectLeft" style="width: 200px;">
+                                <option value="">Chọn trưởng máy</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 400px; position: relative;">
+                            <button class="chart-expand-btn" onclick="openFullscreen('yearlyLeaderChartLeft', '')">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <canvas id="yearlyLeaderChartLeft"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Sản xuất theo trưởng máy - Phải</h6>
+                            <select class="form-select form-select-sm" id="leaderSelectRight" style="width: 200px;">
+                                <option value="">Chọn trưởng máy</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 400px; position: relative;">
+                            <button class="chart-expand-btn" onclick="openFullscreen('yearlyLeaderChartRight', '')">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <canvas id="yearlyLeaderChartRight"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+        <div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Biểu đồ thành phẩm theo trưởng máy</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 400px; position: relative;">
+                    <button class="chart-expand-btn" onclick="openFullscreen('yearlyLeaderPaperLineChart', 'Biểu đồ thành phẩm theo trưởng máy')">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <canvas id="yearlyLeaderPaperLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Biểu đồ phế liệu theo trưởng máy</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 400px; position: relative;">
+                    <button class="chart-expand-btn" onclick="openFullscreen('yearlyLeaderWasteLineChart', 'Biểu đồ phế liệu theo trưởng máy')">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <canvas id="yearlyLeaderWasteLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
     `;
 
     // Sau khi set container.innerHTML = html;
     container.innerHTML = html;
+
+
+    // Tạo biểu đồ trưởng máy
+    setTimeout(() => {
+        loadYearlyLeaderData(yearlyData, year);
+    }, 200);
+
 
     // THÊM TIMEOUT ĐỂ ĐỢI DOM RENDER
     setTimeout(() => {
@@ -1820,6 +1959,9 @@ function createMultipleShiftCharts(canvas, shiftData) {
             <h4>Sản xuất theo mã ca</h4>
         </div>
         <div style="height: 400px; position: relative;">
+        <button class="chart-expand-btn" onclick="openFullscreen('shiftStackedChart', 'Sản xuất theo mã ca')">
+                                            <i class="fas fa-expand"></i>
+                                        </button>
             <canvas id="shiftStackedChart"></canvas>
         </div>
     </div>
@@ -2174,7 +2316,7 @@ function displayQuantityAnalysis(data, filters) {
                         <tr>
                             <th>Mã Ca</th>
                             <th>Máy</th>
-                            <th class="text-end">Tổng</th>
+                            <th class="text-end">Tổng SL giấy</th>
                             <th class="text-end">Thành phẩm</th>
                             <th class="text-end">Phế liệu</th>
                             <th class="text-end">Tỷ lệ TP</th>
@@ -3137,105 +3279,6 @@ function handleResetFilters() {
 
 }
 
-// ====================================================================================================================================
-// BÁO CÁO GMC FUNCTIONS (tương tự In)
-// ====================================================================================================================================
-
-// Khởi tạo báo cáo GMC
-function initBaoCaoGMC() {
-    // Tương tự như initBaoCaoIn nhưng dành cho GMC
-    console.log('Khởi tạo báo cáo GMC...');
-}
-
-// ====================================================================================================================================
-// UTILITY FUNCTIONS
-// ====================================================================================================================================
-
-// Hiển thị loading
-function showLoading(show) {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.style.display = show ? 'flex' : 'none';
-    }
-}
-
-// Hiển thị thông báo
-function showNotification(message, type = 'info') {
-    // Tạo toast notification
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${getBootstrapClass(type)} alert-dismissible fade show position-fixed`;
-    toast.style.cssText = `
-        top: 20px;
-        right: 20px;
-        z-index: 10000;
-        min-width: 300px;
-        max-width: 500px;
-    `;
-
-    toast.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-
-    document.body.appendChild(toast);
-
-    // Tự động ẩn sau 5 giây
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 5000);
-}
-
-// Chuyển đổi type thành class Bootstrap
-function getBootstrapClass(type) {
-    switch (type) {
-        case 'success': return 'success';
-        case 'error': return 'danger';
-        case 'warning': return 'warning';
-        case 'info': return 'info';
-        default: return 'info';
-    }
-}
-
-// Format số
-function formatNumber(num) {
-    if (!num || isNaN(num)) return '0';
-    return parseFloat(num).toLocaleString('en-US');
-}
-
-// Format ngày
-function formatDate(dateString) {
-    if (!dateString) return '';
-    try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN');
-    } catch (error) {
-        return dateString;
-    }
-}
-
-// Format thời gian (phút -> giờ phút)
-function formatDuration(minutes) {
-    if (!minutes || isNaN(minutes)) return '0 phút';
-
-    const totalMinutes = parseInt(minutes);
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-
-    if (hours === 0) {
-        return `${mins} phút`;
-    } else if (mins === 0) {
-        return `${hours} giờ`;
-    } else {
-        return `${hours} giờ ${mins} phút`;
-    }
-}
-
-console.log('✅ Hệ thống biểu đồ đã được khởi tạo hoàn tất');
-
-
-
 
 // Biến lưu chart instance fullscreen
 let fullscreenChart = null;
@@ -3245,31 +3288,586 @@ function openFullscreen(canvasId, title) {
     const originalCanvas = document.getElementById(canvasId);
     const originalChart = Chart.getChart(originalCanvas);
     
-    if (!originalChart) return;
+    if (!originalCanvas || !originalChart) {
+        console.error('Không tìm thấy chart:', canvasId);
+        return;
+    }
     
     // Hiển thị modal
-    document.getElementById('fullscreenModal').style.display = 'block';
+    const modal = document.getElementById('fullscreenModal');
+    modal.style.display = 'block';
     document.getElementById('fullscreenTitle').textContent = title;
     
     // Destroy chart cũ nếu có
     if (fullscreenChart) {
         fullscreenChart.destroy();
+        fullscreenChart = null;
+    }
+
+
+    const originalChartContainer = originalCanvas.closest('.card');
+    const controlsToMove = [];
+    
+   // Tìm các dropdown/select controls trong cùng card (BỎ QUA dropdown tốc độ)
+const cardHeader = originalChartContainer.querySelector('.card-header');
+if (cardHeader) {
+    const selects = cardHeader.querySelectorAll('select');
+    
+    selects.forEach(select => {
+        // BỎ QUA dropdown tốc độ vì sẽ xử lý riêng
+        if (select.id.includes('speedMachineSelect')) {
+            return;
+        }
+        
+        const controlGroup = select.closest('.d-flex') || select.parentElement;
+        if (controlGroup) {
+            const clonedControl = controlGroup.cloneNode(true);
+            const clonedSelect = clonedControl.querySelector('select');
+            if (clonedSelect) {
+                clonedSelect.id = clonedSelect.id + '_fullscreen';
+            }
+            controlsToMove.push(clonedControl);
+        }
+    });
+}
+
+
+if (canvasId === 'leaderShiftStackedChart') {
+    // Tìm dropdown trong cùng container
+    const leaderDropdown = originalChartContainer.querySelector('#leaderSelect');
+    if (leaderDropdown) {
+        // CHỈ CLONE SELECT, KHÔNG CLONE CẢ CONTROL GROUP
+        const clonedSelect = leaderDropdown.cloneNode(true);
+        clonedSelect.id = 'leaderSelect_fullscreen';
+        
+        // TẠO CONTAINER MỚI CHỈ CHỨA SELECT
+        const selectContainer = document.createElement('div');
+        selectContainer.appendChild(clonedSelect);
+        
+        controlsToMove.push(selectContainer);
+    }
+} else if (canvasId === 'topSpeedLeftChart' || canvasId === 'topSpeedRightChart') {
+        // ĐÃ SỬA: Chỉ copy dropdown tương ứng với biểu đồ đang mở
+        const side = canvasId === 'topSpeedLeftChart' ? 'Left' : 'Right';
+        const speedDropdown = originalChartContainer.querySelector(`#speedMachineSelect${side}`);
+        
+        if (speedDropdown) {
+            const controlGroup = speedDropdown.closest('.d-flex') || speedDropdown.parentElement;
+            if (controlGroup) {
+                const clonedControl = controlGroup.cloneNode(true);
+                const clonedSelect = clonedControl.querySelector('select');
+                if (clonedSelect) {
+                    clonedSelect.id = `speedMachineSelect${side}_fullscreen`;
+                    // XÓA LABEL TRÙNG LẶP
+                    const label = clonedControl.querySelector('h6');
+                    if (label) {
+                        label.remove();
+                    }
+                }
+                controlsToMove.push(clonedControl);
+            }
+        }
     }
     
-    // Copy config từ chart gốc
-    const config = {
-        type: originalChart.config.type,
-        data: JSON.parse(JSON.stringify(originalChart.data)),
-        options: JSON.parse(JSON.stringify(originalChart.options))
+
+// Thêm controls vào modal title area
+const fullscreenTitle = document.getElementById('fullscreenTitle');
+if (controlsToMove.length > 0) {
+    const controlsContainer = document.createElement('div');
+    controlsContainer.className = 'd-flex justify-content-between align-items-center';
+    controlsContainer.style.marginTop = '10px';
+    
+    const titleDiv = document.createElement('div');
+    // ĐÃ SỬA: Xử lý title riêng cho biểu đồ tốc độ và trưởng máy
+    if (canvasId === 'topSpeedLeftChart' || canvasId === 'topSpeedRightChart') {
+        const side = canvasId === 'topSpeedLeftChart' ? 'trái' : 'phải';
+        titleDiv.textContent = `Top 10 tốc độ - Máy ${side}`;
+    } else if (canvasId === 'leaderShiftStackedChart') {
+        titleDiv.textContent = 'Sản xuất theo ca - Trưởng máy';
+    } else {
+        titleDiv.textContent = title;
+    }
+
+    titleDiv.style.fontWeight = 'bold';
+    titleDiv.style.fontSize = '18px';
+    
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'd-flex gap-2';
+    
+    controlsToMove.forEach(control => {
+        controlsDiv.appendChild(control);
+    });
+    
+    controlsContainer.appendChild(titleDiv);
+    controlsContainer.appendChild(controlsDiv);
+    
+    fullscreenTitle.innerHTML = '';
+    fullscreenTitle.appendChild(controlsContainer);
+} else {
+    fullscreenTitle.textContent = title;
+}
+
+    
+    // Đợi modal hiển thị xong rồi mới tạo chart
+    setTimeout(() => {
+        const fullscreenCanvas = document.getElementById('fullscreenCanvas');
+        
+        // Copy toàn bộ config từ chart gốc
+const originalConfig = originalChart.config;
+
+let config;
+
+// Kiểm tra nếu là biểu đồ trưởng máy
+if (canvasId === 'yearlyLeaderChartLeft' || canvasId === 'yearlyLeaderChartRight') {
+    config = {
+        type: 'bar',
+        data: {
+            labels: [...originalChart.data.labels],
+            datasets: originalChart.data.datasets.map(dataset => ({
+                ...dataset,
+                data: [...dataset.data]
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    title: {
+                        display: true,
+                        // text: 'Tháng - Ca',
+                        font: { weight: 'bold' }
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Số lượng',
+                        font: { weight: 'bold' }
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: title,
+                    font: { size: 18, weight: 'bold' }
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: { usePointStyle: true, padding: 15 }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            const label = context[0].label;
+                            const [month, shift] = label.split('-');
+                            return shift ? `${month} - Ca ${shift}` : month;
+                        },
+                        label: function(context) {
+                            return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    anchor: function(context) {
+                        return context.datasetIndex === 0 ? 'center' : 'end';
+                    },
+                    align: function(context) {
+                        return context.datasetIndex === 0 ? 'center' : 'top';
+                    },
+                    color: function(context) {
+                        return context.datasetIndex === 0 ? 'black' : '#8b2635';
+                    },
+                    font: { size: 12, weight: 'bold' },
+                    textAlign: 'center',
+                    formatter: function(value, context) {
+                        if (!value || value === 0) return '';
+                        
+                        const dataIndex = context.dataIndex;
+                        const datasets = context.chart.data.datasets;
+                        const paperValue = datasets[0]?.data[dataIndex] || 0;
+                        const wasteValue = datasets[1]?.data[dataIndex] || 0;
+                        const total = paperValue + wasteValue;
+                        
+                        if (total === 0) return '';
+                        
+                        const percent = ((value / total) * 100).toFixed(1);
+                        return `${formatNumber(value)}\n(${percent}%)`;
+                    },
+                    padding: 4,
+                    textAlign: 'center'
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
     };
+} else if (canvasId === 'leaderShiftStackedChart') {
+    config = {
+        type: 'bar',
+        data: {
+            labels: [...originalChart.data.labels],
+            datasets: originalChart.data.datasets.map(dataset => ({
+                ...dataset,
+                data: [...dataset.data]
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 20
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    title: {
+                        display: true,
+                        font: { weight: 'bold' }
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Số lượng',
+                        font: { weight: 'bold' }
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: title,
+                    font: { size: 18, weight: 'bold' }
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: { usePointStyle: true, padding: 15 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                        },
+                        footer: function(tooltipItems) {
+                            let total = 0;
+                            tooltipItems.forEach(item => {
+                                total += item.parsed.y;
+                            });
+                            return `Tổng: ${formatNumber(total)}`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    anchor: function(context) {
+                        return context.datasetIndex === 1 ? 'end' : 'center';
+                    },
+                    align: function(context) {
+                        return context.datasetIndex === 1 ? 'top' : 'center';
+                    },
+                    color: function(context) {
+                        return context.datasetIndex === 1 ? '#8b2635' : 'black';
+                    },
+                    font: { size: 12, weight: 'bold' },
+                    textAlign: 'center',
+                    formatter: function(value, context) {
+                        if (!value || value === 0) return '';
+                        
+                        const dataIndex = context.dataIndex;
+                        const datasets = context.chart.data.datasets;
+                        const paperValue = datasets[0]?.data[dataIndex] || 0;
+                        const wasteValue = datasets[1]?.data[dataIndex] || 0;
+                        const total = paperValue + wasteValue;
+                        
+                        if (total === 0) return '';
+                        
+                        const percent = ((value / total) * 100).toFixed(1);
+                        return `${formatNumber(value)}\n(${percent}%)`;
+                    },
+                    padding: 4,
+                    textAlign: 'center'
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    };
+} else if (canvasId === 'yearlyLeaderPaperLineChart' || canvasId === 'yearlyLeaderWasteLineChart') {
+    // Kiểm tra xem biểu đồ có tồn tại không
+    if (!originalChart) {
+        console.error('Biểu đồ chưa được tạo:', canvasId);
+        return;
+    }
     
-    // Điều chỉnh cho fullscreen
-    config.options.responsive = true;
-    config.options.maintainAspectRatio = false;
+    config = {
+        type: 'line',
+        data: {
+            labels: [...originalChart.data.labels],
+            datasets: originalChart.data.datasets.map(dataset => ({
+                ...dataset,
+                data: [...dataset.data]
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 40 } },
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                title: {
+                    display: true,
+                    text: title,
+                    font: { size: 18, weight: 'bold' }
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'line',
+                        pointStyleWidth: 20,
+                        font: { weight: 'bold', size: 14 },
+                        padding: 25
+                    }
+                },
+                tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+                datalabels: {
+                    display: true,
+                    anchor: 'end',
+                    align: function(context) {
+                        const datasetIndex = context.datasetIndex;
+                        const positions = ['top', 'bottom', 'right', 'left', 'center'];
+                        return positions[datasetIndex % positions.length];
+                    },
+                    color: function(context) {
+                        const originalColor = context.dataset.borderColor;
+                        if (originalColor && originalColor.includes('rgb(')) {
+                            return originalColor.replace(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/, function(match, r, g, b) {
+                                const newR = Math.max(0, Math.floor(r * 0.7));
+                                const newG = Math.max(0, Math.floor(g * 0.7));
+                                const newB = Math.max(0, Math.floor(b * 0.7));
+                                return `rgb(${newR}, ${newG}, ${newB})`;
+                            });
+                        }
+                        return originalColor;
+                    },
+                    font: { size: 12, weight: 'bold' },
+                    textAlign: 'center',
+                    formatter: function(value) {
+                        return value > 0 ? formatNumber(value) : '';
+                    },
+                    padding: 6,
+                    textAlign: 'center',
+                    textStrokeColor: 'white',
+                    textStrokeWidth: 1
+                }
+            },
+            scales: originalConfig.options.scales || {}
+        },
+        plugins: [ChartDataLabels]
+    };
+} else {
+    // Giữ nguyên code cũ cho các biểu đồ khác
+    config = {
+        type: originalConfig.type,
+        data: {
+            labels: [...originalChart.data.labels],
+            datasets: originalChart.data.datasets.map(dataset => ({
+                ...dataset,
+                data: [...dataset.data]
+            }))
+        },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: originalConfig.options.layout || {},
+                interaction: originalConfig.options.interaction || {},
+                plugins: {
+                    legend: originalConfig.options.plugins?.legend || { position: 'bottom' },
+                    tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+                    datalabels: {
+                        display: true,
+                        font: {
+                            size: originalConfig.type === 'line' ? 14 : (originalConfig.type === 'pie' ? 16 : 12),
+                            weight: 'bold'
+                        },
+                        padding: originalConfig.type === 'line' ? 8 : (originalConfig.type === 'pie' ? 6 : 4),
+                        align: function(context) {
+                            if (originalConfig.type === 'line') {
+                                const datasetIndex = context.datasetIndex;
+                                const totalDatasets = context.chart.data.datasets.length;
+                                
+                                if (totalDatasets <= 3) {
+                                    return datasetIndex === 0 ? 'top' : (datasetIndex === 1 ? 'bottom' : 'right');
+                                } else {
+                                    const positions = ['top', 'bottom', 'right', 'left', 'center'];
+                                    return positions[datasetIndex % positions.length];
+                                }
+                            }
+                            return 'center';
+                        },
+                        anchor: originalConfig.type === 'line' ? 'end' : 'center',
+                        color: originalConfig.type === 'pie' ? 'white' : function(context) {
+                            const originalColor = context.dataset.borderColor || context.dataset.backgroundColor;
+                            if (originalColor && originalColor.includes('rgb(')) {
+                                return originalColor.replace(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/, function(match, r, g, b) {
+                                    const newR = Math.max(0, Math.floor(r * 0.7));
+                                    const newG = Math.max(0, Math.floor(g * 0.7));
+                                    const newB = Math.max(0, Math.floor(b * 0.7));
+                                    return `rgb(${newR}, ${newG}, ${newB})`;
+                                });
+                            }
+                            return 'black';
+                        },
+                        textAlign: 'center',
+                        formatter: function(value, context) {
+                            if (originalConfig.type === 'pie') {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return percent + '%';
+                            }
+                            
+                            if (originalConfig.type === 'line') {
+                                return value > 0 ? formatNumber(value) : '';
+                            }
+                            
+                            // ĐÃ SỬA: Thêm % cho bar charts
+                            if (originalConfig.type === 'bar') {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${formatNumber(value)}\n(${percent}%)`;
+                            }
+                            
+                            return formatNumber(value);
+                        },
+                        textStrokeColor: originalConfig.type === 'line' ? 'white' : undefined,
+                        textStrokeWidth: originalConfig.type === 'line' ? 1 : undefined
+                    }
+                },
+                scales: originalConfig.options.scales || {},
+                elements: originalConfig.options.elements || {}
+            },
+            plugins: [ChartDataLabels]  // THÊM DÒNG NÀY
+        };
+    }
+        
+        // Tạo chart fullscreen
+        fullscreenChart = new Chart(fullscreenCanvas, config);
+
+
+// Gắn lại sự kiện cho các controls đã copy
+if (controlsToMove.length > 0) {
+    // Xử lý select cho năm
+    const yearSelect = fullscreenTitle.querySelector('#yearSelectChart_fullscreen');
+    if (yearSelect) {
+        yearSelect.addEventListener('change', function() {
+            closeFullscreen();
+            loadYearlyCharts(this.value);
+        });
+    }
     
-    // Tạo chart mới
-    const fullscreenCanvas = document.getElementById('fullscreenCanvas');
-    fullscreenChart = new Chart(fullscreenCanvas, config);
+    // Xử lý select cho trưởng máy
+    const leaderSelectLeft = fullscreenTitle.querySelector('#leaderSelectLeft_fullscreen');
+    const leaderSelectRight = fullscreenTitle.querySelector('#leaderSelectRight_fullscreen');
+    
+    if (leaderSelectLeft) {
+        leaderSelectLeft.addEventListener('change', function() {
+            currentLeaderSelections.left = this.value;
+            updateLeaderOptions();
+            // Cập nhật fullscreen chart
+            if (canvasId === 'yearlyLeaderChartLeft') {
+                updateFullscreenLeaderChart('left', this.value, fullscreenChart);
+            }
+        });
+    }
+    
+    if (leaderSelectRight) {
+        leaderSelectRight.addEventListener('change', function() {
+            currentLeaderSelections.right = this.value;
+            updateLeaderOptions();
+            // Cập nhật fullscreen chart
+            if (canvasId === 'yearlyLeaderChartRight') {
+                updateFullscreenLeaderChart('right', this.value, fullscreenChart);
+            }
+        });
+    }
+
+
+
+    
+// THÊM: Xử lý select cho leader shift chart
+const leaderSelect = fullscreenTitle.querySelector('#leaderSelect_fullscreen');
+if (leaderSelect) {
+    // Đồng bộ giá trị với select gốc
+    const originalSelect = document.getElementById('leaderSelect');
+    if (originalSelect) {
+        leaderSelect.value = originalSelect.value;
+    }
+    
+    // Gắn event listener
+    leaderSelect.addEventListener('change', function() {
+        // Cập nhật select gốc
+        if (originalSelect) {
+            originalSelect.value = this.value;
+        }
+        
+        // Cập nhật fullscreen chart
+        if (canvasId === 'leaderShiftStackedChart') {
+            updateFullscreenLeaderShiftChart(this.value, fullscreenChart);
+        }
+    });
+}
+
+
+
+// ĐÃ SỬA: Xử lý select cho tốc độ - chỉ xử lý dropdown tương ứng
+const speedSelect = fullscreenTitle.querySelector(`select[id*="speedMachineSelect"]`);
+if (speedSelect) {
+    const side = speedSelect.id.includes('Left') ? 'left' : 'right';
+    const originalSelectId = speedSelect.id.replace('_fullscreen', '');
+    const originalSelect = document.getElementById(originalSelectId);
+    
+    if (originalSelect) {
+        speedSelect.value = originalSelect.value;
+        
+        speedSelect.addEventListener('change', function() {
+            // Cập nhật select gốc
+            originalSelect.value = this.value;
+            
+            // Cập nhật fullscreen chart
+            if (canvasId === 'topSpeedLeftChart' || canvasId === 'topSpeedRightChart') {
+                updateFullscreenSpeedChart(side, this.value, fullscreenChart);
+            }
+        });
+    }
+}
+
+
+}
+
+
+        
+    }, 100);
 }
 
 // Hàm đóng fullscreen
@@ -3338,6 +3936,15 @@ function destroyAllCharts() {
         topProductsChart = null;
     }
 
+    if (topSpeedLeftChart) {
+        topSpeedLeftChart.destroy();
+        topSpeedLeftChart = null;
+    }
+    if (topSpeedRightChart) {
+        topSpeedRightChart.destroy();
+        topSpeedRightChart = null;
+    }
+
     if (window.machineStackedChart && typeof window.machineStackedChart.destroy === 'function') {
         window.machineStackedChart.destroy();
     }
@@ -3362,11 +3969,17 @@ if (stackedContainer) {
 }
 
 
+
+
+
 // Destroy fullscreen chart
 if (fullscreenChart) {
     fullscreenChart.destroy();
     fullscreenChart = null;
 }
+
+
+
 
 // Ẩn modal nếu đang mở
 document.getElementById('fullscreenModal').style.display = 'none';
@@ -3887,6 +4500,8 @@ function renderDetailTable(container, data, filters) {
                         <th>Số màu</th>    
                         <th>Thành phẩm in</th>
                         <th>Phế liệu</th>
+                        <th>Tổng SL</th>
+        <th>Kết quả</th>
                         <th>Tốc độ (s/h)</th>
                         <th>Thời gian</th>
                         <th>Thời gian chạy máy</th>
@@ -3903,6 +4518,12 @@ function renderDetailTable(container, data, filters) {
         const may = record.may || '-';
         const customer = record.khach_hang || '-';
         const product = record.ma_sp || '-';
+        
+        // Lấy dữ liệu từ các cột báo cáo in
+        const tongSL = formatNumber(record.tong_so_luong || 0);
+        const thanhPham = formatNumber(record.thanh_pham || 0);
+        
+        // Format hiển thị các cột cũ
         const paper = formatNumber(record.thanh_pham_in || 0);
         const waste = formatNumber((parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0));
         const timeRange = formatTimeRangeWithDuration(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
@@ -3933,27 +4554,29 @@ function renderDetailTable(container, data, filters) {
         const runTimeDisplay = formatDuration(runTimeForRecord);
 
         html += `
-            <tr>
-                <td><strong>${startIndex + index + 1}</strong></td>
-                <td><span class="badge bg-primary">${ws}</span></td>
-                <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
-                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
-                <td>${customer}</td>
-                <td>${product}</td>
-                <td>${record.sl_don_hang || 0}</td>
-                <td>${record.so_con || 0}</td>
-                <td>${record.so_mau || 0}</td>
-                <td class="text-center text-success"><strong>${paper}</strong></td>
-                <td class="text-center text-danger"><strong>${waste}</strong></td>
-                <td class="text-center">
-                    <span>${calculateSpeed(record.thanh_pham_in, runTimeForRecord)}</span>
-                </td>
-                <td>${timeRange}</td>
-                <td class="text-center">${runTimeDisplay}</td>
-                <td class="text-center">${setupTime}</td>
-                <td class="text-center">${stopTimeDisplay}</td>
-            </tr>
-        `;
+    <tr>
+        <td><strong>${startIndex + index + 1}</strong></td>
+        <td><span class="badge bg-primary">${ws}</span></td>
+        <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
+        <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
+        <td>${customer}</td>
+        <td>${product}</td>
+        <td>${formatNumber(record.sl_don_hang || 0)}</td>
+        <td>${formatNumber(record.so_con || 0)}</td>
+        <td>${record.so_mau || 0}</td>
+        <td class="text-center text-success"><strong>${paper}</strong></td>
+        <td class="text-center text-danger"><strong>${waste}</strong></td>
+        <td class="text-center text-info"><strong>${tongSL}</strong></td>
+        <td class="text-center text-primary"><strong>${thanhPham}</strong></td>
+        <td class="text-center">
+            <span>${calculateSpeed(record.thanh_pham_in, runTimeForRecord)}</span>
+        </td>
+        <td>${timeRange}</td>
+        <td class="text-center">${runTimeDisplay}</td>
+        <td class="text-center">${setupTime}</td>
+        <td class="text-center">${stopTimeDisplay}</td>
+    </tr>
+`;
     });
 
     html += `
@@ -3996,9 +4619,9 @@ function renderDetailTable(container, data, filters) {
             const end = new Date(record.thoi_gian_ket_thuc);
             let totalMinutes = (end - start) / (1000 * 60);
             if (totalMinutes < 0) totalMinutes += 24 * 60;
-
+    
             const setupMinutes = record.thoi_gian_canh_may || 0;
-            const stopMinutes = 0;
+            const stopMinutes = record.stopTime || 0;
             const runMinutes = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
             return sum + runMinutes;
         }
@@ -4466,6 +5089,7 @@ function calculateTopProductsFromTable(reports) {
         if (!productStats[product]) {
             productStats[product] = {
                 product: product,
+                customer: report.khach_hang,
                 totalQuantity: 0,
                 orderCount: 0,
                 wsCount: 0
@@ -4493,6 +5117,354 @@ function calculateTopProductsFromTable(reports) {
 
     console.log('📊 Top 10 products result:', result);
     return result;
+}
+
+
+
+
+// Tính toán top 10 tốc độ theo mã sản phẩm từ dữ liệu bảng chi tiết
+function calculateTopSpeedFromTable(reports) {
+    if (!reports || reports.length === 0) {
+        return {};
+    }
+
+    const machineProductStats = {};
+
+    reports.forEach(report => {
+        const machine = report.may || 'Không xác định';
+        const product = report.ma_sp || 'Không xác định';
+        const paper = parseFloat(report.thanh_pham_in) || 0;
+        
+        // Tính thời gian chạy máy
+        let runTime = 0;
+        if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+            const start = new Date(report.thoi_gian_bat_dau);
+            const end = new Date(report.thoi_gian_ket_thuc);
+            let totalMinutes = (end - start) / (1000 * 60);
+            if (totalMinutes < 0) totalMinutes += 24 * 60;
+            const setupMinutes = report.thoi_gian_canh_may || 0;
+            const stopMinutes = report.stopTime || 0;
+            runTime = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+        }
+
+        // Tính tốc độ (sheet/hour)
+        const speed = (runTime > 0 && paper > 0) ? Math.round(paper / (runTime / 60)) : 0;
+
+        if (!machineProductStats[machine]) {
+            machineProductStats[machine] = {};
+        }
+
+        if (!machineProductStats[machine][product]) {
+            machineProductStats[machine][product] = {
+                machine: machine,
+                product: product,
+                totalPaper: 0,
+                totalRunTime: 0,
+                recordCount: 0
+            };
+        }
+
+        machineProductStats[machine][product].totalPaper += paper;
+        machineProductStats[machine][product].totalRunTime += runTime;
+        machineProductStats[machine][product].recordCount++;
+    });
+
+    // Tính tốc độ trung bình cho từng máy-sản phẩm
+    const result = {};
+    Object.keys(machineProductStats).forEach(machine => {
+        result[machine] = Object.values(machineProductStats[machine])
+            .map(stat => {
+                const avgSpeed = stat.totalRunTime > 0 ? 
+                    Math.round(stat.totalPaper / (stat.totalRunTime / 60)) : 0;
+                return {
+                    product: stat.product,
+                    speed: avgSpeed,
+                    totalPaper: stat.totalPaper,
+                    recordCount: stat.recordCount
+                };
+            })
+            .filter(item => item.speed > 0)
+            .sort((a, b) => b.speed - a.speed)
+            .slice(0, 10);
+    });
+
+    return result;
+}
+
+
+
+
+// Hiển thị biểu đồ tốc độ
+function displayTopSpeedCharts(topSpeedData, filters) {
+    // Tạo dropdown options cho máy
+    const machines = Object.keys(topSpeedData).sort();
+    const leftSelect = document.getElementById('speedMachineSelectLeft');
+    const rightSelect = document.getElementById('speedMachineSelectRight');
+    
+    if (leftSelect && rightSelect) {
+        // Xóa options cũ
+        leftSelect.innerHTML = '<option value="">Chọn máy</option>';
+        rightSelect.innerHTML = '<option value="">Chọn máy</option>';
+        
+        // Thêm options mới
+        machines.forEach(machine => {
+            const optionLeft = document.createElement('option');
+            optionLeft.value = machine;
+            optionLeft.textContent = machine;
+            leftSelect.appendChild(optionLeft);
+            
+            const optionRight = document.createElement('option');
+            optionRight.value = machine;
+            optionRight.textContent = machine;
+            rightSelect.appendChild(optionRight);
+        });
+        
+        // Gắn sự kiện thay đổi
+        leftSelect.addEventListener('change', function() {
+            currentSpeedSelections.left = this.value;
+            updateSpeedMachineOptions();
+            displaySpeedChart('left', this.value, topSpeedData);
+        });
+        
+        rightSelect.addEventListener('change', function() {
+            currentSpeedSelections.right = this.value;
+            updateSpeedMachineOptions();
+            displaySpeedChart('right', this.value, topSpeedData);
+        });
+        
+        // Chọn sẵn 2 máy đầu tiên
+        if (machines.length >= 2) {
+            leftSelect.value = machines[0];
+            rightSelect.value = machines[1];
+            currentSpeedSelections.left = machines[0];
+            currentSpeedSelections.right = machines[1];
+            
+            updateSpeedMachineOptions();
+            displaySpeedChart('left', machines[0], topSpeedData);
+            displaySpeedChart('right', machines[1], topSpeedData);
+        } else if (machines.length === 1) {
+            leftSelect.value = machines[0];
+            currentSpeedSelections.left = machines[0];
+            displaySpeedChart('left', machines[0], topSpeedData);
+        }
+    }
+}
+
+// Cập nhật options để tránh chọn trùng máy
+function updateSpeedMachineOptions() {
+    const leftSelect = document.getElementById('speedMachineSelectLeft');
+    const rightSelect = document.getElementById('speedMachineSelectRight');
+    
+    if (!leftSelect || !rightSelect) return;
+    
+    const leftValue = leftSelect.value;
+    const rightValue = rightSelect.value;
+    
+    // Disable options đã chọn ở bên kia
+    Array.from(leftSelect.options).forEach(option => {
+        if (option.value === rightValue && option.value !== '') {
+            option.disabled = true;
+        } else {
+            option.disabled = false;
+        }
+    });
+    
+    Array.from(rightSelect.options).forEach(option => {
+        if (option.value === leftValue && option.value !== '') {
+            option.disabled = true;
+        } else {
+            option.disabled = false;
+        }
+    });
+}
+
+// Hiển thị biểu đồ tốc độ cho một máy
+function displaySpeedChart(side, machine, topSpeedData) {
+    const canvasId = side === 'left' ? 'topSpeedLeftChart' : 'topSpeedRightChart';
+    const chartVar = side === 'left' ? 'topSpeedLeftChart' : 'topSpeedRightChart';
+    
+    let ctx = document.getElementById(canvasId);
+    if (!ctx) {
+        console.error('❌ Không tìm thấy canvas:', canvasId);
+        return;
+    }
+    
+    // Destroy chart cũ
+    if (side === 'left' && topSpeedLeftChart) {
+        topSpeedLeftChart.destroy();
+        topSpeedLeftChart = null;
+    }
+    if (side === 'right' && topSpeedRightChart) {
+        topSpeedRightChart.destroy();
+        topSpeedRightChart = null;
+    }
+    
+    // RECREATE CANVAS
+    const container = ctx.parentElement;
+    if (container) {
+        ctx.remove();
+        const newCanvas = document.createElement('canvas');
+        newCanvas.id = canvasId;
+        newCanvas.width = 400;
+        newCanvas.height = 400;
+        newCanvas.style.width = '100%';
+        newCanvas.style.height = '400px';
+        container.appendChild(newCanvas);
+        ctx = newCanvas;
+    }
+    
+    if (!machine || !topSpeedData[machine] || topSpeedData[machine].length === 0) {
+        const emptyChart = createEmptyChart(ctx, `Không có dữ liệu tốc độ máy ${machine || 'này'}`);
+        if (side === 'left') {
+            topSpeedLeftChart = emptyChart;
+        } else {
+            topSpeedRightChart = emptyChart;
+        }
+        return;
+    }
+    
+    const speedData = topSpeedData[machine];
+    const labels = speedData.map(item => item.product);
+    const speeds = speedData.map(item => item.speed);
+    
+    try {
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Tốc độ (sheet/hour)',
+                    data: speeds,
+                    backgroundColor: side === 'left' ? 'rgba(54, 162, 235, 0.8)' : 'rgba(255, 99, 132, 0.8)',
+                    borderColor: side === 'left' ? 'rgba(54, 162, 235, 1)' : 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: { top: 30 }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        // text: `Top 10 tốc độ - Máy ${machine}`,
+                        font: { size: 16, weight: 'bold' },
+                        color: 'black',
+                        padding: { bottom: 20 }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return `Tốc độ: ${formatNumber(context.parsed.y)} sheet/hour`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: 'top',
+                        color: 'black',
+                        font: { weight: 'bold', size: 12 },
+                        textAlign: 'center',
+                        formatter: function (value, context) {
+                            // ĐÃ SỬA: Thêm % cho speed chart
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${formatNumber(value)}\n(${percent}%)`;
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Tốc độ (sheet/hour)',
+                            font: { size: 14, weight: 'bold' },
+                            color: 'black'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            display: true,
+                            maxRotation: 45,
+                            minRotation: 0,
+                            callback: function (value, index, values) {
+                                const label = this.getLabelForValue(value);
+                                const maxLength = 10;
+                                if (label.length > maxLength) {
+                                    const result = [];
+                                    for (let i = 0; i < label.length; i += maxLength) {
+                                        result.push(label.substring(i, i + maxLength));
+                                    }
+                                    return result;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        if (side === 'left') {
+            topSpeedLeftChart = chart;
+        } else {
+            topSpeedRightChart = chart;
+        }
+        
+        console.log(`✅ Biểu đồ tốc độ ${side} được tạo thành công`);
+        
+    } catch (error) {
+        console.error(`❌ Lỗi khi tạo biểu đồ tốc độ ${side}:`, error);
+    }
+}
+
+
+
+
+// Cập nhật biểu đồ tốc độ trong fullscreen
+function updateFullscreenSpeedChart(side, selectedMachine, chartInstance) {
+    if (!chartInstance || !selectedMachine) return;
+    
+    console.log('🔄 Updating fullscreen speed chart:', side, selectedMachine);
+    
+    // Lấy dữ liệu tốc độ từ biến toàn cục hoặc tính toán lại
+    let topSpeedData = {};
+    if (currentPageData && currentPageData.length > 0) {
+        topSpeedData = calculateTopSpeedFromTable(currentPageData);
+    }
+    
+    const speedData = topSpeedData[selectedMachine];
+    if (!speedData || speedData.length === 0) {
+        console.log('⚠️ Không có dữ liệu tốc độ cho máy:', selectedMachine);
+        return;
+    }
+    
+    const labels = speedData.map(item => item.product);
+    const speeds = speedData.map(item => item.speed);
+    
+    // Cập nhật dữ liệu chart
+    chartInstance.data.labels = labels;
+    chartInstance.data.datasets[0].data = speeds;
+    
+    // Cập nhật title
+    chartInstance.options.plugins.title.text = `Top 10 tốc độ - Máy ${selectedMachine}`;
+    
+    // Render lại chart
+    chartInstance.update();
+    
+    // Đồng bộ với biểu đồ gốc
+    setTimeout(() => {
+        displaySpeedChart(side, selectedMachine, topSpeedData);
+    }, 100);
+    
+    console.log('✅ Đã cập nhật fullscreen speed chart');
 }
 
 
@@ -4534,6 +5506,13 @@ function displayTopAnalytics(data, filters) {
     // Hiển thị biểu đồ
     displayTopCustomersChart({ topCustomers }, filters);
     displayTopProductsChart({ topProducts }, filters);
+
+    // Tính toán top 10 tốc độ
+const topSpeedData = calculateTopSpeedFromTable(filteredData);
+
+// Hiển thị biểu đồ tốc độ
+displayTopSpeedCharts(topSpeedData, filters);
+
 }
 
 
@@ -4641,8 +5620,12 @@ function displayTopCustomersChart(data, filters) {
                             weight: 'bold',
                             size: 12
                         },
+                        textAlign: 'center',
                         formatter: function (value, context) {
-                            return formatNumber(value);
+                            // ĐÃ SỬA: Thêm % cho top customers
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${formatNumber(value)}\n(${percent}%)`;
                         }
                     }
                 },
@@ -4668,29 +5651,19 @@ function displayTopCustomersChart(data, filters) {
                         },
                         ticks: {
                             display: true,
-                            maxRotation: 0,
+                            maxRotation: 45,
                             minRotation: 0,
                             callback: function (value, index, values) {
                                 const label = this.getLabelForValue(value);
-                                const maxLength = 12; // Độ dài tối đa mỗi dòng
+                                const maxLength = 10; // Độ dài tối đa mỗi dòng
 
                                 // Wrap text nếu quá dài
                                 if (label.length > maxLength) {
-                                    const words = label.split(' ');
-                                    const lines = [];
-                                    let currentLine = '';
-
-                                    words.forEach(word => {
-                                        if ((currentLine + ' ' + word).length > maxLength && currentLine !== '') {
-                                            lines.push(currentLine);
-                                            currentLine = word;
-                                        } else {
-                                            currentLine += (currentLine ? ' ' : '') + word;
-                                        }
-                                    });
-                                    if (currentLine) lines.push(currentLine);
-
-                                    return lines;
+                                    const result = [];
+                                    for (let i = 0; i < label.length; i += maxLength) {
+                                        result.push(label.substring(i, i + maxLength));
+                                    }
+                                    return result;
                                 }
                                 return label;
                             }
@@ -4754,7 +5727,12 @@ function displayTopProductsChart(data, filters) {
         return;
     }
 
-    const labels = data.topProducts.map(item => item.product);
+    const labels = data.topProducts.map(item => {
+        // ĐÃ SỬA: Cắt ngắn tên khách hàng nếu quá dài
+        const shortCustomer = item.customer.length > 15 ? 
+            item.customer.substring(0, 15) + '...' : item.customer;
+        return `${item.product}\n${shortCustomer}`;  // Bỏ dấu ngoặc để gọn hơn
+    });
     const quantities = data.topProducts.map(item => item.totalQuantity);
 
     console.log('📊 Labels:', labels);
@@ -4813,8 +5791,12 @@ function displayTopProductsChart(data, filters) {
                             weight: 'bold',
                             size: 11
                         },
+                        textAlign: 'center',
                         formatter: function (value, context) {
-                            return formatNumber(value); // Hiển thị số lượng trên đầu cột
+                            // ĐÃ SỬA: Thêm % cho top products
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${formatNumber(value)}\n(${percent}%)`;
                         }
                     }
                 },
@@ -4838,20 +5820,20 @@ function displayTopProductsChart(data, filters) {
                         },
                         ticks: {
                             display: true,
-                            maxRotation: 0,
+                            maxRotation: 45,
                             minRotation: 0,
+                            font: {
+                                size: 10  // ĐÃ THÊM: giảm font size để vừa hơn
+                            },
                             callback: function (value, index, values) {
                                 const label = this.getLabelForValue(value);
-                                const maxLength = 10; // Mã sản phẩm ngắn hơn
-                                if (label.length > maxLength) {
-                                    // Chia theo ký tự cho mã sản phẩm
-                                    const result = [];
-                                    for (let i = 0; i < label.length; i += maxLength) {
-                                        result.push(label.substring(i, i + maxLength));
-                                    }
-                                    return result;
+                                const lines = label.split('\n');
+                                
+                                // ĐÃ SỬA: Làm đậm dòng thứ 2 (customer) bằng cách thêm prefix
+                                if (lines.length > 1) {
+                                    return [lines[0], `● ${lines[1]}`];  // Thêm bullet point để làm nổi bật
                                 }
-                                return label;
+                                return lines;
                             }
                         }
                     }
@@ -5863,14 +6845,14 @@ function switchToIncompleteTable() {
     const filters = collectFilters();
     
     // Lọc dữ liệu WS chưa hoàn thành
-    const incompleteData = filteredTableData.filter(record => {
-        const slDonHang = parseFloat(record.sl_don_hang) || 0;
-        const soCon = parseFloat(record.so_con) || 1; // Tránh chia cho 0
-        const thanhPham = parseFloat(record.thanh_pham_in) || 0;
-        
-        const targetQuantity = slDonHang / soCon;
-        return targetQuantity > thanhPham;
-    });
+const incompleteData = filteredTableData.filter(record => {
+    const slDonHang = parseFloat(record.sl_don_hang) || 0;
+    const soCon = parseFloat(record.so_con) || 1; // Tránh chia cho 0
+    const tongSL = parseFloat(record.tong_so_luong) || 0;
+    
+    const targetQuantity = slDonHang / soCon;
+    return targetQuantity > tongSL;
+});
     
     renderIncompleteTable(container, incompleteData, filters);
 }
@@ -5929,6 +6911,8 @@ function renderIncompleteTable(container, data, filters) {
                         <th>Số màu</th>
                         <th>Thành phẩm in</th>
                         <th>Phế liệu</th>
+                        <th>Tổng SL</th>
+        <th>Kết quả</th>
                         <th>Tốc độ (s/h)</th>
                         <th>Thời gian</th>
                     </tr>
@@ -5942,9 +6926,16 @@ function renderIncompleteTable(container, data, filters) {
         const may = record.may || '-';
         const customer = record.khach_hang || '-';
         const product = record.ma_sp || '-';
+        
         const slDonHang = parseFloat(record.sl_don_hang) || 0;
         const soCon = parseFloat(record.so_con) || 1;
         const soMau = record.so_mau || 0;
+        
+        // Lấy dữ liệu từ các cột báo cáo in
+        const tongSL = formatNumber(record.tong_so_luong || 0);
+        const thanhPham = formatNumber(record.thanh_pham || 0);
+        
+        // Format hiển thị các cột cũ
         const paper = formatNumber(record.thanh_pham_in || 0);
         const waste = formatNumber((parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0));
         const timeRange = formatTimeRangeWithDuration(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
@@ -5963,24 +6954,26 @@ function renderIncompleteTable(container, data, filters) {
 
         
         html += `
-            <tr>
-                <td><strong>${startIndex + index + 1}</strong></td>
-                <td><span class="badge bg-primary">${ws}</span></td>
-                <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
-                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
-                <td>${customer}</td>
-                <td>${product}</td>
-                <td>${formatNumber(slDonHang)}</td>
-                <td>${formatNumber(soCon)}</td>
-                <td>${soMau}</td>
-                <td class="text-center text-success"><strong>${paper}</strong></td>
-                <td class="text-center text-danger"><strong>${waste}</strong></td>
-                <td class="text-center">
-                    <span>${calculateSpeed(record.thanh_pham_in, runTimeForRecord)}</span>
-                </td>
-                <td>${timeRange}</td>
-            </tr>
-        `;
+    <tr>
+        <td><strong>${startIndex + index + 1}</strong></td>
+        <td><span class="badge bg-primary">${ws}</span></td>
+        <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
+        <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
+        <td>${customer}</td>
+        <td>${product}</td>
+        <td>${formatNumber(slDonHang)}</td>
+        <td>${formatNumber(soCon)}</td>
+        <td>${soMau}</td>
+        <td class="text-center text-success"><strong>${paper}</strong></td>
+        <td class="text-center text-danger"><strong>${waste}</strong></td>
+        <td class="text-center text-info"><strong>${tongSL}</strong></td>
+        <td class="text-center text-primary"><strong>${thanhPham}</strong></td>
+        <td class="text-center">
+            <span>${calculateSpeed(record.thanh_pham_in, runTimeForRecord)}</span>
+        </td>
+        <td>${timeRange}</td>
+    </tr>
+`;
     });
     
     html += `
@@ -6045,10 +7038,10 @@ function changeIncompleteTablePage(page) {
     const incompleteData = filteredTableData.filter(record => {
         const slDonHang = parseFloat(record.sl_don_hang) || 0;
         const soCon = parseFloat(record.so_con) || 1;
-        const thanhPham = parseFloat(record.thanh_pham_in) || 0;
+        const tongSL = parseFloat(record.tong_so_luong) || 0;
         
         const targetQuantity = slDonHang / soCon;
-        return targetQuantity > thanhPham;
+        return targetQuantity > tongSL;
     });
     
     const totalPages = Math.ceil(incompleteData.length / itemsPerPage);
@@ -6385,6 +7378,9 @@ function createMachineLeaderStackedChart(shiftLeaderData) {
         </div>
     </div>
     <div style="height: 400px; position: relative;">
+    <button class="chart-expand-btn" onclick="openFullscreen('leaderShiftStackedChart', '')">
+                                            <i class="fas fa-expand"></i>
+                                        </button>
         <canvas id="leaderShiftStackedChart"></canvas>
     </div>
 
@@ -6393,6 +7389,9 @@ function createMachineLeaderStackedChart(shiftLeaderData) {
             <h4><i class="fas fa-chart-bar me-2"></i>So sánh sản xuất theo trưởng máy</h4>
         </div>
         <div style="height: 400px; position: relative;">
+        <button class="chart-expand-btn" onclick="openFullscreen('machineLeaderStackedChart', 'So sánh sản xuất theo trưởng máy')">
+                                            <i class="fas fa-expand"></i>
+                                        </button>
             <canvas id="machineLeaderStackedChart"></canvas>
         </div>
     `;
@@ -6425,6 +7424,10 @@ setTimeout(() => {
         
         // Hiển thị biểu đồ ban đầu (tất cả trưởng máy)
         updateLeaderShiftChart(shiftLeaderData, '');
+
+
+        // Lưu dữ liệu để sử dụng trong fullscreen
+window.currentShiftLeaderData = shiftLeaderData;
     }
 }, 100);
 }
@@ -6608,7 +7611,7 @@ function updateLeaderShiftChart(shiftLeaderData, selectedLeader) {
         container.innerHTML = `
             <div class="text-center text-muted p-4">
                 <i class="fas fa-exclamation-triangle"></i>
-                <h6>Không có dữ liệu cho trưởng máy này</h6>
+                <h6>${selectedLeader ? `Không có dữ liệu cho trưởng máy ${selectedLeader}` : 'Không có dữ liệu'}</h6>
             </div>
         `;
         return;
@@ -6616,21 +7619,32 @@ function updateLeaderShiftChart(shiftLeaderData, selectedLeader) {
     
     // Group dữ liệu theo ca và máy
     const shiftMachineGroups = {};
-    filteredData.forEach(item => {
-        const key = `${item.maCa}_${item.may}`;
-        if (!shiftMachineGroups[key]) {
-            shiftMachineGroups[key] = {
-                label: `Ca ${item.maCa} - Máy ${item.may}`,
-                maCa: item.maCa,
-                may: item.may,
-                truongMay: item.truongMay,
-                paper: 0,
-                waste: 0
-            };
-        }
-        shiftMachineGroups[key].paper += item.paper;
-        shiftMachineGroups[key].waste += item.waste;
-    });
+filteredData.forEach(item => {
+    let key, label;
+    
+    if (selectedLeader && selectedLeader !== '') {
+        // Nếu chọn trưởng máy cụ thể, hiển thị theo ca-máy
+        key = `${item.maCa}_${item.may}`;
+        label = `Ca ${item.maCa}`;
+    } else {
+        // Nếu chọn tất cả trưởng máy, hiển thị theo trưởng máy-ca-máy
+        key = `${item.truongMay}_${item.maCa}_${item.may}`;
+        label = `${item.truongMay}`;
+    }
+    
+    if (!shiftMachineGroups[key]) {
+        shiftMachineGroups[key] = {
+            label: label,
+            maCa: item.maCa,
+            may: item.may,
+            truongMay: item.truongMay,
+            paper: 0,
+            waste: 0
+        };
+    }
+    shiftMachineGroups[key].paper += item.paper;
+    shiftMachineGroups[key].waste += item.waste;
+});
     
     // Chuyển thành array và sắp xếp
     const sortedShiftMachines = Object.values(shiftMachineGroups).sort((a, b) => {
@@ -6678,14 +7692,22 @@ function updateLeaderShiftChart(shiftLeaderData, selectedLeader) {
                     stacked: true,
                     title: {
                         display: true,
-                        // text: 'Ca - Máy',
+                        text: selectedLeader ? 'Ca' : 'Trưởng máy',
                         font: {
                             weight: 'bold'
                         }
                     },
                     ticks: {
                         maxRotation: 45,
-                        minRotation: 0
+                        minRotation: 0,
+                        callback: function(value, index, values) {
+                            const label = this.getLabelForValue(value);
+                            // Cắt tên nếu quá dài (chỉ khi hiển thị tất cả trưởng máy)
+                            if (!selectedLeader && label.length > 25) {
+                                return label.substring(0, 25) + '...';
+                            }
+                            return label;
+                        }
                     }
                 },
                 y: {
@@ -6860,3 +7882,1011 @@ function createShiftLeaderChart(canvas, leaderData) {
         }
     });
 }
+
+
+
+// Biến lưu dữ liệu trưởng máy theo năm
+let yearlyLeaderData = {};
+
+// Lấy dữ liệu trưởng máy theo năm
+async function loadYearlyLeaderData(currentYearlyData, year) {
+    try {
+        // Sử dụng year từ tham số được truyền vào
+        const currentYear = year || new Date().getFullYear();
+        
+        const response = await fetch(`/api/bieu-do/in/yearly-leader-data?year=${currentYear}`);
+        if (!response.ok) {
+            throw new Error('Không thể tải dữ liệu trưởng máy theo năm');
+        }
+        
+        yearlyLeaderData = await response.json();
+        console.log('📊 yearlyLeaderData received:', yearlyLeaderData);
+        
+        // Tạo dropdown options cho trưởng máy
+        const uniqueLeaders = Object.keys(yearlyLeaderData).sort();
+        console.log('📊 uniqueLeaders:', uniqueLeaders);
+        
+        const leftSelect = document.getElementById('leaderSelectLeft');
+        const rightSelect = document.getElementById('leaderSelectRight');
+        
+        if (leftSelect && rightSelect) {
+            // Xóa options cũ
+            leftSelect.innerHTML = '<option value="">Chọn trưởng máy</option>';
+            rightSelect.innerHTML = '<option value="">Chọn trưởng máy</option>';
+            
+            // Thêm options mới
+            uniqueLeaders.forEach(leader => {
+                const optionLeft = document.createElement('option');
+                optionLeft.value = leader;
+                optionLeft.textContent = leader;
+                leftSelect.appendChild(optionLeft);
+                
+                const optionRight = document.createElement('option');
+                optionRight.value = leader;
+                optionRight.textContent = leader;
+                rightSelect.appendChild(optionRight);
+            });
+            
+           // Gắn sự kiện thay đổi
+           leftSelect.addEventListener('change', function() {
+            console.log('🔄 Left select changed to:', this.value);
+            currentLeaderSelections.left = this.value;
+            updateLeaderOptions();
+            setTimeout(() => {
+                updateYearlyLeaderChart('left', this.value);
+            }, 100);
+        });
+        
+        rightSelect.addEventListener('change', function() {
+            console.log('🔄 Right select changed to:', this.value);
+            currentLeaderSelections.right = this.value;
+            updateLeaderOptions();
+            setTimeout(() => {
+                updateYearlyLeaderChart('right', this.value);
+            }, 100);
+        });
+            
+           // Chọn sẵn 2 trưởng máy đầu tiên hoặc khôi phục lựa chọn trước đó
+           if (uniqueLeaders.length >= 2) {
+            const leftLeader = currentLeaderSelections.left || uniqueLeaders[0];
+            const rightLeader = currentLeaderSelections.right || uniqueLeaders[1];
+            
+            leftSelect.value = leftLeader;
+            rightSelect.value = rightLeader;
+            
+            // Lưu trạng thái
+            currentLeaderSelections.left = leftLeader;
+            currentLeaderSelections.right = rightLeader;
+            
+// Cập nhật options và tạo biểu đồ
+updateLeaderOptions();
+setTimeout(() => {
+    updateYearlyLeaderChart('left', leftLeader);
+    updateYearlyLeaderChart('right', rightLeader);
+}, 200);
+
+        }
+        // Luôn tạo biểu đồ line bất kể có chọn trưởng máy hay không
+        setTimeout(() => {
+            createYearlyLeaderLineCharts();
+        }, 400);
+
+        }
+        
+        console.log('✅ Đã tải dữ liệu trưởng máy cho năm:', currentYear);
+        
+    } catch (error) {
+        console.error('Lỗi khi tải dữ liệu trưởng máy theo năm:', error);
+    }
+}
+
+
+
+
+
+// Tạo biểu đồ line thành phẩm và phế liệu theo trưởng máy
+function createYearlyLeaderLineCharts() {
+    const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+    const colors = [
+        '#e8b0c9', '#accae3', '#e8c3a7', '#a9dbca', '#a3add9', '#dbd89e',
+        '#ffb3ba', '#bae1ff', '#ffffba', '#ffdfba', '#c7ceea', '#ffd1dc'
+    ];
+    
+if (!yearlyLeaderData || Object.keys(yearlyLeaderData).length === 0) {
+    console.log('⚠️ Không có dữ liệu trưởng máy để tạo biểu đồ line');
+    
+    // Tạo biểu đồ trống
+    const paperCanvas = document.getElementById('yearlyLeaderPaperLineChart');
+    const wasteCanvas = document.getElementById('yearlyLeaderWasteLineChart');
+    
+    if (paperCanvas) {
+        const existingPaperChart = Chart.getChart(paperCanvas);
+        if (existingPaperChart) existingPaperChart.destroy();
+        
+        new Chart(paperCanvas, {
+            type: 'line',
+            data: {
+                labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+                datasets: [{
+                    label: 'Không có dữ liệu',
+                    data: [],
+                    borderColor: '#cccccc',
+                    backgroundColor: '#f0f0f0'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    datalabels: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Số lượng thành phẩm' } },
+                    x: { title: { display: true, text: 'Tháng' } }
+                }
+            }
+        });
+    }
+    
+    if (wasteCanvas) {
+        const existingWasteChart = Chart.getChart(wasteCanvas);
+        if (existingWasteChart) existingWasteChart.destroy();
+        
+        new Chart(wasteCanvas, {
+            type: 'line',
+            data: {
+                labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+                datasets: [{
+                    label: 'Không có dữ liệu',
+                    data: [],
+                    borderColor: '#cccccc',
+                    backgroundColor: '#f0f0f0'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    datalabels: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Số lượng phế liệu' } },
+                    x: { title: { display: true, text: 'Tháng' } }
+                }
+            }
+        });
+    }
+    
+    return;
+}
+    
+    const leaders = Object.keys(yearlyLeaderData).sort();
+    
+    // Tạo datasets cho thành phẩm
+    const paperDatasets = [];
+    leaders.forEach((leader, index) => {
+        const leaderData = yearlyLeaderData[leader] || {};
+        const paperData = months.map(month => {
+            const monthData = leaderData[month] || {};
+            // Tổng thành phẩm của tất cả ca trong tháng
+            const totalPaper = Object.values(monthData).reduce((sum, shiftData) => {
+                return sum + (shiftData.paper || 0);
+            }, 0);
+            return totalPaper > 0 ? totalPaper : null;
+        });
+        
+        paperDatasets.push({
+            label: leader,
+            data: paperData,
+            borderColor: colors[index % colors.length],
+            backgroundColor: colors[index % colors.length] + '20',
+            fill: false,
+            tension: 0.1,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            borderWidth: 3,
+            spanGaps: false
+        });
+    });
+    
+    // Tạo datasets cho phế liệu
+    const wasteDatasets = [];
+    leaders.forEach((leader, index) => {
+        const leaderData = yearlyLeaderData[leader] || {};
+        const wasteData = months.map(month => {
+            const monthData = leaderData[month] || {};
+            // Tổng phế liệu của tất cả ca trong tháng
+            const totalWaste = Object.values(monthData).reduce((sum, shiftData) => {
+                return sum + (shiftData.waste || 0);
+            }, 0);
+            return totalWaste > 0 ? totalWaste : null;
+        });
+        
+        wasteDatasets.push({
+            label: leader,
+            data: wasteData,
+            borderColor: colors[index % colors.length],
+            backgroundColor: colors[index % colors.length] + '20',
+            fill: false,
+            tension: 0.1,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            borderWidth: 3,
+            spanGaps: false
+        });
+    });
+    
+    // Tạo biểu đồ thành phẩm
+// Tạo biểu đồ thành phẩm
+const paperCanvas = document.getElementById('yearlyLeaderPaperLineChart');
+if (paperCanvas) {
+    // Destroy chart cũ nếu có
+    const existingPaperChart = Chart.getChart(paperCanvas);
+    if (existingPaperChart) {
+        existingPaperChart.destroy();
+    }
+    
+    new Chart(paperCanvas, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: paperDatasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: { top: 40 }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'line',
+                            pointStyleWidth: 20,
+                            font: { weight: 'bold', size: 12 },
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: function(context) {
+                            const datasetIndex = context.datasetIndex;
+                            const totalDatasets = context.chart.data.datasets.length;
+                            const positions = ['top', 'bottom', 'right', 'left', 'center'];
+                            return positions[datasetIndex % positions.length];
+                        },
+                        color: function(context) {
+                            const originalColor = context.dataset.borderColor;
+                            if (originalColor && originalColor.includes('rgb(')) {
+                                return originalColor.replace(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/, function(match, r, g, b) {
+                                    const newR = Math.max(0, Math.floor(r * 0.7));
+                                    const newG = Math.max(0, Math.floor(g * 0.7));
+                                    const newB = Math.max(0, Math.floor(b * 0.7));
+                                    return `rgb(${newR}, ${newG}, ${newB})`;
+                                });
+                            }
+                            return originalColor;
+                        },
+                        font: { size: 9, weight: 'bold' },
+                        formatter: function(value) {
+                            return value > 0 ? formatNumber(value) : '';
+                        },
+                        padding: 4,
+                        textAlign: 'center',
+                        textStrokeColor: 'white',
+                        textStrokeWidth: 1
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng thành phẩm',
+                            font: { color: 'black', weight: 'bold' }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tháng',
+                            font: { color: 'black', weight: 'bold' }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Tạo biểu đồ phế liệu
+// Tạo biểu đồ phế liệu
+const wasteCanvas = document.getElementById('yearlyLeaderWasteLineChart');
+if (wasteCanvas) {
+    // Destroy chart cũ nếu có
+    const existingWasteChart = Chart.getChart(wasteCanvas);
+    if (existingWasteChart) {
+        existingWasteChart.destroy();
+    }
+    
+    new Chart(wasteCanvas, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: wasteDatasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: { top: 40 }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'line',
+                            pointStyleWidth: 20,
+                            font: { weight: 'bold', size: 12 },
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: function(context) {
+                            const datasetIndex = context.datasetIndex;
+                            const totalDatasets = context.chart.data.datasets.length;
+                            const positions = ['top', 'bottom', 'right', 'left', 'center'];
+                            return positions[datasetIndex % positions.length];
+                        },
+                        color: function(context) {
+                            const originalColor = context.dataset.borderColor;
+                            if (originalColor && originalColor.includes('rgb(')) {
+                                return originalColor.replace(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/, function(match, r, g, b) {
+                                    const newR = Math.max(0, Math.floor(r * 0.7));
+                                    const newG = Math.max(0, Math.floor(g * 0.7));
+                                    const newB = Math.max(0, Math.floor(b * 0.7));
+                                    return `rgb(${newR}, ${newG}, ${newB})`;
+                                });
+                            }
+                            return originalColor;
+                        },
+                        font: { size: 9, weight: 'bold' },
+                        formatter: function(value) {
+                            return value > 0 ? formatNumber(value) : '';
+                        },
+                        padding: 4,
+                        textAlign: 'center',
+                        textStrokeColor: 'white',
+                        textStrokeWidth: 1
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng phế liệu',
+                            font: { color: 'black', weight: 'bold' }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tháng',
+                            font: { color: 'black', weight: 'bold' }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+
+
+
+
+// Cập nhật options để tránh chọn trùng
+function updateLeaderOptions() {
+    const leftSelect = document.getElementById('leaderSelectLeft');
+    const rightSelect = document.getElementById('leaderSelectRight');
+    
+    if (!leftSelect || !rightSelect) return;
+    
+    const leftValue = leftSelect.value;
+    const rightValue = rightSelect.value;
+    
+    // Disable options đã chọn ở bên kia
+    Array.from(leftSelect.options).forEach(option => {
+        if (option.value === rightValue && option.value !== '') {
+            option.disabled = true;
+        } else {
+            option.disabled = false;
+        }
+    });
+    
+    Array.from(rightSelect.options).forEach(option => {
+        if (option.value === leftValue && option.value !== '') {
+            option.disabled = true;
+        } else {
+            option.disabled = false;
+        }
+    });
+
+
+    // Cập nhật options cho modal nếu đang mở
+const modalLeftSelect = document.getElementById('leaderSelectLeft_fullscreen');
+const modalRightSelect = document.getElementById('leaderSelectRight_fullscreen');
+
+if (modalLeftSelect && modalRightSelect) {
+    const leftValue = modalLeftSelect.value;
+    const rightValue = modalRightSelect.value;
+    
+    // Disable options đã chọn ở bên kia
+    Array.from(modalLeftSelect.options).forEach(option => {
+        if (option.value === rightValue && option.value !== '') {
+            option.disabled = true;
+        } else {
+            option.disabled = false;
+        }
+    });
+    
+    Array.from(modalRightSelect.options).forEach(option => {
+        if (option.value === leftValue && option.value !== '') {
+            option.disabled = true;
+        } else {
+            option.disabled = false;
+        }
+    });
+}
+
+
+}
+
+
+// Cập nhật biểu đồ trưởng máy theo năm
+function updateYearlyLeaderChart(side, selectedLeader) {
+    const canvasId = side === 'left' ? 'yearlyLeaderChartLeft' : 'yearlyLeaderChartRight';
+    
+    console.log(`🔍 updateYearlyLeaderChart: side=${side}, leader=${selectedLeader}`);
+    
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error('❌ Không tìm thấy canvas:', canvasId);
+        return;
+    }
+    
+    // Destroy chart cũ
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+    
+    if (!selectedLeader || selectedLeader === '') {
+        console.log('⚠️ Không có trưởng máy được chọn');
+        return;
+    }
+    
+    const leaderData = yearlyLeaderData[selectedLeader];
+    if (!leaderData) {
+        console.log('❌ Không có dữ liệu cho trưởng máy:', selectedLeader);
+        return;
+    }
+    
+    // Tạo dữ liệu cho biểu đồ - mỗi ca là 1 cột riêng
+    const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+    const shifts = ['A', 'B', 'C', 'D', 'A1', 'B1', 'AB', 'AB-', 'AB+', 'HC'];
+    
+    // Tạo labels và data cho từng ca của từng tháng
+    const labels = [];
+    const paperData = [];
+    const wasteData = [];
+    
+    months.forEach(month => {
+        const monthData = leaderData[month] || {};
+        
+        // Tìm các ca có dữ liệu trong tháng này
+        const activeShifts = shifts.filter(shift => {
+            const shiftData = monthData[shift] || {};
+            return (shiftData.paper || 0) > 0 || (shiftData.waste || 0) > 0;
+        });
+        
+        if (activeShifts.length === 0) {
+            // Nếu không có ca nào, tạo 1 cột trống
+            labels.push(month);
+            paperData.push(0);
+            wasteData.push(0);
+        } else {
+            // Tạo cột cho từng ca
+            activeShifts.forEach(shift => {
+                const shiftData = monthData[shift] || {};
+                labels.push(`${month}-${shift}`);
+                paperData.push(shiftData.paper || 0);
+                wasteData.push(shiftData.waste || 0);
+            });
+        }
+    });
+    
+    console.log('📊 Labels:', labels);
+    console.log('📊 Paper data:', paperData);
+    console.log('📊 Waste data:', wasteData);
+    
+    if (paperData.every(val => val === 0) && wasteData.every(val => val === 0)) {
+        console.log('⚠️ Không có dữ liệu để hiển thị');
+        const container = canvas.parentElement;
+        container.innerHTML = `
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                <h6>Không có dữ liệu sản xuất</h6>
+                <p>Trưởng máy "${selectedLeader}" chưa có dữ liệu cho năm này</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Tạo biểu đồ stacked với thành phẩm + phế liệu
+    try {
+        const newChart = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Thành phẩm',
+                    data: paperData,
+                    backgroundColor: 'rgba(174, 207, 188, 0.8)',
+                    borderColor: 'rgba(148, 199, 169, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Phế liệu',
+                    data: wasteData,
+                    backgroundColor: 'rgba(248, 179, 181, 0.8)',
+                    borderColor: 'rgba(255, 141, 152, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            // text: 'Tháng - Ca',
+                            font: {
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 0,
+                            callback: function(value, index, values) {
+                                const label = this.getLabelForValue(value);
+                                // Hiển thị tháng-ca, ví dụ: T1-A, T1-B
+                                return label;
+                            }
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `Sản xuất theo tháng - ${selectedLeader}`,
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                const label = context[0].label;
+                                const [month, shift] = label.split('-');
+                                return shift ? `${month} - Ca ${shift}` : month;
+                            },
+                            label: function(context) {
+                                return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                            },
+                            footer: function(tooltipItems) {
+                                let sum = 0;
+                                tooltipItems.forEach(item => {
+                                    sum += item.parsed.y;
+                                });
+                                return `Tổng: ${formatNumber(sum)}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: function(context) {
+                            // Thành phẩm hiển thị ở center, phế liệu hiển thị ở end (top)
+                            return context.datasetIndex === 0 ? 'center' : 'end';
+                        },
+                        align: function(context) {
+                            return context.datasetIndex === 0 ? 'center' : 'top';
+                        },
+                        color: function(context) {
+                            // Thành phẩm dùng màu đen, phế liệu dùng màu đỏ đậm
+                            return context.datasetIndex === 0 ? 'black' : '#8b2635';
+                        },
+                        font: {
+                            size: 9,
+                            weight: 'bold'
+                        },
+                        formatter: function(value, context) {
+                            if (!value || value === 0) return '';
+                            
+                            const dataIndex = context.dataIndex;
+                            const datasets = context.chart.data.datasets;
+                            const paperValue = datasets[0]?.data[dataIndex] || 0;
+                            const wasteValue = datasets[1]?.data[dataIndex] || 0;
+                            const total = paperValue + wasteValue;
+                            
+                            if (total === 0) return '';
+                            
+                            const percent = ((value / total) * 100).toFixed(1);
+                            
+                            // Hiển thị số liệu + phần trăm
+                            if (context.datasetIndex === 0) {
+                                // Thành phẩm: hiển thị số + % ở giữa
+                                return `${formatNumber(value)}\n(${percent}%)`;
+                            } else {
+                                // Phế liệu: hiển thị số + % ở trên
+                                return `${formatNumber(value)}\n(${percent}%)`;
+                            }
+                        },
+                        padding: 4,
+                        textAlign: 'center',
+                        textStrokeColor: 'white',
+                        textStrokeWidth: 0.5
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+        
+        console.log(`✅ Tạo biểu đồ thành công cho ${selectedLeader} - ${side}`);
+        
+    } catch (error) {
+        console.error('❌ Lỗi tạo biểu đồ:', error);
+    }
+}
+
+
+// Hàm cập nhật chart trưởng máy trong fullscreen
+function updateFullscreenLeaderChart(side, selectedLeader, chartInstance) {
+    if (!chartInstance || !selectedLeader) return;
+    
+    console.log('🔄 Updating fullscreen leader chart:', side, selectedLeader);
+    
+    const leaderData = yearlyLeaderData[selectedLeader];
+    if (!leaderData) {
+        console.error('❌ Không có dữ liệu cho trưởng máy:', selectedLeader);
+        return;
+    }
+    
+    // Tạo dữ liệu mới
+    const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+    const shifts = ['A', 'B', 'C', 'D', 'A1', 'B1', 'AB', 'AB-', 'AB+', 'HC'];
+    
+    const labels = [];
+    const paperData = [];
+    const wasteData = [];
+    
+    months.forEach(month => {
+        const monthData = leaderData[month] || {};
+        const activeShifts = shifts.filter(shift => {
+            const shiftData = monthData[shift] || {};
+            return (shiftData.paper || 0) > 0 || (shiftData.waste || 0) > 0;
+        });
+        
+        if (activeShifts.length === 0) {
+            labels.push(month);
+            paperData.push(0);
+            wasteData.push(0);
+        } else {
+            activeShifts.forEach(shift => {
+                const shiftData = monthData[shift] || {};
+                labels.push(`${month}-${shift}`);
+                paperData.push(shiftData.paper || 0);
+                wasteData.push(shiftData.waste || 0);
+            });
+        }
+    });
+    
+    // Cập nhật dữ liệu chart
+    chartInstance.data.labels = labels;
+    chartInstance.data.datasets[0].data = paperData;
+    chartInstance.data.datasets[1].data = wasteData;
+    
+    // Cập nhật title
+    chartInstance.options.plugins.title.text = `Sản xuất theo tháng - ${selectedLeader}`;
+    
+    // Render lại chart
+    chartInstance.update();
+    
+    console.log('✅ Đã cập nhật fullscreen chart');
+}
+
+
+
+
+// Hàm cập nhật chart trưởng máy shift trong fullscreen
+function updateFullscreenLeaderShiftChart(selectedLeader, chartInstance) {
+    if (!chartInstance || !window.currentShiftLeaderData) return;
+    
+    console.log('🔄 Updating fullscreen leader shift chart:', selectedLeader);
+    
+    // Lấy dữ liệu gốc
+    const shiftLeaderData = window.currentShiftLeaderData;
+    
+    // Lọc dữ liệu theo trưởng máy được chọn
+    let filteredData = shiftLeaderData;
+    if (selectedLeader && selectedLeader !== '') {
+        filteredData = shiftLeaderData.filter(item => item.truongMay === selectedLeader);
+    }
+    
+    if (filteredData.length === 0) {
+        console.log('⚠️ Không có dữ liệu cho trưởng máy:', selectedLeader);
+        return;
+    }
+    
+    // Group dữ liệu theo ca và máy (GIỐNG LOGIC TRONG updateLeaderShiftChart)
+    const shiftMachineGroups = {};
+    filteredData.forEach(item => {
+        let key, label;
+        
+        if (selectedLeader && selectedLeader !== '') {
+            // Nếu chọn trưởng máy cụ thể, hiển thị theo ca-máy
+            key = `${item.maCa}_${item.may}`;
+            label = `Ca ${item.maCa}`;
+        } else {
+            // Nếu chọn tất cả trưởng máy, hiển thị theo trưởng máy-ca-máy
+            key = `${item.truongMay}_${item.maCa}_${item.may}`;
+            label = `${item.truongMay}`;
+        }
+        
+        if (!shiftMachineGroups[key]) {
+            shiftMachineGroups[key] = {
+                label: label,
+                maCa: item.maCa,
+                may: item.may,
+                truongMay: item.truongMay,
+                paper: 0,
+                waste: 0
+            };
+        }
+        shiftMachineGroups[key].paper += item.paper;
+        shiftMachineGroups[key].waste += item.waste;
+    });
+    
+    // Chuyển thành array và sắp xếp
+    const sortedShiftMachines = Object.values(shiftMachineGroups).sort((a, b) => {
+        if (selectedLeader && selectedLeader !== '') {
+            // Sắp xếp theo ca -> máy
+            if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
+            return a.may.localeCompare(b.may);
+        } else {
+            // Sắp xếp theo trưởng máy -> ca -> máy
+            if (a.truongMay !== b.truongMay) return a.truongMay.localeCompare(b.truongMay);
+            if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
+            return a.may.localeCompare(b.may);
+        }
+    });
+    
+    const labels = sortedShiftMachines.map(item => item.label);
+    const paperData = sortedShiftMachines.map(item => item.paper);
+    const wasteData = sortedShiftMachines.map(item => item.waste);
+    
+    // Cập nhật dữ liệu chart
+    chartInstance.data.labels = labels;
+    chartInstance.data.datasets[0].data = paperData;
+    chartInstance.data.datasets[1].data = wasteData;
+    
+    // Cập nhật title
+    const chartTitle = selectedLeader 
+        ? `Sản xuất theo ca - ${selectedLeader}` 
+        : 'Sản xuất theo ca - Tất cả trưởng máy';
+    chartInstance.options.plugins.title.text = chartTitle;
+    
+    // Cập nhật title trục x
+    chartInstance.options.scales.x.title.text = selectedLeader ? 'Ca' : 'Trưởng máy';
+    
+    // Render lại chart
+    chartInstance.update();
+    
+    // Đồng bộ với biểu đồ gốc
+    setTimeout(() => {
+        const originalCanvas = document.getElementById('leaderShiftStackedChart');
+        if (originalCanvas) {
+            updateLeaderShiftChart(shiftLeaderData, selectedLeader);
+        }
+    }, 100);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ====================================================================================================================================
+// BÁO CÁO GMC FUNCTIONS (tương tự In)
+// ====================================================================================================================================
+
+// Khởi tạo báo cáo GMC
+function initBaoCaoGMC() {
+    // Tương tự như initBaoCaoIn nhưng dành cho GMC
+    console.log('Khởi tạo báo cáo GMC...');
+}
+
+// ====================================================================================================================================
+// UTILITY FUNCTIONS
+// ====================================================================================================================================
+
+// Hiển thị loading
+function showLoading(show) {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = show ? 'flex' : 'none';
+    }
+}
+
+// Hiển thị thông báo
+function showNotification(message, type = 'info') {
+    // Tạo toast notification
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${getBootstrapClass(type)} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = `
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        min-width: 300px;
+        max-width: 500px;
+    `;
+
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Tự động ẩn sau 5 giây
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 5000);
+}
+
+// Chuyển đổi type thành class Bootstrap
+function getBootstrapClass(type) {
+    switch (type) {
+        case 'success': return 'success';
+        case 'error': return 'danger';
+        case 'warning': return 'warning';
+        case 'info': return 'info';
+        default: return 'info';
+    }
+}
+
+// Format số
+function formatNumber(num) {
+    if (!num || isNaN(num)) return '0';
+    return parseFloat(num).toLocaleString('en-US');
+}
+
+// Format ngày
+function formatDate(dateString) {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN');
+    } catch (error) {
+        return dateString;
+    }
+}
+
+// Format thời gian (phút -> giờ phút)
+function formatDuration(minutes) {
+    if (!minutes || isNaN(minutes)) return '0 phút';
+
+    const totalMinutes = parseInt(minutes);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+
+    if (hours === 0) {
+        return `${mins} phút`;
+    } else if (mins === 0) {
+        return `${hours} giờ`;
+    } else {
+        return `${hours} giờ ${mins} phút`;
+    }
+}
+
+console.log('✅ Hệ thống biểu đồ đã được khởi tạo hoàn tất');
+

@@ -262,3 +262,19 @@
         padding: 6px 8px;
     }
 }
+
+
+
+/* Fullscreen modal controls */
+.fullscreen-content .d-flex {
+    align-items: center;
+    gap: 10px;
+}
+
+.fullscreen-content .form-select {
+    min-width: 150px;
+}
+
+.fullscreen-content .gap-2 > * {
+    margin-right: 10px;
+}

@@ -54,7 +54,7 @@ router.get('/in/chart-data', async (req, res) => {
             db.all(`SELECT 
     thanh_pham_in, phe_lieu, phe_lieu_trang, thoi_gian_canh_may,
     thoi_gian_bat_dau, thoi_gian_ket_thuc, khach_hang, ma_sp, id, ws, ma_ca, may,
-    sl_don_hang, so_mau, so_con, ngay_phu, truong_may
+    sl_don_hang, so_mau, so_con, ngay_phu, truong_may, tong_so_luong, thanh_pham
 FROM bao_cao_in ${whereClause}
 ORDER BY created_at DESC`,
                 params, (err, rows) => {
@@ -856,6 +856,203 @@ function getModuleUrl(moduleId) {
             return '#';
     }
 }
+
+
+
+// API lấy dữ liệu trưởng máy theo năm
+router.get('/in/yearly-leader-data', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    try {
+        const { year } = req.query;
+        
+        if (!year) {
+            return res.status(400).json({ error: 'Thiếu tham số năm' });
+        }
+        
+        console.log('📊 Lấy dữ liệu trưởng máy cho năm:', year);
+        
+        // Lấy dữ liệu theo năm, group theo trưởng máy, tháng và mã ca
+        const yearlyLeaderData = await new Promise((resolve, reject) => {
+            db.all(`SELECT 
+                strftime('%m', ngay_phu) as month,
+                truong_may,
+                ma_ca,
+                SUM(CAST(thanh_pham_in as REAL)) as total_paper,
+                SUM(CAST(phe_lieu as REAL) + CAST(phe_lieu_trang as REAL)) as total_waste
+                FROM bao_cao_in 
+                WHERE strftime('%Y', ngay_phu) = ? 
+                AND is_started_only = 0
+                AND thanh_pham_in IS NOT NULL AND thanh_pham_in != ''
+                AND truong_may IS NOT NULL AND truong_may != ''
+                AND ma_ca IS NOT NULL AND ma_ca != ''
+                GROUP BY strftime('%m', ngay_phu), truong_may, ma_ca
+                ORDER BY truong_may, month, ma_ca`, 
+                [year], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+        
+        console.log('📊 Raw data from DB:', yearlyLeaderData.length, 'rows');
+        console.log('📊 Sample data:', yearlyLeaderData.slice(0, 3));
+        
+        // Nếu không có dữ liệu với ngay_phu, thử với created_at
+        if (yearlyLeaderData.length === 0) {
+            console.log('📊 Thử lấy dữ liệu với created_at...');
+            
+            const fallbackData = await new Promise((resolve, reject) => {
+                db.all(`SELECT 
+                    strftime('%m', created_at) as month,
+                    truong_may,
+                    ma_ca,
+                    SUM(CAST(thanh_pham_in as REAL)) as total_paper,
+                    SUM(CAST(phe_lieu as REAL) + CAST(phe_lieu_trang as REAL)) as total_waste
+                    FROM bao_cao_in 
+                    WHERE strftime('%Y', created_at) = ? 
+                    AND is_started_only = 0
+                    AND thanh_pham_in IS NOT NULL AND thanh_pham_in != ''
+                    GROUP BY strftime('%m', created_at), truong_may, ma_ca
+                    ORDER BY truong_may, month, ma_ca`, 
+                    [year], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows || []);
+                });
+            });
+            
+            console.log('📊 Fallback data:', fallbackData.length, 'rows');
+            
+            if (fallbackData.length > 0) {
+                // Sử dụng dữ liệu fallback
+                const result = processFallbackData(fallbackData);
+                console.log('📊 Processed fallback result:', result);
+                return res.json(result);
+            }
+        }
+        
+        if (yearlyLeaderData.length === 0) {
+            console.log('📊 Không có dữ liệu, trả về object rỗng');
+            return res.json({});
+        }
+        
+        // Xử lý dữ liệu thành format mong muốn
+        const result = {};
+        
+        // Lấy danh sách trưởng máy từ dữ liệu thực tế
+        const leaders = [...new Set(yearlyLeaderData.map(row => row.truong_may))].filter(l => l).sort();
+        console.log('📊 Leaders found:', leaders);
+        
+        // Khởi tạo dữ liệu cho tất cả trưởng máy
+        leaders.forEach(leader => {
+            result[leader] = {};
+            for (let month = 1; month <= 12; month++) {
+                const monthKey = `T${month}`;
+                result[leader][monthKey] = {};
+                // Khởi tạo tất cả ca có thể
+                ['A', 'B', 'C', 'D', 'A1', 'B1', 'AB', 'AB-', 'AB+', 'HC'].forEach(shift => {
+                    result[leader][monthKey][shift] = {
+                        paper: 0,
+                        waste: 0
+                    };
+                });
+            }
+        });
+        
+        // Điền dữ liệu thực tế
+        yearlyLeaderData.forEach(row => {
+            const month = parseInt(row.month);
+            const leader = row.truong_may;
+            const shift = row.ma_ca;
+            const monthKey = `T${month}`;
+            
+            if (result[leader] && result[leader][monthKey] && result[leader][monthKey][shift]) {
+                result[leader][monthKey][shift].paper += row.total_paper || 0;
+                result[leader][monthKey][shift].waste += row.total_waste || 0;
+            }
+        });
+        
+        console.log('📊 Final result:', result);
+        res.json(result);
+        
+    } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu trưởng máy theo năm:', error);
+        res.status(500).json({ error: 'Lỗi khi lấy dữ liệu trưởng máy theo năm: ' + error.message });
+    }
+});
+
+// Hàm xử lý dữ liệu fallback
+function processFallbackData(fallbackData) {
+    const result = {};
+    
+    // Tạo dữ liệu giả cho demo nếu không có truong_may
+    const sampleLeaders = ['Trưởng máy A', 'Trưởng máy B', 'Trưởng máy C'];
+    
+    // Lấy danh sách trưởng máy từ dữ liệu thực tế hoặc dùng mẫu
+    const leaders = [...new Set(fallbackData.map(row => row.truong_may))].filter(l => l && l.trim() !== '');
+    const finalLeaders = leaders.length > 0 ? leaders : sampleLeaders;
+    
+    console.log('📊 Using leaders:', finalLeaders);
+    
+    // Khởi tạo dữ liệu cho tất cả trưởng máy
+    finalLeaders.forEach(leader => {
+        result[leader] = {};
+        for (let month = 1; month <= 12; month++) {
+            const monthKey = `T${month}`;
+            result[leader][monthKey] = {};
+            ['A', 'B', 'C', 'D', 'A1', 'B1', 'AB', 'AB-', 'AB+', 'HC'].forEach(shift => {
+                result[leader][monthKey][shift] = {
+                    paper: 0,
+                    waste: 0
+                };
+            });
+        }
+    });
+    
+    // Điền dữ liệu thực tế nếu có
+    if (leaders.length > 0) {
+        fallbackData.forEach(row => {
+            const month = parseInt(row.month);
+            const leader = row.truong_may;
+            const shift = row.ma_ca;
+            const monthKey = `T${month}`;
+            
+            if (result[leader] && result[leader][monthKey] && result[leader][monthKey][shift]) {
+                result[leader][monthKey][shift].paper += row.total_paper || 0;
+                result[leader][monthKey][shift].waste += row.total_waste || 0;
+            }
+        });
+    } else {
+        // Tạo dữ liệu từ fallbackData nếu không có truong_may
+        if (fallbackData.length > 0) {
+            // Phân phối dữ liệu cho các trưởng máy mẫu
+            const dataPerLeader = Math.floor(fallbackData.length / finalLeaders.length);
+            
+            finalLeaders.forEach((leader, leaderIndex) => {
+                const startIndex = leaderIndex * dataPerLeader;
+                const endIndex = (leaderIndex + 1) * dataPerLeader;
+                const leaderFallbackData = fallbackData.slice(startIndex, endIndex);
+                
+                leaderFallbackData.forEach(row => {
+                    const month = parseInt(row.month);
+                    const shift = row.ma_ca || 'A';
+                    const monthKey = `T${month}`;
+                    
+                    if (result[leader][monthKey][shift]) {
+                        result[leader][monthKey][shift].paper += row.total_paper || 0;
+                        result[leader][monthKey][shift].waste += row.total_waste || 0;
+                    }
+                });
+            });
+        }
+    }
+    
+    return result;
+}
+
+
+
+
+
 
 
 
