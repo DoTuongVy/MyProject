@@ -260,12 +260,12 @@ reports.forEach(r => {
         const start = new Date(r.thoi_gian_bat_dau);
         const end = new Date(r.thoi_gian_ket_thuc);
         
-        let diff = (end - start) / (1000 * 60); // phút
-        
-        // Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
-        if (diff < 0) {
-            diff += 24 * 60; // cộng 24 giờ = 1440 phút
-        }
+        let diffSeconds = (end - start) / 1000; // giây
+// Nếu diff âm, có thể là ca đêm - cộng thêm 24 giờ
+if (diffSeconds < 0) {
+    diffSeconds += 24 * 60 * 60; // cộng 24 giờ = 86400 giây
+}
+let diff = diffSeconds / 60; // chuyển sang phút nhưng giữ số thập phân
         
         totalWorkTime += diff;
     }

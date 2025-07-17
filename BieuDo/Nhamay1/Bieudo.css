@@ -288,3 +288,48 @@ CSS cho hệ thống biểu đồ sản xuất
 }
 
 
+
+
+
+/* Responsive cho biểu đồ tốc độ */
+@media (max-width: 768px) {
+    #topSpeedLeftChart, #topSpeedRightChart {
+        font-size: 10px !important;
+    }
+    
+    .chart-container canvas {
+        max-height: 350px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    #topSpeedLeftChart, #topSpeedRightChart {
+        font-size: 9px !important;
+    }
+    
+    .chart-container canvas {
+        max-height: 300px !important;
+    }
+}
+
+/* Ẩn một số label khi quá nhiều trên mobile */
+@media (max-width: 768px) {
+    .chart-container canvas {
+        overflow: hidden;
+    }
+}
+
+
+
+
+/* Padding cho bảng phân tích thời gian */
+.time-table td,
+.time-table th {
+    padding: 12px 15px !important;
+    font-size: 0.9rem;
+}
+
+.time-table .badge {
+    padding: 10px 15px;
+    font-size: 0.85rem;
+}

@@ -509,8 +509,9 @@
                                     <hr>
                                     <div class="row">
                                         <div
-                                            class="col-6 border-end border-dark">
-                                            <div class="mb-3">
+                                            class="col-6 border-end">
+                                            <div  style="border-left: 4px solid #2495d2; padding-left: 10px;">
+                                               <div class="mb-3">
                                                 <div
                                                     class="d-flex justify-content-between">
                                                     <span><i
@@ -555,38 +556,67 @@
                                                     <strong id="totalTime">0 giờ
                                                         0 phút</strong>
                                                 </div>
+                                            </div> 
                                             </div>
+                                            
                                         </div>
 
                                         <div class="col-6">
-                                            <div class="mb-3">
-                                                <div class="d-flex justify-content-between">
-                                                    <span><i class="fa-solid fa-circle-play me-2" style="color: rgb(174, 195, 214);"></i>Thời gian sản xuất:</span>
-                                                    <strong id="productionTime">0 giờ 0 phút</strong>
+                                            <!-- Nhóm Sản xuất -->
+                                            <div style="border-left: 4px solid #28a745; padding-left: 10px; margin-bottom: 15px;">
+                                                <h6 style="color: #28a745; margin-bottom: 10px;"><i class="fas fa-industry me-2"></i>Sản xuất</h6>
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span><i class="fa-solid fa-circle-play me-2" style="color: rgb(119, 191, 220);"></i>Thời gian sản xuất:</span>
+                                                        <strong id="productionTime">0 giờ 0 phút</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span><i class="fas fa-tools me-2" style="color: rgb(224, 202, 162);"></i>TG canh máy sản xuất:</span>
+                                                        <strong id="setupTimeRight">0 giờ 0 phút</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span><i class="fas fa-pause-circle me-2" style="color: rgb(242, 174, 174);"></i>TG dừng máy sản xuất:</span>
+                                                        <strong id="stopTimeRight">0 giờ 0 phút</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-2" style="border-top: 1px solid #dee2e6; padding-top: 5px;">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span><i class="fas fa-clock text-success me-2"></i><strong>Tổng TG sản xuất:</strong></span>
+                                                        <strong id="totalTimeRight" style="color: #28a745;">0 giờ 0 phút</strong>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="mb-3">
-                                                <div class="d-flex justify-content-between">
-                                                    <span><i class="fas fa-tools me-2" style="color: rgb(224, 202, 162);"></i>Thời gian chạy mẫu:</span>
-                                                    <strong id="sampleTime">0 giờ 0 phút</strong>
+                                            
+                                            <!-- Nhóm Chạy mẫu -->
+                                            <div style="border-left: 4px solid #ffc107; padding-left: 10px;">
+                                                <h6 style="color: #ffc107; margin-bottom: 10px;"><i class="fas fa-flask me-2"></i>Chạy mẫu</h6>
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span><i class="fa-solid fa-circle-play me-2" style="color: rgb(119, 191, 220);"></i>Thời gian chạy mẫu:</span>
+                                                        <strong id="sampleTime">0 giờ 0 phút</strong>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <div class="d-flex justify-content-between">
-                                                    <span><i class="fas fa-pause-circle me-2" style="color: rgb(242, 174, 174);"></i>Thời gian canh máy:</span>
-                                                    <strong id="setupTimeRight">0 giờ 0 phút</strong>
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span><i class="fas fa-tools me-2" style="color: rgb(224, 202, 162);"></i>TG canh mẫu:</span>
+                                                        <strong id="sampleSetupTime">0 giờ 0 phút</strong>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <div class="d-flex justify-content-between">
-                                                    <span><i class="fas fa-pause-circle me-2" style="color: rgb(242, 174, 174);"></i>Thời gian dừng máy:</span>
-                                                    <strong id="stopTimeRight">0 giờ 0 phút</strong>
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span><i class="fas fa-pause-circle me-2" style="color: rgb(242, 174, 174);"></i>TG dừng máy:</span>
+                                                        <strong id="sampleStopTime">0 giờ 0 phút</strong>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <div class="d-flex justify-content-between">
-                                                    <span><i class="fas fa-clock text-primary me-2"></i>Tổng thời gian:</span>
-                                                    <strong id="totalTimeRight">0 giờ 0 phút</strong>
+                                                <div class="mb-2" style="border-top: 1px solid #dee2e6; padding-top: 5px;">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span><i class="fas fa-clock text-warning me-2"></i><strong>Tổng TG chạy mẫu:</strong></span>
+                                                        <strong id="totalSampleTime" style="color: #ffc107;">0 giờ 0 phút</strong>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
