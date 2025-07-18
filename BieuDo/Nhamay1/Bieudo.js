@@ -1574,7 +1574,7 @@ function displayTimeProgressBar(workTime, stopTime, totalTime) {
     }
 
     const workPercent = (workTime / progressTotal) * 100;
-const stopPercent = (stopTime / progressTotal) * 100;
+    const stopPercent = (stopTime / progressTotal) * 100;
 
     const workProgress = document.getElementById('workTimeProgress');
     const stopProgress = document.getElementById('stopTimeProgress');
@@ -2630,6 +2630,14 @@ function displayTimeCharts(data, filters) {
     // Tạo biểu đồ lý do dừng máy
     displayStopReasonChart(data, filters);
 
+
+    // Tạo biểu đồ máy nếu có dữ liệu
+if (data && data.reports && data.reports.length > 0) {
+    setTimeout(() => {
+        createMachineTimeChart(data.reports);
+    }, 200);
+}
+
     // Cập nhật thông tin thời gian ở bên phân tích
     updateTimeAnalysisInfo({
         totalTime: totalTime,
@@ -2640,13 +2648,13 @@ function displayTimeCharts(data, filters) {
 
 
     // Tính toán và hiển thị thời gian sản xuất/chạy mẫu
-if (data && data.reports) {
-    const { totalRunTime, productionTime, sampleTime, productionSetupTime, sampleSetupTime, productionStopTime, sampleStopTime } = calculateProductionAndSampleTime(data.reports);
+    if (data && data.reports) {
+        const { totalRunTime, productionTime, sampleTime, productionSetupTime, sampleSetupTime, productionStopTime, sampleStopTime } = calculateProductionAndSampleTime(data.reports);
 
-    // Tính tổng thời gian cho sản xuất và mẫu
-    const totalProductionTime = productionTime + productionSetupTime + productionStopTime;
-    const totalSampleTime = sampleTime + sampleSetupTime + sampleStopTime;
-    const totalTimeRight = totalProductionTime + totalSampleTime;
+        // Tính tổng thời gian cho sản xuất và mẫu
+        const totalProductionTime = productionTime + productionSetupTime + productionStopTime;
+        const totalSampleTime = sampleTime + sampleSetupTime + sampleStopTime;
+        const totalTimeRight = totalProductionTime + totalSampleTime;
 
         // Debug tổng thời gian
         console.log('🔍 DEBUG tổng thời gian bên phải:');
@@ -2658,25 +2666,25 @@ if (data && data.reports) {
         console.log('- totalTimeRight (format):', formatDuration(totalTimeRight));
 
         // Cập nhật display bên phải
-const productionTimeEl = document.getElementById('productionTime');
-const sampleTimeEl = document.getElementById('sampleTime');
-const setupTimeRightEl = document.getElementById('setupTimeRight');
-const stopTimeRightEl = document.getElementById('stopTimeRight');
-const totalTimeRightEl = document.getElementById('totalTimeRight');
+        const productionTimeEl = document.getElementById('productionTime');
+        const sampleTimeEl = document.getElementById('sampleTime');
+        const setupTimeRightEl = document.getElementById('setupTimeRight');
+        const stopTimeRightEl = document.getElementById('stopTimeRight');
+        const totalTimeRightEl = document.getElementById('totalTimeRight');
 
-// Thêm các element mới cho canh mẫu và dừng mẫu
-const sampleSetupTimeEl = document.getElementById('sampleSetupTime');
-const sampleStopTimeEl = document.getElementById('sampleStopTime');
-const totalSampleTimeEl = document.getElementById('totalSampleTime');
+        // Thêm các element mới cho canh mẫu và dừng mẫu
+        const sampleSetupTimeEl = document.getElementById('sampleSetupTime');
+        const sampleStopTimeEl = document.getElementById('sampleStopTime');
+        const totalSampleTimeEl = document.getElementById('totalSampleTime');
 
-if (productionTimeEl) productionTimeEl.textContent = formatDuration(productionTime);
-if (sampleTimeEl) sampleTimeEl.textContent = formatDuration(sampleTime);
-if (setupTimeRightEl) setupTimeRightEl.textContent = formatDuration(productionSetupTime);
-if (stopTimeRightEl) stopTimeRightEl.textContent = formatDuration(productionStopTime);
-if (sampleSetupTimeEl) sampleSetupTimeEl.textContent = formatDuration(sampleSetupTime);
-if (sampleStopTimeEl) sampleStopTimeEl.textContent = formatDuration(sampleStopTime);
-if (totalTimeRightEl) totalTimeRightEl.textContent = formatDuration(totalProductionTime);
-if (totalSampleTimeEl) totalSampleTimeEl.textContent = formatDuration(totalSampleTime);
+        if (productionTimeEl) productionTimeEl.textContent = formatDuration(productionTime);
+        if (sampleTimeEl) sampleTimeEl.textContent = formatDuration(sampleTime);
+        if (setupTimeRightEl) setupTimeRightEl.textContent = formatDuration(productionSetupTime);
+        if (stopTimeRightEl) stopTimeRightEl.textContent = formatDuration(productionStopTime);
+        if (sampleSetupTimeEl) sampleSetupTimeEl.textContent = formatDuration(sampleSetupTime);
+        if (sampleStopTimeEl) sampleStopTimeEl.textContent = formatDuration(sampleStopTime);
+        if (totalTimeRightEl) totalTimeRightEl.textContent = formatDuration(totalProductionTime);
+        if (totalSampleTimeEl) totalSampleTimeEl.textContent = formatDuration(totalSampleTime);
 
         // Tạo biểu đồ chi tiết với thời gian đúng
         createSampleProductTimeChart(productionTime, productionSetupTime, productionStopTime, sampleTime, sampleSetupTime, sampleStopTime);
@@ -2753,41 +2761,41 @@ function displayStopReasonChart(data, filters) {
         'rgb(210, 210, 210)',  // Xám nhạt trung tính
     ];
     // Tạo mảng combined để sắp xếp cùng nhau
-const combined = displayStopReasons.map((reason, index) => ({
-    reason: reason.reason,
-    duration: reason.duration,
-    color: colors[index % colors.length]
-}));
+    const combined = displayStopReasons.map((reason, index) => ({
+        reason: reason.reason,
+        duration: reason.duration,
+        color: colors[index % colors.length]
+    }));
 
-// Sắp xếp theo thứ tự F1-F13
-combined.sort((a, b) => {
-    const aMatch = a.reason.match(/F(\d+)/);
-    const bMatch = b.reason.match(/F(\d+)/);
-    
-    if (aMatch && bMatch) {
-        return parseInt(aMatch[1]) - parseInt(bMatch[1]);
-    }
-    
-    // Nếu không match pattern F+số, sắp xếp theo alphabet
-    return a.reason.localeCompare(b.reason);
-});
+    // Sắp xếp theo thứ tự F1-F13
+    combined.sort((a, b) => {
+        const aMatch = a.reason.match(/F(\d+)/);
+        const bMatch = b.reason.match(/F(\d+)/);
 
-// Tách lại thành các mảng riêng sau khi sắp xếp
-const sortedLabels = combined.map(item => item.reason);
-const sortedDurations = combined.map(item => item.duration);
-const sortedColors = combined.map(item => item.color);
+        if (aMatch && bMatch) {
+            return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+        }
 
-stopReasonChart = new Chart(stopReasonCtx, {
-    type: 'pie',
-    data: {
-        labels: sortedLabels,  // Sử dụng labels đã sắp xếp
-        datasets: [{
-            data: sortedDurations,  // Sử dụng durations đã sắp xếp
-            backgroundColor: sortedColors,  // Sử dụng colors đã sắp xếp
-            borderColor: sortedColors.map(color => color.replace('0.8', '1')),
-            borderWidth: 2
-        }]
-    },
+        // Nếu không match pattern F+số, sắp xếp theo alphabet
+        return a.reason.localeCompare(b.reason);
+    });
+
+    // Tách lại thành các mảng riêng sau khi sắp xếp
+    const sortedLabels = combined.map(item => item.reason);
+    const sortedDurations = combined.map(item => item.duration);
+    const sortedColors = combined.map(item => item.color);
+
+    stopReasonChart = new Chart(stopReasonCtx, {
+        type: 'pie',
+        data: {
+            labels: sortedLabels,  // Sử dụng labels đã sắp xếp
+            datasets: [{
+                data: sortedDurations,  // Sử dụng durations đã sắp xếp
+                backgroundColor: sortedColors,  // Sử dụng colors đã sắp xếp
+                borderColor: sortedColors.map(color => color.replace('0.8', '1')),
+                borderWidth: 2
+            }]
+        },
         options: {
             responsive: true,
             elements: {
@@ -3070,14 +3078,14 @@ function displayTimeAnalysis(data, filters) {
 
 
     // THÊM 3 NÚT NGAY SAU totalWorkHours
-const timeAnalysisEl = document.getElementById('timeAnalysis');
-if (timeAnalysisEl) {
-    // Tìm container chứa totalWorkHours
-    const totalWorkHoursContainer = timeAnalysisEl.querySelector('#totalWorkHours').closest('.d-flex');
-    
-    // Kiểm tra xem đã có 3 nút chưa để tránh tạo lại
-    if (totalWorkHoursContainer && !timeAnalysisEl.querySelector('#btnSanXuat')) {
-        const buttonsHtml = `
+    const timeAnalysisEl = document.getElementById('timeAnalysis');
+    if (timeAnalysisEl) {
+        // Tìm container chứa totalWorkHours
+        const totalWorkHoursContainer = timeAnalysisEl.querySelector('#totalWorkHours').closest('.d-flex');
+
+        // Kiểm tra xem đã có 3 nút chưa để tránh tạo lại
+        if (totalWorkHoursContainer && !timeAnalysisEl.querySelector('#btnSanXuat')) {
+            const buttonsHtml = `
             <div class="mt-3 text-center">
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-success btn-sm active" id="btnSanXuat" onclick="switchTimeAnalysisMode('sanxuat')">
@@ -3095,10 +3103,10 @@ if (timeAnalysisEl) {
                 </div>
             </div>
         `;
-        totalWorkHoursContainer.insertAdjacentHTML('afterend', buttonsHtml);
+            totalWorkHoursContainer.insertAdjacentHTML('afterend', buttonsHtml);
+        }
     }
-}
-   
+
 
 
     let html = '';
@@ -3174,16 +3182,16 @@ if (timeAnalysisEl) {
         `;
     }
 
-    
 
-// Wrap nội dung lý do dừng máy vào container
-const wrappedHtml = `
+
+    // Wrap nội dung lý do dừng máy vào container
+    const wrappedHtml = `
     <div id="timeAnalysisContent">
         ${html}
     </div>
 `;
 
-stopReasonsEl.innerHTML = wrappedHtml;
+    stopReasonsEl.innerHTML = wrappedHtml;
 
 
 }
@@ -3193,7 +3201,7 @@ stopReasonsEl.innerHTML = wrappedHtml;
 
 // Tính toán thời gian sản xuất và chạy mẫu
 function calculateProductionAndSampleTime(reports) {
-    let totalRunTime = 0;      
+    let totalRunTime = 0;
     let productionTime = 0;
     let sampleTime = 0;
     let productionSetupTime = 0;
@@ -3212,9 +3220,9 @@ function calculateProductionAndSampleTime(reports) {
             if (totalSeconds < 0) totalSeconds += 24 * 60 * 60;
             let totalMinutes = totalSeconds / 60; // Không làm tròn, giữ chính xác
 
-const setupMinutes = Math.round(parseFloat(report.thoi_gian_canh_may) || 0); // THÊM Math.round
-const stopMinutes = Math.round(report.stopTime || 0); // THÊM Math.round
-const actualTime = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+            const setupMinutes = Math.round(parseFloat(report.thoi_gian_canh_may) || 0); // THÊM Math.round
+            const stopMinutes = Math.round(report.stopTime || 0); // THÊM Math.round
+            const actualTime = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
 
             // Tất cả báo cáo đều tính vào thời gian chạy máy
             totalRunTime += actualTime;
@@ -3626,6 +3634,7 @@ function openFullscreen(canvasId, title) {
                     },
                     scales: {
                         x: {
+                            stacked: true,
                             title: {
                                 display: true,
                                 // text: 'Khách hàng'
@@ -3712,6 +3721,324 @@ function openFullscreen(canvasId, title) {
                 },
                 plugins: [ChartDataLabels]
             };
+        } else if (canvasId === 'machineLeaderStackedChart') {
+            config = {
+                type: 'bar',
+                data: {
+                    labels: [...originalChart.data.labels],
+                    datasets: originalChart.data.datasets.map(dataset => ({
+                        ...dataset,
+                        data: [...dataset.data]
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 40 } },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: { display: true, font: { weight: 'bold' } }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: { display: true, text: 'Số lượng', font: { weight: 'bold' } }
+                        }
+                    },
+                    plugins: {
+                        title: { display: false, text: title, font: { size: 18, weight: 'bold' } },
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } },
+                        tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+                        datalabels: {
+                            display: true,
+                            anchor: function (context) {
+                                return context.datasetIndex === 1 ? 'end' : 'center';
+                            },
+                            align: function (context) {
+                                return context.datasetIndex === 1 ? 'top' : 'center';
+                            },
+                            color: function (context) {
+                                return context.datasetIndex === 1 ? '#8b2635' : 'black';
+                            },
+                            font: { size: 12, weight: 'bold' },
+                            textAlign: 'center',
+                            formatter: function (value, context) {
+                                if (!value || value === 0) return '';
+                                const dataIndex = context.dataIndex;
+                                const datasets = context.chart.data.datasets;
+                                const paperValue = datasets[0]?.data[dataIndex] || 0;
+                                const wasteValue = datasets[1]?.data[dataIndex] || 0;
+                                const total = paperValue + wasteValue;
+                                if (total === 0) return '';
+                                const percent = ((value / total) * 100).toFixed(1);
+                                if (context.datasetIndex === 1) {
+                                    return `${formatNumber(value)}\n(${percent}%)`;
+                                }
+                                if (value < 1000) {
+                                    return `${percent}%`;
+                                } else {
+                                    return `${formatNumber(value)}\n(${percent}%)`;
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            };
+        } else if (canvasId === 'shiftStackedChart') {
+            config = {
+                type: 'bar',
+                data: {
+                    labels: [...originalChart.data.labels],
+                    datasets: originalChart.data.datasets.map(dataset => ({
+                        ...dataset,
+                        data: [...dataset.data]
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 40 } },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: { display: true, font: { weight: 'bold' } }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: { display: true, text: 'Số lượng', font: { weight: 'bold' } }
+                        }
+                    },
+                    plugins: {
+                        title: { display: false, text: title, font: { size: 18, weight: 'bold' } },
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } },
+                        tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+                        datalabels: {
+                            display: true,
+                            anchor: function (context) {
+                                return context.datasetIndex === 1 ? 'end' : 'center';
+                            },
+                            align: function (context) {
+                                return context.datasetIndex === 1 ? 'top' : 'center';
+                            },
+                            color: function (context) {
+                                return context.datasetIndex === 1 ? '#8b2635' : 'black';
+                            },
+                            font: { size: 12, weight: 'bold' },
+                            textAlign: 'center',
+                            formatter: function (value, context) {
+                                if (!value || value === 0) return '';
+                                const dataIndex = context.dataIndex;
+                                const datasets = context.chart.data.datasets;
+                                const paperValue = datasets[0]?.data[dataIndex] || 0;
+                                const wasteValue = datasets[1]?.data[dataIndex] || 0;
+                                const total = paperValue + wasteValue;
+                                if (total === 0) return '';
+                                const percent = ((value / total) * 100).toFixed(1);
+                                if (context.datasetIndex === 1) {
+                                    return `${formatNumber(value)}\n(${percent}%)`;
+                                }
+                                if (value < 1000) {
+                                    return `${percent}%`;
+                                } else {
+                                    return `${formatNumber(value)}\n(${percent}%)`;
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            };
+        } else if (canvasId === 'machineStackedChart') {
+            config = {
+                type: 'bar',
+                data: {
+                    labels: [...originalChart.data.labels],
+                    datasets: originalChart.data.datasets.map(dataset => ({
+                        ...dataset,
+                        data: [...dataset.data]
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 40 } },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: { display: true, font: { weight: 'bold' } }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: { display: true, text: 'Số lượng', font: { weight: 'bold' } }
+                        }
+                    },
+                    plugins: {
+                        title: { display: false, text: title, font: { size: 18, weight: 'bold' } },
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } },
+                        tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+                        datalabels: {
+                            display: true,
+                            anchor: function (context) {
+                                return context.datasetIndex === 1 ? 'end' : 'center';
+                            },
+                            align: function (context) {
+                                return context.datasetIndex === 1 ? 'top' : 'center';
+                            },
+                            color: function (context) {
+                                return context.datasetIndex === 1 ? '#8b2635' : 'black';
+                            },
+                            font: { size: 12, weight: 'bold' },
+                            textAlign: 'center',
+                            formatter: function (value, context) {
+                                if (!value || value === 0) return '';
+                                const dataIndex = context.dataIndex;
+                                const datasets = context.chart.data.datasets;
+                                const paperValue = datasets[0]?.data[dataIndex] || 0;
+                                const wasteValue = datasets[1]?.data[dataIndex] || 0;
+                                const total = paperValue + wasteValue;
+                                if (total === 0) return '';
+                                const percent = ((value / total) * 100).toFixed(1);
+                                if (context.datasetIndex === 1) {
+                                    return `${formatNumber(value)}\n(${percent}%)`;
+                                }
+                                if (value < 1000) {
+                                    return `${percent}%`;
+                                } else {
+                                    return `${formatNumber(value)}\n(${percent}%)`;
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            };
+        } else if (canvasId === 'machineTimeChart') {
+                config = {
+                    type: 'bar',
+                    data: {
+                        labels: [...originalChart.data.labels],
+                        datasets: originalChart.data.datasets.map(dataset => ({
+                            ...dataset,
+                            data: [...dataset.data]
+                        }))
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: { padding: { top: 40 } },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                title: { display: false, text: 'Máy', font: { weight: 'bold' } }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                title: { display: true, text: 'Thời gian (phút)', font: { weight: 'bold' } }
+                            }
+                        },
+                        plugins: {
+                            title: { display: false, text: title, font: { size: 18, weight: 'bold' } },
+                            legend: { 
+                                position: 'bottom', 
+                                labels: { 
+                                    usePointStyle: true, 
+                                    padding: 15,
+                                    generateLabels: function(chart) {
+                                        const datasets = chart.data.datasets;
+                                        
+                                        return datasets.map((dataset, datasetIndex) => {
+                                            // Tính tổng của dataset này
+                                            const datasetTotal = dataset.data.reduce((sum, value) => sum + (value || 0), 0);
+                                            
+                                            // Tính tổng tất cả datasets
+                                            const grandTotal = datasets.reduce((sum, ds) => {
+                                                return sum + ds.data.reduce((dsSum, value) => dsSum + (value || 0), 0);
+                                            }, 0);
+                                            
+                                            const percent = grandTotal > 0 ? ((datasetTotal / grandTotal) * 100).toFixed(1) : 0;
+                                            
+                                            // Format thành giờ phút
+                                            const hours = Math.floor(datasetTotal / 60);
+                                            const minutes = Math.floor(datasetTotal % 60);
+                                            let timeStr = '';
+                                            
+                                            if (hours > 0) {
+                                                timeStr = `${hours} giờ${minutes > 0 ? ' ' + minutes + ' phút' : ''}`;
+                                            } else {
+                                                timeStr = `${minutes} phút`;
+                                            }
+                                            
+                                            return {
+                                                text: `${dataset.label}: ${percent}% (${timeStr})`,
+                                                fillStyle: dataset.backgroundColor,
+                                                strokeStyle: dataset.borderColor,
+                                                lineWidth: 1,
+                                                hidden: false,
+                                                index: datasetIndex,
+                                                datasetIndex: datasetIndex
+                                            };
+                                        });
+                                    }
+                                }
+                            },
+                            tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+                            datalabels: {
+                                display: function(context) {
+                                    try {
+                                        if (!context || !context.parsed) return false;
+                                        const value = context.parsed.y;
+                                        return value !== null && value !== undefined && value > 0;
+                                    } catch (error) {
+                                        return false;
+                                    }
+                                },
+                                anchor: 'center',
+                                align: 'center',
+                                color: 'black',
+                                font: { size: 12, weight: 'bold' },
+                                formatter: function(value, context) {
+                                    try {
+                                        if (!value || value <= 0) return '';
+                                        
+                                        // Tính tổng cột
+                                        const dataIndex = context.dataIndex;
+                                        const total = context.chart.data.datasets.reduce((sum, dataset) => {
+                                            return sum + (dataset.data[dataIndex] || 0);
+                                        }, 0);
+                                        
+                                        if (total === 0) return '';
+                                        
+                                        const percent = ((value / total) * 100).toFixed(1);
+                                        
+                                        // Format thành giờ phút
+                                        const hours = Math.floor(value / 60);
+                                        const minutes = Math.floor(value % 60);
+                                        let timeStr = '';
+                                        
+                                        if (hours > 0) {
+                                            timeStr = `${hours} giờ${minutes > 0 ? ' ' + minutes + ' phút' : ''}`;
+                                        } else {
+                                            timeStr = `${minutes} phút`;
+                                        }
+                                        
+                                        return `${percent}% (${timeStr})`;
+                                    } catch (error) {
+                                        return '';
+                                    }
+                                },
+                                textStrokeColor: 'white',
+                                textStrokeWidth: 1,
+                                padding: 4
+                            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                };            
         } else if (canvasId === 'yearlyLeaderPaperLineChart' || canvasId === 'yearlyLeaderWasteLineChart') {
             // Kiểm tra xem biểu đồ có tồn tại không
             if (!originalChart) {
@@ -3804,7 +4131,7 @@ function openFullscreen(canvasId, title) {
                     interaction: originalConfig.options.interaction || {},
                     plugins: {
                         legend: {
-                            position: function() {
+                            position: function () {
                                 // Biểu đồ thời gian và lý do dừng máy -> bên trái, các biểu đồ khác -> bottom
                                 if (originalConfig.type === 'pie' && (canvasId === 'timeChart' || canvasId === 'sampleProductTimeChart' || canvasId === 'stopReasonChart')) {
                                     return 'left';
@@ -3814,23 +4141,23 @@ function openFullscreen(canvasId, title) {
                             labels: {
                                 usePointStyle: true,
                                 padding: 15,
-                                generateLabels: function(chart) {
+                                generateLabels: function (chart) {
                                     // Áp dụng cho cả biểu đồ thời gian VÀ lý do dừng máy
                                     if (originalConfig.type === 'pie' && (canvasId === 'timeChart' || canvasId === 'sampleProductTimeChart' || canvasId === 'stopReasonChart')) {
                                         // Tính tổng để tính phần trăm
                                         const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                                        
+
                                         // Tạo mảng các items với index gốc
                                         const items = chart.data.labels.map((labelName, index) => {
                                             const value = chart.data.datasets[0].data[index] || 0;
                                             const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                             const displayValue = formatDuration(value);
                                             const color = chart.data.datasets[0].backgroundColor[index];
-                                            
+
                                             // Kiểm tra trạng thái hidden của segment
                                             const meta = chart.getDatasetMeta(0);
                                             const isHidden = meta.data[index] ? meta.data[index].hidden : false;
-                                            
+
                                             return {
                                                 text: `${labelName} : ${percent}% (${displayValue})`,
                                                 fillStyle: color,
@@ -3842,40 +4169,40 @@ function openFullscreen(canvasId, title) {
                                                 labelName: labelName  // Thêm để sắp xếp
                                             };
                                         });
-                                        
+
                                         // Sắp xếp theo thứ tự F1-F13 cho biểu đồ lý do dừng máy
                                         if (canvasId === 'stopReasonChart') {
                                             items.sort((a, b) => {
                                                 const aMatch = a.labelName.match(/F(\d+)/);
                                                 const bMatch = b.labelName.match(/F(\d+)/);
-                                                
+
                                                 if (aMatch && bMatch) {
                                                     return parseInt(aMatch[1]) - parseInt(bMatch[1]);
                                                 }
-                                                
+
                                                 // Nếu không match pattern F+số, sắp xếp theo alphabet
                                                 return a.labelName.localeCompare(b.labelName);
                                             });
                                         }
-                                        
+
                                         return items;
                                     }
-                                    
+
                                     // Cho các biểu đồ khác, giữ nguyên
                                     const original = Chart.defaults.plugins.legend.labels.generateLabels;
                                     return original.call(this, chart);
                                 }
                             },
-                            onClick: function(event, legendItem, legend) {
+                            onClick: function (event, legendItem, legend) {
                                 // Áp dụng cho cả biểu đồ thời gian VÀ lý do dừng máy
                                 if (originalConfig.type === 'pie' && (canvasId === 'timeChart' || canvasId === 'sampleProductTimeChart' || canvasId === 'stopReasonChart')) {
                                     const chart = legend.chart;
                                     const index = legendItem.index;
                                     const meta = chart.getDatasetMeta(0);
-                                    
+
                                     // Toggle trạng thái hidden
                                     meta.data[index].hidden = !meta.data[index].hidden;
-                                    
+
                                     // Update chart
                                     chart.update();
                                 } else {
@@ -3886,7 +4213,7 @@ function openFullscreen(canvasId, title) {
                         },
                         tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
                         datalabels: {
-                            display: function(context) {
+                            display: function (context) {
                                 // Ẩn datalabels cho biểu đồ thời gian VÀ lý do dừng máy, hiển thị cho các biểu đồ khác
                                 if (originalConfig.type === 'pie' && (canvasId === 'timeChart' || canvasId === 'sampleProductTimeChart' || canvasId === 'stopReasonChart')) {
                                     return false;
@@ -3900,9 +4227,9 @@ function openFullscreen(canvasId, title) {
                             padding: originalConfig.type === 'line' ? 8 : (originalConfig.type === 'pie' ? 6 : 4),
                             align: function (context) {
                                 // Cho biểu đồ thời gian: đặt label bên trái
-        if (originalConfig.type === 'pie' && (canvasId === 'timeChart' || canvasId === 'sampleProductTimeChart')) {
-            return 'left';
-        }
+                                if (originalConfig.type === 'pie' && (canvasId === 'timeChart' || canvasId === 'sampleProductTimeChart')) {
+                                    return 'left';
+                                }
                                 if (originalConfig.type === 'line') {
                                     const datasetIndex = context.datasetIndex;
                                     const totalDatasets = context.chart.data.datasets.length;
@@ -3951,14 +4278,14 @@ function openFullscreen(canvasId, title) {
                                 if (originalConfig.type === 'pie') {
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                    
+
                                     // Kiểm tra nếu là biểu đồ thời gian thì hiển thị theo format mới
                                     if (canvasId === 'timeChart' || canvasId === 'sampleProductTimeChart') {
                                         const label = context.chart.data.labels[context.dataIndex];
                                         const timeStr = formatDuration(value);
                                         return `${label} : ${percent}% (${timeStr})`;
                                     }
-                                    
+
                                     return percent + '%';
                                 }
 
@@ -3970,7 +4297,7 @@ function openFullscreen(canvasId, title) {
                                 if (originalConfig.type === 'bar') {
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                    return percent + '%';
+                                    return `${formatNumber(value)}\n(${percent}%)`;
                                 }
 
                                 return formatNumber(value);
@@ -4164,6 +4491,14 @@ function destroyAllCharts() {
         window.machineStackedChart.destroy();
     }
     window.machineStackedChart = null;
+
+
+    if (window.machineTimeChart && typeof window.machineTimeChart.destroy === 'function') {
+        window.machineTimeChart.destroy();
+    }
+    window.machineTimeChart = null;
+
+
 
     if (window.leaderShiftStackedChartInstance) {
         window.leaderShiftStackedChartInstance.destroy();
@@ -4571,12 +4906,17 @@ function renderDetailTable(container, data, filters) {
 
 
     const switchButtonHtml = `
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6><i class="fas fa-table me-2"></i>Bảng chi tiết báo cáo</h6>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h6><i class="fas fa-table me-2"></i>Bảng chi tiết báo cáo</h6>
+    <div>
+        <button class="btn btn-outline-success btn-sm me-2" onclick="exportToExcel()">
+            <i class="fas fa-file-excel me-1"></i>Xuất Excel
+        </button>
         <button class="btn btn-outline-warning btn-sm" id="switchToIncompleteBtn" onclick="switchToIncompleteTable()">
             <i class="fas fa-exclamation-triangle me-1"></i>Xem WS chưa hoàn thành
         </button>
     </div>
+</div>
 `;
 
 
@@ -4726,8 +5066,8 @@ function renderDetailTable(container, data, filters) {
 
         // Lấy dữ liệu từ các cột báo cáo in
         const tongSL = formatNumber(record.tong_so_luong || 0);
-const thanhPhamRaw = record.thanh_pham || '0';
-const thanhPham = formatNumber(parseUSFormat(thanhPhamRaw));
+        const thanhPhamRaw = record.thanh_pham || '0';
+        const thanhPham = formatNumber(parseUSFormat(thanhPhamRaw));
 
         // Format hiển thị các cột cũ
         const paper = formatNumber(record.thanh_pham_in || 0);
@@ -4787,13 +5127,17 @@ const thanhPham = formatNumber(parseUSFormat(thanhPhamRaw));
 `;
     });
 
-    html += `
-                </tbody>
+
+
+    // Phân trang
+    if (totalPages > 1) {
+        html += `
+        </tbody>
             </table>
         </div>
 
-        <div class="row my-3">
-            <div class="col-md-6">
+        <div class="row mt-4 d-flex justify-content-between">
+<div class="col-md-4">
                 <div class="d-flex align-items-center">
                     <label class="me-2">Hiển thị:</label>
                     <select class="form-select form-select-sm w-auto" id="itemsPerPageSelect">
@@ -4805,46 +5149,13 @@ const thanhPham = formatNumber(parseUSFormat(thanhPhamRaw));
                     <span class="ms-2 text-muted">mục</span>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="text-end">
-                    <small class="text-muted">
-                        Hiển thị ${startIndex + 1} - ${Math.min(endIndex, totalItems)} trong tổng số ${totalItems} mục
-                    </small>
-                </div>
-            </div>
-        </div>
-    `;
 
-    // Tính thống kê tổng
-    const totalPaper = data.reduce((sum, record) => sum + (parseFloat(record.thanh_pham_in) || 0), 0);
-    const totalWaste = data.reduce((sum, record) =>
-        sum + (parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0), 0);
-    const totalSetupTime = data.reduce((sum, record) => sum + (parseFloat(record.thoi_gian_canh_may) || 0), 0);
 
-    const totalRunTime = data.reduce((sum, record) => {
-        if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
-            const start = new Date(record.thoi_gian_bat_dau);
-            const end = new Date(record.thoi_gian_ket_thuc);
-            let totalMinutes = (end - start) / (1000 * 60);
-            if (totalMinutes < 0) totalMinutes += 24 * 60;
 
-            const setupMinutes = record.thoi_gian_canh_may || 0;
-            const stopMinutes = record.stopTime || 0;
-            const runMinutes = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
-            return sum + runMinutes;
-        }
-        return sum;
-    }, 0);
 
-    const uniqueWS = new Set(data.map(record => record.ws).filter(ws => ws && ws !== '-')).size;
-    const totalStopTime = currentChartData && currentChartData.stopReasons ?
-        currentChartData.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
 
-    // Phân trang
-    if (totalPages > 1) {
-        html += `
-        <div class="row mt-3">
-            <div class="col-12">
+        
+            <div class="col-md-4">
                 <nav aria-label="Phân trang bảng chi tiết">
                     <ul class="pagination justify-content-center">
                         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
@@ -4871,9 +5182,54 @@ const thanhPham = formatNumber(parseUSFormat(thanhPhamRaw));
                     </ul>
                 </nav>
             </div>
-        </div>
+
+
+
+        <div class="col-md-4">
+                <div class="text-end">
+                    <small class="text-muted">
+                        Hiển thị ${startIndex + 1} - ${Math.min(endIndex, totalItems)} trong tổng số ${totalItems} mục
+                    </small>
+                </div>
+            </div>
+
+
+
+</div>
+
+        <button class="btn btn-outline-success btn-sm" onclick="exportToExcel()">
+            <i class="fas fa-file-excel me-1"></i>Xuất Excel
+        </button>
+
         `;
     }
+
+    // Tính thống kê tổng
+    const totalPaper = data.reduce((sum, record) => sum + (parseFloat(record.thanh_pham_in) || 0), 0);
+    const totalWaste = data.reduce((sum, record) =>
+        sum + (parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0), 0);
+    const totalSetupTime = data.reduce((sum, record) => sum + (parseFloat(record.thoi_gian_canh_may) || 0), 0);
+
+    const totalRunTime = data.reduce((sum, record) => {
+        if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
+            const start = new Date(record.thoi_gian_bat_dau);
+            const end = new Date(record.thoi_gian_ket_thuc);
+            let totalMinutes = (end - start) / (1000 * 60);
+            if (totalMinutes < 0) totalMinutes += 24 * 60;
+
+            const setupMinutes = record.thoi_gian_canh_may || 0;
+            const stopMinutes = record.stopTime || 0;
+            const runMinutes = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+            return sum + runMinutes;
+        }
+        return sum;
+    }, 0);
+
+    const uniqueWS = new Set(data.map(record => record.ws).filter(ws => ws && ws !== '-')).size;
+    const totalStopTime = currentChartData && currentChartData.stopReasons ?
+        currentChartData.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
+
+
 
     html += `
         <div class="row mt-3">
@@ -4927,6 +5283,8 @@ const thanhPham = formatNumber(parseUSFormat(thanhPhamRaw));
             </div>
         </div>
     `;
+
+
 
     container.innerHTML = filterHtml + html;
 
@@ -5607,10 +5965,10 @@ function displaySpeedChart(side, machine, topSpeedData) {
                             maxRotation: 45,
                             minRotation: 30,
                             font: {
-                                size: function(context) {
+                                size: function (context) {
                                     const itemCount = context.chart.data.labels.length;
                                     const screenWidth = window.innerWidth;
-                                    
+
                                     if (screenWidth < 576) {
                                         return itemCount > 8 ? 8 : 9;
                                     } else if (screenWidth < 768) {
@@ -5623,7 +5981,7 @@ function displaySpeedChart(side, machine, topSpeedData) {
                             callback: function (value, index, values) {
                                 const label = this.getLabelForValue(value);
                                 const lines = label.split('\n');
-                                
+
                                 if (lines.length > 1) {
                                     // Format giống top products: dòng 1 là mã SP, dòng 2 là customer với bullet
                                     return [lines[0], `● ${lines[1]}`];
@@ -6240,7 +6598,7 @@ function createMachineProductionChart(reportData) {
 function calculateSpeed(thanhPham, runTimeMinutes) {
     const paper = parseFloat(thanhPham) || 0;
     const runTimeInteger = Math.floor(runTimeMinutes); // Lấy phần nguyên
-    
+
     if (runTimeInteger === 0 || paper === 0) return '0';
 
     const speed = Math.round((paper * 60) / runTimeInteger);
@@ -6299,24 +6657,24 @@ function createFilterOptions(data) {
         });
 
         // Gắn sự kiện cho filter type select
-['speedFilterType', 'orderFilterType'].forEach(selectId => {
-    const element = document.getElementById(selectId);
-    if (element) {
-        element.addEventListener('change', function () {
-            const filterName = selectId.replace('FilterType', '');
-            const selectedValue = this.value;
-            
-            // Nếu chọn sort, reset sort khác
-            if (selectedValue === 'desc' || selectedValue === 'asc') {
-                resetOtherSort(filterName);
+        ['speedFilterType', 'orderFilterType'].forEach(selectId => {
+            const element = document.getElementById(selectId);
+            if (element) {
+                element.addEventListener('change', function () {
+                    const filterName = selectId.replace('FilterType', '');
+                    const selectedValue = this.value;
+
+                    // Nếu chọn sort, reset sort khác
+                    if (selectedValue === 'desc' || selectedValue === 'asc') {
+                        resetOtherSort(filterName);
+                    }
+
+                    toggleFilterInputs(filterName, selectedValue);
+                    updateNumericFilterButtons();
+                    autoApplyFilters();
+                });
             }
-            
-            toggleFilterInputs(filterName, selectedValue);
-            updateNumericFilterButtons();
-            autoApplyFilters();
         });
-    }
-});
 
         // Khởi tạo input ban đầu
         toggleFilterInputs('speed', 'range');
@@ -6422,7 +6780,7 @@ function autoApplyFilters() {
     // Áp dụng sort - CHỈ 1 SORT DUY NHẤT
     // const speedFilterType = document.getElementById('speedFilterType')?.value;
     // const orderFilterType = document.getElementById('orderFilterType')?.value;
-    
+
     if (speedFilterType === 'desc' || speedFilterType === 'asc') {
         // Nếu đang sort tốc độ, reset sort đơn hàng về range
         const orderSelect = document.getElementById('orderFilterType');
@@ -6430,10 +6788,10 @@ function autoApplyFilters() {
             orderSelect.value = 'range';
             toggleFilterInputs('order', 'range');
         }
-        
+
         // Áp dụng sort tốc độ
         filteredTableData = sortTableData(filteredTableData, 'tocDo', speedFilterType);
-        
+
     } else if (orderFilterType === 'desc' || orderFilterType === 'asc') {
         // Nếu đang sort đơn hàng, reset sort tốc độ về range
         const speedSelect = document.getElementById('speedFilterType');
@@ -6441,7 +6799,7 @@ function autoApplyFilters() {
             speedSelect.value = 'range';
             toggleFilterInputs('speed', 'range');
         }
-        
+
         // Áp dụng sort đơn hàng
         filteredTableData = sortTableData(filteredTableData, 'slDonHang', orderFilterType);
     }
@@ -6467,7 +6825,7 @@ function resetOtherSort(currentSortType) {
             if (currentValue === 'desc' || currentValue === 'asc') {
                 orderSelect.value = 'range';
                 toggleFilterInputs('order', 'range');
-                
+
                 // Reset filter object
                 currentDetailFilters.orderFilter = {
                     type: 'range',
@@ -6484,7 +6842,7 @@ function resetOtherSort(currentSortType) {
             if (currentValue === 'desc' || currentValue === 'asc') {
                 speedSelect.value = 'range';
                 toggleFilterInputs('speed', 'range');
-                
+
                 // Reset filter object
                 currentDetailFilters.speedFilter = {
                     type: 'range',
@@ -6525,8 +6883,8 @@ function updateTableContentOnly() {
         const product = record.ma_sp || '-';
 
         const tongSL = formatNumber(record.tong_so_luong || 0);
-const thanhPhamRaw = record.thanh_pham || '0';
-const thanhPham = formatNumber(parseUSFormat(thanhPhamRaw));
+        const thanhPhamRaw = record.thanh_pham || '0';
+        const thanhPham = formatNumber(parseUSFormat(thanhPhamRaw));
         const paper = formatNumber(record.thanh_pham_in || 0);
         const waste = formatNumber((parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0));
         const timeRange = formatTimeRangeWithDuration(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
@@ -6901,7 +7259,7 @@ function getButtonMinWidth(filterType) {
 function toggleFilterInputs(filterName, type) {
     const inputsContainer = document.getElementById(`${filterName}Inputs`);
     if (!inputsContainer) return;
-    
+
     const inputGroup = inputsContainer.querySelector('.input-group');
     if (!inputGroup) return;
 
@@ -6947,21 +7305,21 @@ function toggleFilterInputs(filterName, type) {
     const inputs = inputGroup.querySelectorAll('input');
     inputs.forEach(input => {
         formatNumberInput(input);
-        
-        input.addEventListener('click', function(e) {
+
+        input.addEventListener('click', function (e) {
             e.stopPropagation();
         });
-        
-        input.addEventListener('keydown', function(e) {
+
+        input.addEventListener('keydown', function (e) {
             e.stopPropagation();
         });
-        
-        input.addEventListener('input', function(e) {
+
+        input.addEventListener('input', function (e) {
             e.stopPropagation();
             updateNumericFilterButtons();
         });
-        
-        input.addEventListener('blur', function(e) {
+
+        input.addEventListener('blur', function (e) {
             e.stopPropagation();
             autoApplyFilters();
         });
@@ -7154,8 +7512,8 @@ function calculateRunTimeForRecord(record) {
     const end = new Date(record.thoi_gian_ket_thuc);
 
     let totalSeconds = (end - start) / 1000;
-if (totalSeconds < 0) totalSeconds += 24 * 60 * 60;
-let totalMinutes = totalSeconds / 60; // Giữ nguyên số thập phân cho giây
+    if (totalSeconds < 0) totalSeconds += 24 * 60 * 60;
+    let totalMinutes = totalSeconds / 60; // Giữ nguyên số thập phân cho giây
 
     const setupMinutes = record.thoi_gian_canh_may || 0;
     const stopMinutes = record.stopTime || 0;
@@ -7518,8 +7876,8 @@ function renderIncompleteTable(container, data, filters) {
 
         // Lấy dữ liệu từ các cột báo cáo in
         const tongSL = formatNumber(record.tong_so_luong || 0);
-const thanhPhamRaw = record.thanh_pham || '0';
-const thanhPham = formatNumber(parseUSFormat(thanhPhamRaw));
+        const thanhPhamRaw = record.thanh_pham || '0';
+        const thanhPham = formatNumber(parseUSFormat(thanhPhamRaw));
 
         // Format hiển thị các cột cũ
         const paper = formatNumber(record.thanh_pham_in || 0);
@@ -7759,21 +8117,21 @@ function renderShiftLeaderAnalysis(shiftLeaderData, filters) {
         `;
     } else {
         // Sắp xếp dữ liệu theo trưởng máy A-Z
-shiftLeaderData.sort((a, b) => {
-    // Sắp xếp trưởng máy theo A-Z trước
-    const leaderCompare = a.truongMay.localeCompare(b.truongMay, 'vi', { numeric: true });
-    if (leaderCompare !== 0) return leaderCompare;
-    
-    // Sau đó sắp xếp theo mã ca
-    if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
-    return a.may.localeCompare(b.may);
-});
+        shiftLeaderData.sort((a, b) => {
+            // Sắp xếp trưởng máy theo A-Z trước
+            const leaderCompare = a.truongMay.localeCompare(b.truongMay, 'vi', { numeric: true });
+            if (leaderCompare !== 0) return leaderCompare;
+
+            // Sau đó sắp xếp theo mã ca
+            if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
+            return a.may.localeCompare(b.may);
+        });
 
         html += `
         <button class="btn btn-outline-info btn-sm mb-2" onclick="switchBackToShiftAnalysis()">
                     <i class="fas fa-chart-pie me-1"></i>Quay lại bảng mã ca
                 </button>
-    <div class="table-responsive" style="max-height: 700px; overflow-y: auto; overflow-x: auto;">
+    <div class="table-responsive" style="max-height: 600px; overflow-y: auto; overflow-x: auto;">
         <table class="table table-striped table-hover" style="min-width: 800px;">
                     <thead class="table-dark sticky-top" style="position: sticky; top: 0; z-index: 10;">
                         <tr>
@@ -7806,16 +8164,16 @@ shiftLeaderData.sort((a, b) => {
         });
 
         // Render từng nhóm trưởng máy theo thứ tự A-Z
-const sortedLeaderGroups = Object.values(leaderGroups).sort((a, b) => {
-    return a.truongMay.localeCompare(b.truongMay, 'vi', { numeric: true });
-});
+        const sortedLeaderGroups = Object.values(leaderGroups).sort((a, b) => {
+            return a.truongMay.localeCompare(b.truongMay, 'vi', { numeric: true });
+        });
 
-sortedLeaderGroups.forEach(group => {
-    // Sắp xếp chi tiết theo mã ca -> máy
-    group.details.sort((a, b) => {
-        if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
-        return a.may.localeCompare(b.may);
-    });
+        sortedLeaderGroups.forEach(group => {
+            // Sắp xếp chi tiết theo mã ca -> máy
+            group.details.sort((a, b) => {
+                if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
+                return a.may.localeCompare(b.may);
+            });
 
             // Render từng dòng chi tiết
             group.details.forEach((item, index) => {
@@ -8216,7 +8574,7 @@ function updateLeaderShiftChart(shiftLeaderData, selectedLeader) {
     const shiftMachineGroups = {};
     filteredData.forEach(item => {
         let key, label;
-    
+
         if (selectedLeader && selectedLeader !== '') {
             // Nếu chọn trưởng máy cụ thể, hiển thị theo ca + máy
             key = `${item.maCa}_${item.may}`;
@@ -8242,20 +8600,20 @@ function updateLeaderShiftChart(shiftLeaderData, selectedLeader) {
     });
 
     // Chuyển thành array và sắp xếp
-const sortedShiftMachines = Object.values(shiftMachineGroups).sort((a, b) => {
-    if (selectedLeader && selectedLeader !== '') {
-        // Nếu chọn trưởng máy cụ thể, sắp xếp theo ca -> máy
-        if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
-        return a.may.localeCompare(b.may);
-    } else {
-        // Nếu chọn tất cả trưởng máy, sắp xếp theo tên trưởng máy A-Z trước
-        const leaderCompare = a.truongMay.localeCompare(b.truongMay, 'vi', { numeric: true });
-        if (leaderCompare !== 0) return leaderCompare;
-        
-        if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
-        return a.may.localeCompare(b.may);
-    }
-});
+    const sortedShiftMachines = Object.values(shiftMachineGroups).sort((a, b) => {
+        if (selectedLeader && selectedLeader !== '') {
+            // Nếu chọn trưởng máy cụ thể, sắp xếp theo ca -> máy
+            if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
+            return a.may.localeCompare(b.may);
+        } else {
+            // Nếu chọn tất cả trưởng máy, sắp xếp theo tên trưởng máy A-Z trước
+            const leaderCompare = a.truongMay.localeCompare(b.truongMay, 'vi', { numeric: true });
+            if (leaderCompare !== 0) return leaderCompare;
+
+            if (a.maCa !== b.maCa) return a.maCa.localeCompare(b.maCa);
+            return a.may.localeCompare(b.may);
+        }
+    });
 
     const labels = sortedShiftMachines.map(item => item.label);
     const paperData = sortedShiftMachines.map(item => item.paper);
@@ -9371,40 +9729,40 @@ let currentTimeAnalysisMode = 'sanxuat';
 // Hàm chuyển đổi chế độ phân tích thời gian
 function switchTimeAnalysisMode(mode) {
     if (currentTimeAnalysisMode === mode) return;
-    
+
     currentTimeAnalysisMode = mode;
-    
+
     // Cập nhật trạng thái active của các nút
     document.querySelectorAll('#timeAnalysis .btn-group button').forEach(btn => {
         btn.classList.remove('active', 'btn-success');
         btn.classList.add('btn-outline-success');
     });
-    
-    // Xác định ID button dựa trên mode
-let buttonId = '';
-switch (mode) {
-    case 'sanxuat':
-        buttonId = 'btnSanXuat';
-        break;
-    case 'maca':
-        buttonId = 'btnMaCa';
-        break;
-    case 'may':
-        buttonId = 'btnMay';
-        break;
-    case 'truongmay':
-        buttonId = 'btnTruongMay';
-        break;
-    default:
-        buttonId = 'btnSanXuat';
-}
 
-const activeBtn = document.getElementById(buttonId);
+    // Xác định ID button dựa trên mode
+    let buttonId = '';
+    switch (mode) {
+        case 'sanxuat':
+            buttonId = 'btnSanXuat';
+            break;
+        case 'maca':
+            buttonId = 'btnMaCa';
+            break;
+        case 'may':
+            buttonId = 'btnMay';
+            break;
+        case 'truongmay':
+            buttonId = 'btnTruongMay';
+            break;
+        default:
+            buttonId = 'btnSanXuat';
+    }
+
+    const activeBtn = document.getElementById(buttonId);
     if (activeBtn) {
         activeBtn.classList.remove('btn-outline-success');
         activeBtn.classList.add('active', 'btn-success');
     }
-    
+
     // Cập nhật nội dung phần dưới
     updateTimeAnalysisContent(mode);
 }
@@ -9416,10 +9774,10 @@ function updateTimeAnalysisContent(mode) {
     // Tìm toàn bộ phần row chứa 2 cột trong timeAnalysis
     const timeAnalysisEl = document.getElementById('timeAnalysis');
     if (!timeAnalysisEl) return;
-    
+
     const twoColumnRow = timeAnalysisEl.querySelector('.row');
     if (!twoColumnRow) return;
-    
+
     switch (mode) {
         case 'sanxuat':
             // Khôi phục lại nội dung 2 cột sản xuất/chạy mẫu
@@ -9433,20 +9791,20 @@ function updateTimeAnalysisContent(mode) {
             // Thay thế bằng bảng trưởng máy (1 cột full width)
             displayTimeTableByLeader(twoColumnRow);
             break;
-            case 'may':
-        // Thay thế bằng bảng máy (1 cột full width)
-        displayTimeTableByMachine(twoColumnRow);
-        break;
+        case 'may':
+            // Thay thế bằng bảng máy (1 cột full width)
+            displayTimeTableByMachine(twoColumnRow);
+            break;
     }
 }
 
 // Hàm hiển thị lại nội dung lý do dừng máy
 function displayStopReasonsContent(container) {
     let html = '';
-    
-    if (currentChartData && currentChartData.timeData && currentChartData.timeData.otherTime > 0 && 
+
+    if (currentChartData && currentChartData.timeData && currentChartData.timeData.otherTime > 0 &&
         currentChartData.stopReasons && currentChartData.stopReasons.length > 0) {
-        
+
         html += `
             <div class="mt-3">
                 <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Chi tiết thời gian dừng máy:</h6>
@@ -9509,9 +9867,12 @@ function displayStopReasonsContent(container) {
             </div>
         `;
     }
-    
+
     container.innerHTML = html;
 }
+
+
+
 
 // Hàm hiển thị bảng thời gian theo mã ca
 function displayTimeTableByShift(container) {
@@ -9519,154 +9880,175 @@ function displayTimeTableByShift(container) {
         container.innerHTML = '<div class="col-12 text-center text-muted p-4">Không có dữ liệu</div>';
         return;
     }
-    
+
     const shiftGroups = {};
+    const wsCountByShiftMachine = {};
     currentChartData.reports.forEach(report => {
         const shift = report.ma_ca || 'Unknown';
         const may = report.may || 'Unknown';
         const key = `${shift}_${may}`;
-        
+        const ws = report.ws || 'Unknown';
+
+
+        // Đếm WS
+    if (!wsCountByShiftMachine[key]) {
+        wsCountByShiftMachine[key] = new Set();
+    }
+    wsCountByShiftMachine[key].add(ws);
+
         if (!shiftGroups[key]) {
             shiftGroups[key] = {
                 shift: shift,
                 may: may,
                 runTime: 0,
                 setupTime: 0,
-                stopTime: 0
+                stopTime: 0,
+                giaiLaoTime: 0,
+                baoDuongTime: 0,
+                mayHuTime: 0
             };
         }
-        
+
         if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
             const start = new Date(report.thoi_gian_bat_dau);
             const end = new Date(report.thoi_gian_ket_thuc);
             let totalMinutes = (end - start) / (1000 * 60);
             if (totalMinutes < 0) totalMinutes += 24 * 60;
-            
+
             const setupMinutes = parseFloat(report.thoi_gian_canh_may) || 0;
             const stopMinutes = report.stopTime || 0;
             const runMinutes = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
-            
+
             shiftGroups[key].runTime += runMinutes;
             shiftGroups[key].setupTime += setupMinutes;
             shiftGroups[key].stopTime += stopMinutes;
-            // Tính thời gian theo lý do cụ thể
-            if (!shiftGroups[key].giaiLaoTime) shiftGroups[key].giaiLaoTime = 0;
-            if (!shiftGroups[key].baoDuongTime) shiftGroups[key].baoDuongTime = 0;
-            if (!shiftGroups[key].mayHuTime) shiftGroups[key].mayHuTime = 0;
-
-
-
-// Tính thời gian dừng máy theo lý do F cụ thể cho từng ca-máy
-if (currentChartData && currentChartData.stopReasons) {
-    // Group stopReasons theo lý do
-    const reasonTimeMap = {};
-    currentChartData.stopReasons.forEach(reason => {
-        const reasonCode = reason.reason;
-        const duration = reason.duration || 0;
-        
-        if (reasonCode === 'F12: Giải lao') {
-            reasonTimeMap.giaiLao = (reasonTimeMap.giaiLao || 0) + duration;
-        } else if (reasonCode === 'F7: Bảo dưỡng') {
-            reasonTimeMap.baoDuong = (reasonTimeMap.baoDuong || 0) + duration;
-        } else if (reasonCode === 'F1: Máy hư') {
-            reasonTimeMap.mayHu = (reasonTimeMap.mayHu || 0) + duration;
         }
     });
-    
-    // Phân bổ thời gian theo tỷ lệ sản xuất của từng ca-máy
-    const totalProduction = Object.values(shiftGroups).reduce((sum, group) => 
-        sum + group.runTime + group.setupTime, 0);
-    
-    if (totalProduction > 0) {
-        Object.values(shiftGroups).forEach(group => {
-            const groupRatio = (group.runTime + group.setupTime) / totalProduction;
-            group.giaiLaoTime = Math.round((reasonTimeMap.giaiLao || 0) * groupRatio);
-            group.baoDuongTime = Math.round((reasonTimeMap.baoDuong || 0) * groupRatio);
-            group.mayHuTime = Math.round((reasonTimeMap.mayHu || 0) * groupRatio);
+
+    // Tính thời gian dừng máy theo lý do F cụ thể cho từng ca-máy
+    if (currentChartData && currentChartData.stopReasons) {
+        // Group stopReasons theo lý do
+        const reasonTimeMap = {};
+        currentChartData.stopReasons.forEach(reason => {
+            const reasonCode = reason.reason;
+            const duration = reason.duration || 0;
+
+            if (reasonCode === 'F12: Giải lao') {
+                reasonTimeMap.giaiLao = (reasonTimeMap.giaiLao || 0) + duration;
+            } else if (reasonCode === 'F7: Bảo dưỡng') {
+                reasonTimeMap.baoDuong = (reasonTimeMap.baoDuong || 0) + duration;
+            } else if (reasonCode === 'F1: Máy hư') {
+                reasonTimeMap.mayHu = (reasonTimeMap.mayHu || 0) + duration;
+            }
         });
-    }
-}
 
+        // Phân bổ thời gian theo tỷ lệ sản xuất của từng ca-máy
+        const totalProduction = Object.values(shiftGroups).reduce((sum, group) =>
+            sum + group.runTime + group.setupTime, 0);
 
+        if (totalProduction > 0) {
+            Object.values(shiftGroups).forEach(group => {
+                const groupRatio = (group.runTime + group.setupTime) / totalProduction;
+                group.giaiLaoTime = Math.round((reasonTimeMap.giaiLao || 0) * groupRatio);
+                group.baoDuongTime = Math.round((reasonTimeMap.baoDuong || 0) * groupRatio);
+                group.mayHuTime = Math.round((reasonTimeMap.mayHu || 0) * groupRatio);
+            });
         }
-    });
-    
+    }
+
     const sortedShifts = Object.values(shiftGroups).sort((a, b) => {
         if (a.shift !== b.shift) return a.shift.localeCompare(b.shift);
         return a.may.localeCompare(b.may);
     });
-    
-    let html = `
-        <div class="table-responsive" style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
-    <table class="table table-striped table-hover table-sm" style="white-space: nowrap; min-width: 800px;">
-                <thead class="table-dark sticky-top">
-                    <tr>
-                        <th>Mã ca</th>
-                        <th>Máy</th>
-                        <th class="text-end">TG chạy máy</th>
-                        <th class="text-end">TG canh máy</th>
-                        <th class="text-end">TG dừng máy</th>
-                        <th class="text-end">TG giải lao</th>
-        <th class="text-end">TG bảo dưỡng</th>
-        <th class="text-end">TG máy hư</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-    
+
+    // Tính tổng theo mã ca
+    const shiftTotals = {};
     sortedShifts.forEach(item => {
-        html += `
-            <tr>
-                <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">Ca ${item.shift}</span></td>
-                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${item.may}</span></td>
-                <td class="text-end">${formatDuration(item.runTime)}</td>
-                <td class="text-end">${formatDuration(item.setupTime)}</td>
-                <td class="text-end">${formatDuration(item.stopTime)}</td>
-        <td class="text-end">${formatDuration(item.giaiLaoTime || 0)}</td>
-        <td class="text-end">${formatDuration(item.baoDuongTime || 0)}</td>
-        <td class="text-end">${formatDuration(item.mayHuTime || 0)}</td>
+        if (!shiftTotals[item.shift]) {
+            shiftTotals[item.shift] = {
+                runTime: 0, setupTime: 0, stopTime: 0,
+                giaiLaoTime: 0, baoDuongTime: 0, mayHuTime: 0
+            };
+        }
+        shiftTotals[item.shift].runTime += item.runTime;
+        shiftTotals[item.shift].setupTime += item.setupTime;
+        shiftTotals[item.shift].stopTime += item.stopTime;
+        shiftTotals[item.shift].giaiLaoTime += (item.giaiLaoTime || 0);
+        shiftTotals[item.shift].baoDuongTime += (item.baoDuongTime || 0);
+        shiftTotals[item.shift].mayHuTime += (item.mayHuTime || 0);
+    });
+
+    // Tạo HTML với tổng cộng
+    let tableRows = '';
+    const uniqueShifts = [...new Set(sortedShifts.map(item => item.shift))].sort();
+
+    uniqueShifts.forEach(shift => {
+        // Thêm các dòng chi tiết của ca
+        const shiftItems = sortedShifts.filter(item => item.shift === shift);
+        shiftItems.forEach(item => {
+            tableRows += `
+                <tr>
+                    <td><span class="badge p-2" style="background-color: rgb(128, 186, 151); color: white;">Ca ${item.shift}</span></td>
+                    <td><span class="badge p-2" style="background-color: rgb(208, 160, 145); color: white;">${item.may}</span></td>
+                    <td class="text-center p-2"><strong>${wsCountByShiftMachine[`${item.shift}_${item.may}`]?.size || 0}</strong></td>
+                    <td class="text-center p-2">${formatDuration(item.runTime)}</td>
+                    <td class="text-center p-2">${formatDuration(item.setupTime)}</td>
+                    <td class="text-center p-2">${formatDuration(item.stopTime)}</td>
+                    <td class="text-center p-2">${formatDuration(item.giaiLaoTime || 0)}</td>
+                    <td class="text-center p-2">${formatDuration(item.baoDuongTime || 0)}</td>
+                    <td class="text-center p-2">${formatDuration(item.mayHuTime || 0)}</td>
+                </tr>
+            `;
+        });
+
+        // Thêm dòng tổng cộng cho ca này
+        const total = shiftTotals[shift];
+        tableRows += `
+            <tr style="background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
+                <td class="p-2"><strong style="color: #0066cc;">Tổng cộng</strong></td>
+                <td></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${shiftItems.reduce((sum, item) => sum + (wsCountByShiftMachine[`${item.shift}_${item.may}`]?.size || 0), 0)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.runTime)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.setupTime)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.stopTime)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.giaiLaoTime)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.baoDuongTime)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.mayHuTime)}</strong></td>
             </tr>
+            <tr style="height: 10px;"><td colspan="9"></td></tr>
         `;
     });
-    
-    html = `
+
+    const html = `
         <div class="col-12">
             <h6><i class="fas fa-clock me-2"></i>Phân tích thời gian theo mã ca</h6>
             <div class="table-responsive" style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
-    <table class="table table-striped table-hover table-sm" style="white-space: nowrap; min-width: 800px;">
+                <table class="table table-striped table-hover table-sm" style="white-space: nowrap; min-width: 800px;">
                     <thead class="table-dark sticky-top">
                         <tr>
-                            <th>Mã ca</th>
-                            <th>Máy</th>
-                            <th class="text-end">TG chạy máy</th>
-                            <th class="text-end">TG canh máy</th>
-                            <th class="text-end">TG dừng máy</th>
-                            <th class="text-end">TG giải lao</th>
-        <th class="text-end">TG bảo dưỡng</th>
-        <th class="text-end">TG máy hư</th>
+                            <th class="text-center p-2">Mã ca</th>
+                            <th class="text-center p-2">Máy</th>
+                            <th class="text-center p-2">SL WS</th>
+                            <th class="text-center p-2">TG chạy máy</th>
+                            <th class="text-center p-2">TG canh máy</th>
+                            <th class="text-center p-2">TG dừng máy</th>
+                            <th class="text-center p-2">TG giải lao</th>
+                            <th class="text-center p-2">TG bảo dưỡng</th>
+                            <th class="text-center p-2">TG máy hư</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${sortedShifts.map(item => `
-                            <tr>
-                                <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">Ca ${item.shift}</span></td>
-                                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${item.may}</span></td>
-                                <td class="text-end">${formatDuration(item.runTime)}</td>
-                                <td class="text-end">${formatDuration(item.setupTime)}</td>
-                                <td class="text-end">${formatDuration(item.stopTime)}</td>
-                                        <td class="text-end">${formatDuration(item.giaiLaoTime || 0)}</td>
-        <td class="text-end">${formatDuration(item.baoDuongTime || 0)}</td>
-        <td class="text-end">${formatDuration(item.mayHuTime || 0)}</td>
-                            </tr>
-                        `).join('')}
+                        ${tableRows}
                     </tbody>
                 </table>
             </div>
         </div>
     `;
-    
+
     container.innerHTML = html;
 }
+
+
 
 // Hàm hiển thị bảng thời gian theo trưởng máy
 function displayTimeTableByLeader(container) {
@@ -9674,14 +10056,23 @@ function displayTimeTableByLeader(container) {
         container.innerHTML = '<div class="col-12 text-center text-muted p-4">Không có dữ liệu</div>';
         return;
     }
-    
+
     const leaderGroups = {};
+    const wsCountByLeaderShiftMachine = {};
     currentChartData.reports.forEach(report => {
         const leader = report.truong_may || `Trưởng máy ${report.may || 'Unknown'}`;
         const shift = report.ma_ca || 'Unknown';
         const may = report.may || 'Unknown';
         const key = `${leader}_${shift}_${may}`;
-        
+        const ws = report.ws || 'Unknown';
+
+
+        if (!wsCountByLeaderShiftMachine[key]) {
+            wsCountByLeaderShiftMachine[key] = new Set();
+        }
+        wsCountByLeaderShiftMachine[key].add(ws);
+
+
         if (!leaderGroups[key]) {
             leaderGroups[key] = {
                 leader: leader,
@@ -9691,142 +10082,152 @@ function displayTimeTableByLeader(container) {
                 setupTime: 0,
                 stopTime: 0,
                 giaiLaoTime: 0,
-        baoDuongTime: 0,
-        mayHuTime: 0
+                baoDuongTime: 0,
+                mayHuTime: 0
             };
         }
-        
+
         if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
             const start = new Date(report.thoi_gian_bat_dau);
             const end = new Date(report.thoi_gian_ket_thuc);
             let totalMinutes = (end - start) / (1000 * 60);
             if (totalMinutes < 0) totalMinutes += 24 * 60;
-            
+
             const setupMinutes = parseFloat(report.thoi_gian_canh_may) || 0;
             const stopMinutes = report.stopTime || 0;
             const runMinutes = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
-            
+
             leaderGroups[key].runTime += runMinutes;
             leaderGroups[key].setupTime += setupMinutes;
             leaderGroups[key].stopTime += stopMinutes;
         }
     });
 
-
-
     // Tính thời gian dừng máy theo lý do F cụ thể cho từng trưởng máy
-if (currentChartData && currentChartData.stopReasons) {
-    // Group stopReasons theo lý do
-    const reasonTimeMap = {};
-    currentChartData.stopReasons.forEach(reason => {
-        const reasonCode = reason.reason;
-        const duration = reason.duration || 0;
-        
-        if (reasonCode === 'F12: Giải lao') {
-            reasonTimeMap.giaiLao = (reasonTimeMap.giaiLao || 0) + duration;
-        } else if (reasonCode === 'F7: Bảo dưỡng') {
-            reasonTimeMap.baoDuong = (reasonTimeMap.baoDuong || 0) + duration;
-        } else if (reasonCode === 'F1: Máy hư') {
-            reasonTimeMap.mayHu = (reasonTimeMap.mayHu || 0) + duration;
-        }
-    });
-    
-    // Phân bổ thời gian theo tỷ lệ sản xuất của từng trưởng máy-ca-máy
-    const totalProduction = Object.values(leaderGroups).reduce((sum, group) => 
-        sum + group.runTime + group.setupTime, 0);
-    
-    if (totalProduction > 0) {
-        Object.values(leaderGroups).forEach(group => {
-            const groupRatio = (group.runTime + group.setupTime) / totalProduction;
-            group.giaiLaoTime = Math.round((reasonTimeMap.giaiLao || 0) * groupRatio);
-            group.baoDuongTime = Math.round((reasonTimeMap.baoDuong || 0) * groupRatio);
-            group.mayHuTime = Math.round((reasonTimeMap.mayHu || 0) * groupRatio);
+    if (currentChartData && currentChartData.stopReasons) {
+        // Group stopReasons theo lý do
+        const reasonTimeMap = {};
+        currentChartData.stopReasons.forEach(reason => {
+            const reasonCode = reason.reason;
+            const duration = reason.duration || 0;
+
+            if (reasonCode === 'F12: Giải lao') {
+                reasonTimeMap.giaiLao = (reasonTimeMap.giaiLao || 0) + duration;
+            } else if (reasonCode === 'F7: Bảo dưỡng') {
+                reasonTimeMap.baoDuong = (reasonTimeMap.baoDuong || 0) + duration;
+            } else if (reasonCode === 'F1: Máy hư') {
+                reasonTimeMap.mayHu = (reasonTimeMap.mayHu || 0) + duration;
+            }
         });
+
+        // Phân bổ thời gian theo tỷ lệ sản xuất của từng trưởng máy-ca-máy
+        const totalProduction = Object.values(leaderGroups).reduce((sum, group) =>
+            sum + group.runTime + group.setupTime, 0);
+
+        if (totalProduction > 0) {
+            Object.values(leaderGroups).forEach(group => {
+                const groupRatio = (group.runTime + group.setupTime) / totalProduction;
+                group.giaiLaoTime = Math.round((reasonTimeMap.giaiLao || 0) * groupRatio);
+                group.baoDuongTime = Math.round((reasonTimeMap.baoDuong || 0) * groupRatio);
+                group.mayHuTime = Math.round((reasonTimeMap.mayHu || 0) * groupRatio);
+            });
+        }
     }
-}
-    
+
     const sortedLeaders = Object.values(leaderGroups).sort((a, b) => {
         if (a.leader !== b.leader) return a.leader.localeCompare(b.leader);
         if (a.shift !== b.shift) return a.shift.localeCompare(b.shift);
         return a.may.localeCompare(b.may);
     });
-    
-    let html = `
-<div class="table-responsive" style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
-    <table class="table table-striped table-hover table-sm" style="white-space: nowrap; min-width: 900px;">
-                <thead class="table-dark sticky-top">
-                    <tr>
-                        <th>Trưởng máy</th>
-                        <th>Mã ca</th>
-                        <th>Máy</th>
-                        <th class="text-end">TG chạy máy</th>
-                        <th class="text-end">TG canh máy</th>
-                        <th class="text-end">TG dừng máy</th>
-                                <th class="text-end" style="white-space: nowrap;">TG giải lao</th>
-        <th class="text-end" style="white-space: nowrap;">TG bảo dưỡng</th>
-        <th class="text-end" style="white-space: nowrap;">TG máy hư</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-    
+
+    // Tính tổng theo trưởng máy
+    const leaderTotals = {};
     sortedLeaders.forEach(item => {
-        html += `
-            <tr>
-                <td><strong>${item.leader}</strong></td>
-                <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">Ca ${item.shift}</span></td>
-                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${item.may}</span></td>
-                <td class="text-end">${formatDuration(item.runTime)}</td>
-                <td class="text-end">${formatDuration(item.setupTime)}</td>
-                <td class="text-end">${formatDuration(item.stopTime)}</td>
-                        <td class="text-end">${formatDuration(item.giaiLaoTime || 0)}</td>
-        <td class="text-end">${formatDuration(item.baoDuongTime || 0)}</td>
-        <td class="text-end">${formatDuration(item.mayHuTime || 0)}</td>
+        if (!leaderTotals[item.leader]) {
+            leaderTotals[item.leader] = {
+                runTime: 0, setupTime: 0, stopTime: 0,
+                giaiLaoTime: 0, baoDuongTime: 0, mayHuTime: 0
+            };
+        }
+        leaderTotals[item.leader].runTime += item.runTime;
+        leaderTotals[item.leader].setupTime += item.setupTime;
+        leaderTotals[item.leader].stopTime += item.stopTime;
+        leaderTotals[item.leader].giaiLaoTime += (item.giaiLaoTime || 0);
+        leaderTotals[item.leader].baoDuongTime += (item.baoDuongTime || 0);
+        leaderTotals[item.leader].mayHuTime += (item.mayHuTime || 0);
+    });
+
+    // Tạo HTML với tổng cộng
+    let tableRows = '';
+    const uniqueLeaders = [...new Set(sortedLeaders.map(item => item.leader))].sort();
+
+    uniqueLeaders.forEach(leader => {
+        // Thêm các dòng chi tiết của trưởng máy
+        const leaderItems = sortedLeaders.filter(item => item.leader === leader);
+        leaderItems.forEach(item => {
+            tableRows += `
+                <tr>
+                    <td><strong>${item.leader}</strong></td>
+                    <td><span class="badge p-2" style="background-color: rgb(128, 186, 151); color: white;">Ca ${item.shift}</span></td>
+                    <td><span class="badge p-2" style="background-color: rgb(208, 160, 145); color: white;">${item.may}</span></td>
+                    <td class="text-center p-2"><strong>${wsCountByLeaderShiftMachine[`${item.leader}_${item.shift}_${item.may}`]?.size || 0}</strong></td>
+                    <td class="text-center p-2">${formatDuration(item.runTime)}</td>
+                    <td class="text-center p-2">${formatDuration(item.setupTime)}</td>
+                    <td class="text-center p-2">${formatDuration(item.stopTime)}</td>
+                    <td class="text-center p-2">${formatDuration(item.giaiLaoTime || 0)}</td>
+                    <td class="text-center p-2">${formatDuration(item.baoDuongTime || 0)}</td>
+                    <td class="text-center p-2">${formatDuration(item.mayHuTime || 0)}</td>
+                </tr>
+            `;
+        });
+
+        // Thêm dòng tổng cộng cho trưởng máy này
+        const total = leaderTotals[leader];
+        tableRows += `
+            <tr style="background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
+                <td class="text-center p-2"><strong style="color: #0066cc;">Tổng cộng</strong></td>
+                <td></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${leaderItems.reduce((sum, item) => sum + (wsCountByLeaderShiftMachine[`${item.leader}_${item.shift}_${item.may}`]?.size || 0), 0)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.runTime)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.setupTime)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.stopTime)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.giaiLaoTime)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.baoDuongTime)}</strong></td>
+                <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.mayHuTime)}</strong></td>
             </tr>
+            <tr style="height: 10px;"><td colspan="10"></td></tr>
         `;
     });
-    
-    html = `
+
+    const html = `
         <div class="col-12">
             <h6><i class="fas fa-user-tie me-2"></i>Phân tích thời gian theo trưởng máy</h6>
-<div class="table-responsive" style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
-    <table class="table table-striped table-hover table-sm" style="white-space: nowrap; min-width: 900px;">
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
+                <table class="table table-striped table-hover table-sm" style="white-space: nowrap; min-width: 900px;">
                     <thead class="table-dark sticky-top">
                         <tr>
-                            <th>Trưởng máy</th>
-                            <th>Mã ca</th>
-                            <th>Máy</th>
-                            <th class="text-end">TG chạy máy</th>
-                            <th class="text-end">TG canh máy</th>
-                            <th class="text-end">TG dừng máy</th>
-                            <th class="text-end" style="white-space: nowrap;">TG giải lao</th>
-        <th class="text-end" style="white-space: nowrap;">TG bảo dưỡng</th>
-        <th class="text-end" style="white-space: nowrap;">TG máy hư</th>
+                            <th class="text-center p-2">Trưởng máy</th>
+                            <th class="text-center p-2">Mã ca</th>
+                            <th class="text-center p-2">Máy</th>
+                            <th class="text-center p-2">SL WS</th>
+                            <th class="text-center p-2">TG chạy máy</th>
+                            <th class="text-center p-2">TG canh máy</th>
+                            <th class="text-center p-2">TG dừng máy</th>
+                            <th class="text-center p-2" style="white-space: nowrap;">TG giải lao</th>
+                            <th class="text-center p-2" style="white-space: nowrap;">TG bảo dưỡng</th>
+                            <th class="text-center p-2" style="white-space: nowrap;">TG máy hư</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${sortedLeaders.map(item => `
-                            <tr>
-                                <td><strong>${item.leader}</strong></td>
-                                <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">Ca ${item.shift}</span></td>
-                                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${item.may}</span></td>
-                                <td class="text-end">${formatDuration(item.runTime)}</td>
-                                <td class="text-end">${formatDuration(item.setupTime)}</td>
-                                <td class="text-end">${formatDuration(item.stopTime)}</td>
-                                        <td class="text-end">${formatDuration(item.giaiLaoTime || 0)}</td>
-        <td class="text-end">${formatDuration(item.baoDuongTime || 0)}</td>
-        <td class="text-end">${formatDuration(item.mayHuTime || 0)}</td>
-                            </tr>
-                        `).join('')}
+                        ${tableRows}
                     </tbody>
                 </table>
             </div>
         </div>
     `;
-    
+
     container.innerHTML = html;
 }
-
 
 
 
@@ -9837,11 +10238,20 @@ function displayTimeTableByMachine(container) {
         container.innerHTML = '<div class="col-12 text-center text-muted p-4">Không có dữ liệu</div>';
         return;
     }
-    
+
     const machineGroups = {};
+    const wsCountByMachine = {};
+
     currentChartData.reports.forEach(report => {
         const may = report.may || 'Unknown';
-        
+        const ws = report.ws || 'Unknown';
+
+if (!wsCountByMachine[may]) {
+    wsCountByMachine[may] = new Set();
+}
+wsCountByMachine[may].add(ws);
+
+
         if (!machineGroups[may]) {
             machineGroups[may] = {
                 may: may,
@@ -9853,23 +10263,23 @@ function displayTimeTableByMachine(container) {
                 mayHuTime: 0
             };
         }
-        
+
         if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
             const start = new Date(report.thoi_gian_bat_dau);
             const end = new Date(report.thoi_gian_ket_thuc);
             let totalMinutes = (end - start) / (1000 * 60);
             if (totalMinutes < 0) totalMinutes += 24 * 60;
-            
+
             const setupMinutes = parseFloat(report.thoi_gian_canh_may) || 0;
             const stopMinutes = report.stopTime || 0;
             const runMinutes = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
-            
+
             machineGroups[may].runTime += runMinutes;
             machineGroups[may].setupTime += setupMinutes;
             machineGroups[may].stopTime += stopMinutes;
         }
     });
-    
+
     // Tính thời gian dừng máy theo lý do F cụ thể cho từng máy
     if (currentChartData && currentChartData.stopReasons) {
         // Group stopReasons theo lý do
@@ -9877,7 +10287,7 @@ function displayTimeTableByMachine(container) {
         currentChartData.stopReasons.forEach(reason => {
             const reasonCode = reason.reason;
             const duration = reason.duration || 0;
-            
+
             if (reasonCode === 'F12: Giải lao') {
                 reasonTimeMap.giaiLao = (reasonTimeMap.giaiLao || 0) + duration;
             } else if (reasonCode === 'F7: Bảo dưỡng') {
@@ -9886,11 +10296,11 @@ function displayTimeTableByMachine(container) {
                 reasonTimeMap.mayHu = (reasonTimeMap.mayHu || 0) + duration;
             }
         });
-        
+
         // Phân bổ thời gian theo tỷ lệ sản xuất của từng máy
-        const totalProduction = Object.values(machineGroups).reduce((sum, group) => 
+        const totalProduction = Object.values(machineGroups).reduce((sum, group) =>
             sum + group.runTime + group.setupTime, 0);
-        
+
         if (totalProduction > 0) {
             Object.values(machineGroups).forEach(group => {
                 const groupRatio = (group.runTime + group.setupTime) / totalProduction;
@@ -9900,11 +10310,21 @@ function displayTimeTableByMachine(container) {
             });
         }
     }
-    
+
     const sortedMachines = Object.values(machineGroups).sort((a, b) => {
         return a.may.localeCompare(b.may);
     });
-    
+
+    // Tính tổng tất cả máy
+    const grandTotal = sortedMachines.reduce((total, item) => ({
+        runTime: total.runTime + item.runTime,
+        setupTime: total.setupTime + item.setupTime,
+        stopTime: total.stopTime + item.stopTime,
+        giaiLaoTime: total.giaiLaoTime + (item.giaiLaoTime || 0),
+        baoDuongTime: total.baoDuongTime + (item.baoDuongTime || 0),
+        mayHuTime: total.mayHuTime + (item.mayHuTime || 0)
+    }), {runTime: 0, setupTime: 0, stopTime: 0, giaiLaoTime: 0, baoDuongTime: 0, mayHuTime: 0});
+
     const html = `
         <div class="col-12">
             <h6><i class="fas fa-cogs me-2"></i>Phân tích thời gian theo máy</h6>
@@ -9912,36 +10332,47 @@ function displayTimeTableByMachine(container) {
                 <table class="table table-striped table-hover table-sm" style="white-space: nowrap; min-width: 700px;">
                     <thead class="table-dark sticky-top">
                         <tr>
-                            <th style="white-space: nowrap;">Máy</th>
-                            <th class="text-end" style="white-space: nowrap;">TG chạy máy</th>
-                            <th class="text-end" style="white-space: nowrap;">TG canh máy</th>
-                            <th class="text-end" style="white-space: nowrap;">TG dừng máy</th>
-                            <th class="text-end" style="white-space: nowrap;">TG giải lao</th>
-                            <th class="text-end" style="white-space: nowrap;">TG bảo dưỡng</th>
-                            <th class="text-end" style="white-space: nowrap;">TG máy hư</th>
+                            <th style="white-space: nowrap;" class="text-center p-2">Máy</th>
+                            <th class="text-center p-2">SL WS</th>
+                            <th class="text-center p-2" style="white-space: nowrap;">TG chạy máy</th>
+                            <th class="text-center p-2" style="white-space: nowrap;">TG canh máy</th>
+                            <th class="text-center p-2" style="white-space: nowrap;">TG dừng máy</th>
+                            <th class="text-center p-2" style="white-space: nowrap;">TG giải lao</th>
+                            <th class="text-center p-2" style="white-space: nowrap;">TG bảo dưỡng</th>
+                            <th class="text-center p-2" style="white-space: nowrap;">TG máy hư</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${sortedMachines.map(item => `
                             <tr>
-                                <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${item.may}</span></td>
-                                <td class="text-end">${formatDuration(item.runTime)}</td>
-                                <td class="text-end">${formatDuration(item.setupTime)}</td>
-                                <td class="text-end">${formatDuration(item.stopTime)}</td>
-                                <td class="text-end">${formatDuration(item.giaiLaoTime || 0)}</td>
-                                <td class="text-end">${formatDuration(item.baoDuongTime || 0)}</td>
-                                <td class="text-end">${formatDuration(item.mayHuTime || 0)}</td>
+                                <td><span class="badge p-2" style="background-color: rgb(208, 160, 145); color: white;">${item.may}</span></td>
+                                <td class="text-center p-2"><strong>${wsCountByMachine[item.may]?.size || 0}</strong></td>
+                                <td class="text-center p-2">${formatDuration(item.runTime)}</td>
+                                <td class="text-center p-2">${formatDuration(item.setupTime)}</td>
+                                <td class="text-center p-2">${formatDuration(item.stopTime)}</td>
+                                <td class="text-center p-2">${formatDuration(item.giaiLaoTime || 0)}</td>
+                                <td class="text-center p-2">${formatDuration(item.baoDuongTime || 0)}</td>
+                                <td class="text-center p-2">${formatDuration(item.mayHuTime || 0)}</td>
                             </tr>
                         `).join('')}
+                        <tr style="background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
+                            <td class="text-center p-2"><strong style="color: #0066cc;">Tổng cộng</strong></td>
+                            <td class="text-center p-2"><strong style="color: #0066cc;">${Object.values(wsCountByMachine).reduce((sum, wsSet) => sum + wsSet.size, 0)}</strong></td>
+                            <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(grandTotal.runTime)}</strong></td>
+                            <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(grandTotal.setupTime)}</strong></td>
+                            <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(grandTotal.stopTime)}</strong></td>
+                            <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(grandTotal.giaiLaoTime)}</strong></td>
+                            <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(grandTotal.baoDuongTime)}</strong></td>
+                            <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(grandTotal.mayHuTime)}</strong></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
     `;
-    
+
     container.innerHTML = html;
 }
-
 
 
 // Hàm hiển thị nội dung 2 cột sản xuất/chạy mẫu (khôi phục nội dung gốc)
@@ -9949,7 +10380,7 @@ function displayTwoColumnProductionContent(container) {
     // Lấy lại dữ liệu từ currentChartData để tính toán
     let runTime = 0, setupTime = 0, otherTime = 0, totalTime = 0;
     let productionTime = 0, sampleTime = 0, productionSetupTime = 0, sampleSetupTime = 0, productionStopTime = 0, sampleStopTime = 0;
-    
+
     if (currentChartData && currentChartData.reports) {
         // Tính lại thời gian từ dữ liệu gốc
         const result = calculateProductionAndSampleTime(currentChartData.reports);
@@ -9960,7 +10391,7 @@ function displayTwoColumnProductionContent(container) {
         sampleSetupTime = result.sampleSetupTime;
         productionStopTime = result.productionStopTime;
         sampleStopTime = result.sampleStopTime;
-        
+
         // Lấy thời gian từ timeData
         if (currentChartData.timeData) {
             setupTime = currentChartData.timeData.setupTime || 0;
@@ -9968,10 +10399,10 @@ function displayTwoColumnProductionContent(container) {
             totalTime = currentChartData.timeData.totalTime || 0;
         }
     }
-    
+
     const totalProductionTime = productionTime + productionSetupTime + productionStopTime;
     const totalSampleTime = sampleTime + sampleSetupTime + sampleStopTime;
-    
+
     const html = `
         <div class="col-6 border-end border-dark">
         <div  style="border-left: 4px solid #2495d2; padding-left: 10px;">
@@ -10062,9 +10493,383 @@ function displayTwoColumnProductionContent(container) {
             </div>
         </div>
     `;
-    
+
     container.innerHTML = html;
 }
+
+
+
+
+
+// Hàm xuất Excel
+function exportToExcel() {
+    try {
+        // Kiểm tra thư viện XLSX
+        if (typeof XLSX === 'undefined') {
+            showNotification('Chưa tải thư viện Excel. Vui lòng tải lại trang.', 'error');
+            return;
+        }
+
+        // Lấy dữ liệu hiện tại đang hiển thị
+        const dataToExport = currentTableMode === 'incomplete' ?
+            getIncompleteDataForExport() :
+            filteredTableData;
+
+        if (!dataToExport || dataToExport.length === 0) {
+            showNotification('Không có dữ liệu để xuất Excel', 'warning');
+            return;
+        }
+
+        // Chuẩn bị dữ liệu Excel
+        const excelData = dataToExport.map((record, index) => {
+            // Tính thời gian chạy máy cho record
+            let runTimeForRecord = 0;
+            if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
+                const start = new Date(record.thoi_gian_bat_dau);
+                const end = new Date(record.thoi_gian_ket_thuc);
+                let totalMinutes = (end - start) / (1000 * 60);
+                if (totalMinutes < 0) totalMinutes += 24 * 60;
+                const setupMinutes = record.thoi_gian_canh_may || 0;
+                const stopMinutes = record.stopTime || 0;
+                runTimeForRecord = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+            }
+
+            return {
+                'STT': index + 1,
+                'WS': record.ws || '-',
+                'Mã Ca': record.ma_ca || '-',
+                'Máy': record.may || '-',
+                'Khách hàng': record.khach_hang || '-',
+                'Mã sản phẩm': record.ma_sp || '-',
+                'SL Đơn hàng': record.sl_don_hang || 0,
+                'Số con': record.so_con || 0,
+                'Số màu': record.so_mau || 0,
+                'Tuỳ chọn': record.tuy_chon || '-',
+                'Thành phẩm in': record.thanh_pham_in || 0,
+                'Phế liệu': (parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0),
+                'Tổng SL': record.tong_so_luong || 0,
+                'Thành phẩm cuối': record.thanh_pham || 0,
+                'Tốc độ (s/h)': calculateSpeed(record.thanh_pham_in, runTimeForRecord),
+                'Thời gian bắt đầu': record.thoi_gian_bat_dau || '-',
+                'Thời gian kết thúc': record.thoi_gian_ket_thuc || '-',
+                'Thời gian chạy máy (phút)': Math.round(runTimeForRecord),
+                'Thời gian canh máy (phút)': record.thoi_gian_canh_may || 0,
+                'Thời gian dừng máy (phút)': record.stopTime || 0
+            };
+        });
+
+        // Tạo workbook
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+
+        // Tự động điều chỉnh độ rộng cột
+        const colWidths = [];
+        Object.keys(excelData[0]).forEach(key => {
+            const maxLength = Math.max(
+                key.length,
+                ...excelData.map(row => String(row[key]).length)
+            );
+            colWidths.push({ width: Math.min(maxLength + 2, 30) });
+        });
+        ws['!cols'] = colWidths;
+
+        // Thêm worksheet vào workbook
+        const fileName = currentTableMode === 'incomplete' ?
+            'WS_Chua_Hoan_Thanh' :
+            'Bao_Cao_In_Chi_Tiet';
+        XLSX.utils.book_append_sheet(wb, ws, fileName);
+
+        // Tạo tên file với timestamp
+        const now = new Date();
+        const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
+        const fullFileName = `${fileName}_${timestamp}.xlsx`;
+
+        // Xuất file
+        XLSX.writeFile(wb, fullFileName);
+
+        showNotification(`Đã xuất file ${fullFileName} thành công`, 'success');
+
+    } catch (error) {
+        console.error('Lỗi khi xuất Excel:', error);
+        showNotification('Có lỗi xảy ra khi xuất Excel: ' + error.message, 'error');
+    }
+}
+
+// Hàm lấy dữ liệu WS chưa hoàn thành cho xuất Excel
+function getIncompleteDataForExport() {
+    if (!filteredTableData || filteredTableData.length === 0) {
+        return [];
+    }
+
+    return filteredTableData.filter(record => {
+        const slDonHang = parseFloat(record.sl_don_hang) || 0;
+        const soCon = parseFloat(record.so_con) || 1;
+        const tongSL = parseFloat(record.tong_so_luong) || 0;
+
+        const targetQuantity = slDonHang / soCon;
+        return targetQuantity > tongSL;
+    });
+}
+
+
+
+
+// Tạo biểu đồ thời gian theo máy
+function createMachineTimeChart(reports) {
+    const canvas = document.getElementById('machineTimeChart');
+    if (!canvas) return;
+
+    // Destroy chart cũ nếu có
+    if (window.machineTimeChart) {
+        window.machineTimeChart.destroy();
+        window.machineTimeChart = null;
+    }
+
+    // Group dữ liệu theo máy (sử dụng logic từ displayTimeTableByMachine)
+    const machineGroups = {};
+    reports.forEach(report => {
+        const may = report.may || 'Unknown';
+
+        if (!machineGroups[may]) {
+            machineGroups[may] = {
+                may: may,
+                runTime: 0,
+                setupTime: 0,
+                stopTime: 0,
+                giaiLaoTime: 0,
+                baoDuongTime: 0,
+                mayHuTime: 0
+            };
+        }
+
+        if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+            const start = new Date(report.thoi_gian_bat_dau);
+            const end = new Date(report.thoi_gian_ket_thuc);
+            let totalMinutes = (end - start) / (1000 * 60);
+            if (totalMinutes < 0) totalMinutes += 24 * 60;
+
+            const setupMinutes = parseFloat(report.thoi_gian_canh_may) || 0;
+            const stopMinutes = report.stopTime || 0;
+            const runMinutes = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+
+            machineGroups[may].runTime += runMinutes;
+            machineGroups[may].setupTime += setupMinutes;
+            machineGroups[may].stopTime += stopMinutes;
+        }
+    });
+
+    // Tính thời gian dừng máy theo lý do F cụ thể (copy từ displayTimeTableByMachine)
+    if (currentChartData && currentChartData.stopReasons) {
+        const reasonTimeMap = {};
+        currentChartData.stopReasons.forEach(reason => {
+            const reasonCode = reason.reason;
+            const duration = reason.duration || 0;
+
+            if (reasonCode === 'F12: Giải lao') {
+                reasonTimeMap.giaiLao = (reasonTimeMap.giaiLao || 0) + duration;
+            } else if (reasonCode === 'F7: Bảo dưỡng') {
+                reasonTimeMap.baoDuong = (reasonTimeMap.baoDuong || 0) + duration;
+            } else if (reasonCode === 'F1: Máy hư') {
+                reasonTimeMap.mayHu = (reasonTimeMap.mayHu || 0) + duration;
+            }
+        });
+
+        const totalProduction = Object.values(machineGroups).reduce((sum, group) =>
+            sum + group.runTime + group.setupTime, 0);
+
+        if (totalProduction > 0) {
+            Object.values(machineGroups).forEach(group => {
+                const groupRatio = (group.runTime + group.setupTime) / totalProduction;
+                group.giaiLaoTime = Math.round((reasonTimeMap.giaiLao || 0) * groupRatio);
+                group.baoDuongTime = Math.round((reasonTimeMap.baoDuong || 0) * groupRatio);
+                group.mayHuTime = Math.round((reasonTimeMap.mayHu || 0) * groupRatio);
+            });
+        }
+    }
+
+    const sortedMachines = Object.values(machineGroups).sort((a, b) => a.may.localeCompare(b.may));
+
+    if (sortedMachines.length === 0) return;
+
+    const labels = sortedMachines.map(item => `Máy ${item.may}`);
+    const runTimeData = sortedMachines.map(item => item.runTime);
+    const setupTimeData = sortedMachines.map(item => item.setupTime);
+    const stopTimeData = sortedMachines.map(item => item.stopTime);
+    const giaiLaoData = sortedMachines.map(item => item.giaiLaoTime || 0);
+    const baoDuongData = sortedMachines.map(item => item.baoDuongTime || 0);
+    const mayHuData = sortedMachines.map(item => item.mayHuTime || 0);
+
+    window.machineTimeChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'TG chạy máy',
+                data: runTimeData,
+                backgroundColor: 'rgba(175, 196, 215, 0.8)',
+                borderColor: 'rgba(165, 190, 214, 1)',
+                borderWidth: 1
+            }, {
+                label: 'TG canh máy',
+                data: setupTimeData,
+                backgroundColor: 'rgba(225, 203, 161, 0.8)',
+                borderColor: 'rgba(223, 201, 158, 1)',
+                borderWidth: 1
+            }, {
+                label: 'TG dừng máy',
+                data: stopTimeData,
+                backgroundColor: 'rgba(243, 174, 174, 0.8)',
+                borderColor: 'rgba(221, 152, 152, 1)',
+                borderWidth: 1
+            }, {
+                label: 'TG giải lao',
+                data: giaiLaoData,
+                backgroundColor: 'rgba(255, 206, 84, 0.8)',
+                borderColor: 'rgba(255, 206, 84, 1)',
+                borderWidth: 1
+            }, {
+                label: 'TG bảo dưỡng',
+                data: baoDuongData,
+                backgroundColor: 'rgba(153, 102, 255, 0.8)',
+                borderColor: 'rgba(153, 102, 255, 1)',
+                borderWidth: 1
+            }, {
+                label: 'TG máy hư',
+                data: mayHuData,
+                backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: { top: 40 }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    title: {
+                        display: true,
+                        text: '',
+                        font: { weight: 'bold' }
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Thời gian (phút)',
+                        font: { weight: 'bold' }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 10
+                
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${formatDuration(context.parsed.y)}`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: function(context) {
+                        try {
+                            if (!context || !context.parsed) return false;
+                            const value = context.parsed.y;
+                            return value !== null && value !== undefined && value > 0;
+                        } catch (error) {
+                            return false;
+                        }
+                    },
+                    anchor: 'center',
+                    align: 'center',
+                    color: 'black',
+                    font: { size: 10, weight: 'bold' },
+                    formatter: function(value, context) {
+                        try {
+                            if (!value || value <= 0) return '';
+                            
+                            // Tính tổng cột
+                            const dataIndex = context.dataIndex;
+                            const total = context.chart.data.datasets.reduce((sum, dataset) => {
+                                return sum + (dataset.data[dataIndex] || 0);
+                            }, 0);
+                            
+                            if (total === 0) return '';
+                            
+                            const percent = ((value / total) * 100).toFixed(1);
+                            
+                            // Format thành giờ phút
+                            const hours = Math.floor(value / 60);
+                            const minutes = Math.floor(value % 60);
+                            let timeStr = '';
+                            
+                            if (hours > 0) {
+                                timeStr = `${hours} giờ${minutes > 0 ? ' ' + minutes + ' phút' : ''}`;
+                            } else {
+                                timeStr = `${minutes} phút`;
+                            }
+                            
+                            return `${percent}% (${timeStr})`;
+                        } catch (error) {
+                            return '';
+                        }
+                    },
+                    textStrokeColor: 'white',
+                    textStrokeWidth: 1,
+                    padding: 4
+                }
+            }
+        }
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -10215,17 +11020,20 @@ console.log('✅ Hệ thống biểu đồ đã được khởi tạo hoàn tấ
 // Hàm chuyển đổi format US (1,000) thành số
 function parseUSFormat(value) {
     if (!value || value === '' || value === null || value === undefined) return 0;
-    
+
     // Nếu đã là số thì return luôn
     if (typeof value === 'number') return value;
-    
+
     // Chuyển thành string và xử lý
     const stringValue = value.toString().trim();
     if (stringValue === '') return 0;
-    
+
     // Loại bỏ dấu phẩy và chuyển thành số
     const cleaned = stringValue.replace(/,/g, '');
     const parsed = parseFloat(cleaned);
-    
+
     return isNaN(parsed) ? 0 : parsed;
 }
+
+
+

@@ -30,6 +30,9 @@
         <script
             src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
         <!-- Custom CSS -->
         <link rel="stylesheet" href="Bieudo.css">
         <link rel="stylesheet" href="../../auth.css">
@@ -412,11 +415,14 @@
                                         xuất theo máy</h6>
                                 </div>
                                 <div class="card-body">
-                                    <div style="height: 400px; position: relative;">
-                                        <button class="chart-expand-btn" onclick="openFullscreen('machineStackedChart', 'Sản xuất theo máy')">
+                                    <div
+                                        style="height: 400px; position: relative;">
+                                        <button class="chart-expand-btn"
+                                            onclick="openFullscreen('machineStackedChart', 'Sản xuất theo máy')">
                                             <i class="fas fa-expand"></i>
                                         </button>
-                                        <canvas id="machineStackedChart"></canvas>
+                                        <canvas
+                                            id="machineStackedChart"></canvas>
                                     </div>
                                 </div>
                             </div>
@@ -446,11 +452,13 @@
                                     <!-- Biểu đồ tổng thời gian -->
                                     <div class="col-6 mb-3">
                                         <div class="text-center">
-                                            <h6 >Tổng thời gian</h6>
+                                            <h6>Tổng thời gian</h6>
                                             <div class="chart-container"
                                                 style="height: 300px;">
-                                                <button class="chart-expand-btn" onclick="openFullscreen('timeChart', 'Tổng thời gian')">
-                                                    <i class="fas fa-expand"></i>
+                                                <button class="chart-expand-btn"
+                                                    onclick="openFullscreen('timeChart', 'Tổng thời gian')">
+                                                    <i
+                                                        class="fas fa-expand"></i>
                                                 </button>
                                                 <canvas id="timeChart"></canvas>
                                             </div>
@@ -458,12 +466,16 @@
                                     </div>
                                     <div class="col-6 mb-3">
                                         <div class="text-center">
-                                            <h6 >Tổng thời gian</h6>
-                                            <div class="chart-container" style="height: 350px;">
-                                                <button class="chart-expand-btn" onclick="openFullscreen('sampleProductTimeChart', 'Tổng thời gian')">
-                                                    <i class="fas fa-expand"></i>
+                                            <h6>Tổng thời gian</h6>
+                                            <div class="chart-container"
+                                                style="height: 350px;">
+                                                <button class="chart-expand-btn"
+                                                    onclick="openFullscreen('sampleProductTimeChart', 'Tổng thời gian')">
+                                                    <i
+                                                        class="fas fa-expand"></i>
                                                 </button>
-                                                <canvas id="sampleProductTimeChart"></canvas>
+                                                <canvas
+                                                    id="sampleProductTimeChart"></canvas>
                                             </div>
                                         </div>
                                     </div>
@@ -473,14 +485,34 @@
                                             <h6 class="mb-2">Lý do dừng máy</h6>
                                             <div class="chart-container"
                                                 style="height: 350px;">
-                                                <button class="chart-expand-btn" onclick="openFullscreen('stopReasonChart', 'Lý do dừng máy')">
-                                                    <i class="fas fa-expand"></i>
+                                                <button class="chart-expand-btn"
+                                                    onclick="openFullscreen('stopReasonChart', 'Lý do dừng máy')">
+                                                    <i
+                                                        class="fas fa-expand"></i>
                                                 </button>
                                                 <canvas
                                                     id="stopReasonChart"></canvas>
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="col-12 mt-3">
+                                        <div class="text-center">
+                                            <h6 class="mb-2">Thời gian theo
+                                                máy</h6>
+                                            <div class="chart-container"
+                                                style="height: 350px;">
+                                                <button class="chart-expand-btn"
+                                                    onclick="openFullscreen('machineTimeChart', 'Thời gian theo máy')">
+                                                    <i
+                                                        class="fas fa-expand"></i>
+                                                </button>
+                                                <canvas
+                                                    id="machineTimeChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -510,112 +542,181 @@
                                     <div class="row">
                                         <div
                                             class="col-6 border-end">
-                                            <div  style="border-left: 4px solid #2495d2; padding-left: 10px;">
-                                               <div class="mb-3">
-                                                <div
-                                                    class="d-flex justify-content-between">
-                                                    <span><i
-                                                            class="fa-solid fa-circle-play me-2"
-                                                            style="color: rgb(174, 195, 214);"></i>Thời
-                                                        gian chạy
-                                                        máy:</span>
-                                                    <strong id="runTime">0 giờ 0
-                                                        phút</strong>
+                                            <div
+                                                style="border-left: 4px solid #2495d2; padding-left: 10px;">
+                                                <div class="mb-3">
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fa-solid fa-circle-play me-2"
+                                                                style="color: rgb(174, 195, 214);"></i>Thời
+                                                            gian chạy
+                                                            máy:</span>
+                                                        <strong id="runTime">0
+                                                            giờ 0
+                                                            phút</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fas fa-tools me-2"
+                                                                style="color: rgb(224, 202, 162);"></i>Thời
+                                                            gian canh
+                                                            máy:</span>
+                                                        <strong id="setupTime">0
+                                                            giờ
+                                                            0 phút</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fas fa-pause-circle me-2"
+                                                                style="color: rgb(242, 174, 174);"></i>Thời
+                                                            gian khác:</span>
+                                                        <strong id="otherTime">0
+                                                            giờ
+                                                            0 phút</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fas fa-clock text-primary me-2"></i>Tổng
+                                                            thời
+                                                            gian:</span>
+                                                        <strong id="totalTime">0
+                                                            giờ
+                                                            0 phút</strong>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="mb-3">
-                                                <div
-                                                    class="d-flex justify-content-between">
-                                                    <span><i
-                                                            class="fas fa-tools me-2"
-                                                            style="color: rgb(224, 202, 162);"></i>Thời
-                                                        gian canh
-                                                        máy:</span>
-                                                    <strong id="setupTime">0 giờ
-                                                        0 phút</strong>
-                                                </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <div
-                                                    class="d-flex justify-content-between">
-                                                    <span><i
-                                                            class="fas fa-pause-circle me-2"
-                                                            style="color: rgb(242, 174, 174);"></i>Thời
-                                                        gian khác:</span>
-                                                    <strong id="otherTime">0 giờ
-                                                        0 phút</strong>
-                                                </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <div
-                                                    class="d-flex justify-content-between">
-                                                    <span><i
-                                                            class="fas fa-clock text-primary me-2"></i>Tổng
-                                                        thời
-                                                        gian:</span>
-                                                    <strong id="totalTime">0 giờ
-                                                        0 phút</strong>
-                                                </div>
-                                            </div> 
-                                            </div>
-                                            
+
                                         </div>
 
                                         <div class="col-6">
                                             <!-- Nhóm Sản xuất -->
-                                            <div style="border-left: 4px solid #28a745; padding-left: 10px; margin-bottom: 15px;">
-                                                <h6 style="color: #28a745; margin-bottom: 10px;"><i class="fas fa-industry me-2"></i>Sản xuất</h6>
+                                            <div
+                                                style="border-left: 4px solid #28a745; padding-left: 10px; margin-bottom: 15px;">
+                                                <h6
+                                                    style="color: #28a745; margin-bottom: 10px;"><i
+                                                        class="fas fa-industry me-2"></i>Sản
+                                                    xuất</h6>
                                                 <div class="mb-2">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span><i class="fa-solid fa-circle-play me-2" style="color: rgb(119, 191, 220);"></i>Thời gian sản xuất:</span>
-                                                        <strong id="productionTime">0 giờ 0 phút</strong>
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fa-solid fa-circle-play me-2"
+                                                                style="color: rgb(119, 191, 220);"></i>Thời
+                                                            gian sản
+                                                            xuất:</span>
+                                                        <strong
+                                                            id="productionTime">0
+                                                            giờ 0 phút</strong>
                                                     </div>
                                                 </div>
                                                 <div class="mb-2">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span><i class="fas fa-tools me-2" style="color: rgb(224, 202, 162);"></i>TG canh máy sản xuất:</span>
-                                                        <strong id="setupTimeRight">0 giờ 0 phút</strong>
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fas fa-tools me-2"
+                                                                style="color: rgb(224, 202, 162);"></i>TG
+                                                            canh máy sản
+                                                            xuất:</span>
+                                                        <strong
+                                                            id="setupTimeRight">0
+                                                            giờ 0 phút</strong>
                                                     </div>
                                                 </div>
                                                 <div class="mb-2">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span><i class="fas fa-pause-circle me-2" style="color: rgb(242, 174, 174);"></i>TG dừng máy sản xuất:</span>
-                                                        <strong id="stopTimeRight">0 giờ 0 phút</strong>
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fas fa-pause-circle me-2"
+                                                                style="color: rgb(242, 174, 174);"></i>TG
+                                                            dừng máy sản
+                                                            xuất:</span>
+                                                        <strong
+                                                            id="stopTimeRight">0
+                                                            giờ 0 phút</strong>
                                                     </div>
                                                 </div>
-                                                <div class="mb-2" style="border-top: 1px solid #dee2e6; padding-top: 5px;">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span><i class="fas fa-clock text-success me-2"></i><strong>Tổng TG sản xuất:</strong></span>
-                                                        <strong id="totalTimeRight" style="color: #28a745;">0 giờ 0 phút</strong>
+                                                <div class="mb-2"
+                                                    style="border-top: 1px solid #dee2e6; padding-top: 5px;">
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fas fa-clock text-success me-2"></i><strong>Tổng
+                                                                TG sản
+                                                                xuất:</strong></span>
+                                                        <strong
+                                                            id="totalTimeRight"
+                                                            style="color: #28a745;">0
+                                                            giờ 0 phút</strong>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             <!-- Nhóm Chạy mẫu -->
-                                            <div style="border-left: 4px solid #ffc107; padding-left: 10px;">
-                                                <h6 style="color: #ffc107; margin-bottom: 10px;"><i class="fas fa-flask me-2"></i>Chạy mẫu</h6>
+                                            <div
+                                                style="border-left: 4px solid #ffc107; padding-left: 10px;">
+                                                <h6
+                                                    style="color: #ffc107; margin-bottom: 10px;"><i
+                                                        class="fas fa-flask me-2"></i>Chạy
+                                                    mẫu</h6>
                                                 <div class="mb-2">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span><i class="fa-solid fa-circle-play me-2" style="color: rgb(119, 191, 220);"></i>Thời gian chạy mẫu:</span>
-                                                        <strong id="sampleTime">0 giờ 0 phút</strong>
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fa-solid fa-circle-play me-2"
+                                                                style="color: rgb(119, 191, 220);"></i>Thời
+                                                            gian chạy
+                                                            mẫu:</span>
+                                                        <strong
+                                                            id="sampleTime">0
+                                                            giờ 0 phút</strong>
                                                     </div>
                                                 </div>
                                                 <div class="mb-2">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span><i class="fas fa-tools me-2" style="color: rgb(224, 202, 162);"></i>TG canh mẫu:</span>
-                                                        <strong id="sampleSetupTime">0 giờ 0 phút</strong>
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fas fa-tools me-2"
+                                                                style="color: rgb(224, 202, 162);"></i>TG
+                                                            canh mẫu:</span>
+                                                        <strong
+                                                            id="sampleSetupTime">0
+                                                            giờ 0 phút</strong>
                                                     </div>
                                                 </div>
                                                 <div class="mb-2">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span><i class="fas fa-pause-circle me-2" style="color: rgb(242, 174, 174);"></i>TG dừng máy:</span>
-                                                        <strong id="sampleStopTime">0 giờ 0 phút</strong>
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fas fa-pause-circle me-2"
+                                                                style="color: rgb(242, 174, 174);"></i>TG
+                                                            dừng máy:</span>
+                                                        <strong
+                                                            id="sampleStopTime">0
+                                                            giờ 0 phút</strong>
                                                     </div>
                                                 </div>
-                                                <div class="mb-2" style="border-top: 1px solid #dee2e6; padding-top: 5px;">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span><i class="fas fa-clock text-warning me-2"></i><strong>Tổng TG chạy mẫu:</strong></span>
-                                                        <strong id="totalSampleTime" style="color: #ffc107;">0 giờ 0 phút</strong>
+                                                <div class="mb-2"
+                                                    style="border-top: 1px solid #dee2e6; padding-top: 5px;">
+                                                    <div
+                                                        class="d-flex justify-content-between">
+                                                        <span><i
+                                                                class="fas fa-clock text-warning me-2"></i><strong>Tổng
+                                                                TG chạy
+                                                                mẫu:</strong></span>
+                                                        <strong
+                                                            id="totalSampleTime"
+                                                            style="color: #ffc107;">0
+                                                            giờ 0 phút</strong>
                                                     </div>
                                                 </div>
                                             </div>
@@ -665,7 +766,8 @@
                             <div class="card-body">
                                 <div class="chart-container"
                                     style="height: 400px;">
-                                    <button class="chart-expand-btn" onclick="openFullscreen('topCustomersChart', 'Top 10 khách hàng')">
+                                    <button class="chart-expand-btn"
+                                        onclick="openFullscreen('topCustomersChart', 'Top 10 khách hàng')">
                                         <i class="fas fa-expand"></i>
                                     </button>
                                     <canvas id="topCustomersChart"></canvas>
@@ -685,7 +787,8 @@
                             <div class="card-body">
                                 <div class="chart-container"
                                     style="height: 400px;">
-                                    <button class="chart-expand-btn" onclick="openFullscreen('topProductsChart', 'Top 10 mã sản phẩm')">
+                                    <button class="chart-expand-btn"
+                                        onclick="openFullscreen('topProductsChart', 'Top 10 mã sản phẩm')">
                                         <i class="fas fa-expand"></i>
                                     </button>
                                     <canvas id="topProductsChart"></canvas>
@@ -696,23 +799,27 @@
                 </div>
             </div>
 
-
-
             <div class="row mt-4">
                 <div class="col-6">
                     <!-- Top 10 Tốc độ máy trái -->
                     <div class="card h-100">
                         <div class="card-header">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h6><i class="fas fa-tachometer-alt me-2"></i>Top 10 Tốc độ - Máy trái</h6>
-                                <select class="form-select form-select-sm" id="speedMachineSelectLeft" style="width: 150px;">
-                                    <option value="">Chọn máy</option>
+                            <div
+                                class="d-flex justify-content-between align-items-center">
+                                <h6><i
+                                        class="fas fa-tachometer-alt me-2"></i>Top
+                                    10 Tốc độ - Máy trái</h6>
+                                <select class="form-select form-select-sm"
+                                    id="speedMachineSelectLeft"
+                                    style="width: 150px;">
+                                    <option value>Chọn máy</option>
                                 </select>
                             </div>
                         </div>
                         <div class="card-body">
                             <div class="chart-container" style="height: 400px;">
-                                <button class="chart-expand-btn" onclick="openFullscreen('topSpeedLeftChart', 'Top 10 tốc độ máy trái')">
+                                <button class="chart-expand-btn"
+                                    onclick="openFullscreen('topSpeedLeftChart', 'Top 10 tốc độ máy trái')">
                                     <i class="fas fa-expand"></i>
                                 </button>
                                 <canvas id="topSpeedLeftChart"></canvas>
@@ -724,16 +831,22 @@
                     <!-- Top 10 Tốc độ máy phải -->
                     <div class="card h-100">
                         <div class="card-header">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h6><i class="fas fa-tachometer-alt me-2"></i>Top 10 Tốc độ - Máy phải</h6>
-                                <select class="form-select form-select-sm" id="speedMachineSelectRight" style="width: 150px;">
-                                    <option value="">Chọn máy</option>
+                            <div
+                                class="d-flex justify-content-between align-items-center">
+                                <h6><i
+                                        class="fas fa-tachometer-alt me-2"></i>Top
+                                    10 Tốc độ - Máy phải</h6>
+                                <select class="form-select form-select-sm"
+                                    id="speedMachineSelectRight"
+                                    style="width: 150px;">
+                                    <option value>Chọn máy</option>
                                 </select>
                             </div>
                         </div>
                         <div class="card-body">
                             <div class="chart-container" style="height: 400px;">
-                                <button class="chart-expand-btn" onclick="openFullscreen('topSpeedRightChart', 'Top 10 tốc độ máy phải')">
+                                <button class="chart-expand-btn"
+                                    onclick="openFullscreen('topSpeedRightChart', 'Top 10 tốc độ máy phải')">
                                     <i class="fas fa-expand"></i>
                                 </button>
                                 <canvas id="topSpeedRightChart"></canvas>
@@ -742,8 +855,6 @@
                     </div>
                 </div>
             </div>
-
-            
 
         </div>
 
@@ -781,19 +892,18 @@
             </div>
         </div>
 
-
         <!-- Fullscreen Chart Modal -->
-<div id="fullscreenModal" class="fullscreen-modal">
-    <div class="fullscreen-content">
-        <button class="close-fullscreen" onclick="closeFullscreen()">&times;</button>
-        <div id="fullscreenTitle" style="text-align: center; margin-bottom: 20px; font-size: 18px; font-weight: bold;"></div>
-        <div style="height: calc(100% - 60px); position: relative;">
-            <canvas id="fullscreenCanvas"></canvas>
+        <div id="fullscreenModal" class="fullscreen-modal">
+            <div class="fullscreen-content">
+                <button class="close-fullscreen"
+                    onclick="closeFullscreen()">&times;</button>
+                <div id="fullscreenTitle"
+                    style="text-align: center; margin-bottom: 20px; font-size: 23px; font-weight: bold;"></div>
+                <div style="height: calc(100% - 60px); position: relative;">
+                    <canvas id="fullscreenCanvas"></canvas>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
-
-
 
         <!-- Scripts -->
         <script
