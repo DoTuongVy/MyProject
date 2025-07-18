@@ -119,11 +119,14 @@
             <!-- Filter Section -->
             <div class="row mb-4">
                 <div id="filterSection">
-                    <div class="card">
+                    <div class="card card-custom border-left-main" style="border-left: 7px solid #d0bb2c;">
                         <div
-                            class="card-header d-flex justify-content-between align-items-center">
-                            <h5><i class="fas fa-filter me-2"></i>Điều kiện
-                                lọc</h5>
+                            class="d-flex justify-content-between align-items-center label-title" style=" background-color:rgb(242, 244, 211);">
+                            <div>
+                                <i class="fas fa-filter me-2"></i>Điều kiện
+                                lọc
+                            </div>
+                            
                             <button id="toggleFilterBtn"
                                 class="btn btn-light btn-sm"><i
                                     class="fas fa-bars"></i></button>
@@ -223,10 +226,10 @@
                 <div class="row mb-4">
                     <!-- Cột Thời gian -->
                     <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-info text-white">
-                                <h5><i class="fas fa-clock me-2"></i>Thống kê
-                                    thời gian</h5>
+                        <div class="card card-custom border-left-main">
+                            <div class="label-title ">
+                                <i class="fas fa-clock me-2"></i>Thống kê
+                                    thời gian
                             </div>
                             <div class="card-body">
                                 <div class="row mb-3">
@@ -300,10 +303,10 @@
 
                     <!-- Cột Số lượng -->
                     <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-warning text-white">
-                                <h5><i class="fas fa-chart-bar me-2"></i>Thống
-                                    kê số lượng</h5>
+                        <div class="card card-custom border-left-main">
+                            <div class="label-title">
+                                <i class="fas fa-chart-bar me-2"></i>Thống
+                                    kê số lượng
                             </div>
                             <div class="card-body">
                                 <div class="row mb-3">
@@ -377,10 +380,10 @@
                 <div class="row mb-4">
                     <!-- Biểu đồ số lượng sản xuất -->
                     <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header">
-                                <h6><i class="fas fa-chart-pie me-2"></i>Số
-                                    lượng sản xuất</h6>
+                        <div class="card card-custom border-left-main ">
+                            <div class="label-title">
+                                <i class="fas fa-chart-pie me-2"></i>Số
+                                    lượng sản xuất
                             </div>
                             <div class="card-body">
                                 <!-- Hiển thị biểu đồ tổng -->
@@ -398,21 +401,22 @@
 
                     <!-- Phân tích sản xuất -->
                     <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header">
-                                <h6><i class="fas fa-analytics me-2"></i>Phân
-                                    tích sản xuất</h6>
+                        <div class="card  card-custom border-left-main">
+                            <div class="label-title">
+                                <i class="fas fa-analytics me-2"></i>Phân
+                                    tích sản xuất
                             </div>
                             <div class="card-body">
                                 <div id="quantityAnalysis">
                                     <!-- Nội dung phân tích sản xuất sẽ được load động -->
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6><i class="fas fa-chart-bar me-2"></i>Sản
-                                        xuất theo máy</h6>
+                            <div class="card mt-4 card-custom border-left-main">
+                                <div class="label-title">
+                                    <i class="fas fa-chart-bar me-2"></i>Sản
+                                        xuất theo máy
                                 </div>
                                 <div class="card-body">
                                     <div
@@ -427,8 +431,6 @@
                                 </div>
                             </div>
 
-                        </div>
-
                     </div>
                 </div>
 
@@ -442,10 +444,10 @@
                 <div class="row">
                     <!-- Biểu đồ thời gian sản xuất -->
                     <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header">
-                                <h6><i class="fas fa-chart-pie me-2"></i>Thời
-                                    gian sản xuất</h6>
+                        <div class="card h-100  card-custom border-left-main">
+                            <div class="label-title">
+                                <i class="fas fa-chart-pie me-2"></i>Thời
+                                    gian sản xuất
                             </div>
                             <div class="card-body">
                                 <div class="row">
@@ -520,8 +522,8 @@
 
                     <!-- Phân tích thời gian -->
                     <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header">
+                        <div class="card h-100  card-custom border-left-main">
+                            <div class="label-title">
                                 <h6><i class="fas fa-clock me-2"></i>Phân tích
                                     thời gian</h6>
                             </div>
@@ -735,10 +737,10 @@
 
                 <div class="row mt-4">
                     <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6><i class="fas fa-table me-2"></i>Bảng chi
-                                    tiết báo cáo</h6>
+                        <div class="card  card-custom border-left-main" style="border-left: 7px solid #7fc88a;">
+                            <div class="label-title" style=" background-color:rgb(177, 223, 204);">
+                                <i class="fas fa-table me-2"></i>Bảng chi
+                                    tiết báo cáo
                             </div>
                             <div class="card-body">
                                 <div id="detailTableContainer">

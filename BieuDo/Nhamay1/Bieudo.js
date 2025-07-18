@@ -1951,12 +1951,12 @@ function createMultipleShiftCharts(canvas, shiftData) {
     const multiContainer = document.createElement('div');
     multiContainer.className = 'multi-shift-charts';
 
-    let html = '<div class="row justify-content-center">';
+    let html = '<div class="">';
 
     html += `
-    <div class="col-12">
-        <div class="text-start mb-3">
-            <h4>Sản xuất theo mã ca</h4>
+    <div class="col-12 card-custom-sub border-left-sub">
+        <div class="text-start mb-3 label-title-sub">
+            Sản xuất theo mã ca
         </div>
         <div style="height: 400px; position: relative;">
         <button class="chart-expand-btn" onclick="openFullscreen('shiftStackedChart', 'Sản xuất theo mã ca')">
@@ -3114,8 +3114,10 @@ function displayTimeAnalysis(data, filters) {
     // Chỉ hiển thị khi có lý do dừng máy (thời gian khác > 0)
     if (data.timeData && data.timeData.otherTime > 0 && data.stopReasons && data.stopReasons.length > 0) {
         html += `
-            <div class="mt-3">
-                <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Chi tiết thời gian dừng máy:</h6>
+            <div class="mt-3  card-custom-sub " style=" border-left: 6px solid rgb(199, 196, 145);">
+            <div class="label-title-sub" style=" background-color:rgb(242, 244, 211);">
+                <i class="fas fa-exclamation-triangle text-warning me-2"></i>Chi tiết thời gian dừng máy:
+                </div>
                 <div class="table-responsive">
                     <table class="table table-sm">
                         <thead class="table-light">
@@ -3165,7 +3167,7 @@ function displayTimeAnalysis(data, filters) {
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-2 text-center">
+                <div class="my-2 text-center">
                     <small class="text-muted">
                         <i class="fas fa-clock me-1"></i>
                         Tổng thời gian dừng máy: <strong>${formatDuration(totalStopTime)}</strong>
@@ -5234,7 +5236,7 @@ function renderDetailTable(container, data, filters) {
     html += `
         <div class="row mt-3">
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng WS</h6>
                         <h4 class="text-primary">${uniqueWS}</h4>
@@ -5242,7 +5244,7 @@ function renderDetailTable(container, data, filters) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng thành phẩm</h6>
                         <h4 class="text-success">${formatNumber(totalPaper)}</h4>
@@ -5250,7 +5252,7 @@ function renderDetailTable(container, data, filters) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng phế liệu</h6>
                         <h4 class="text-danger">${formatNumber(totalWaste)}</h4>
@@ -5258,7 +5260,7 @@ function renderDetailTable(container, data, filters) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng TG chạy máy</h6>
                         <h4 class="text-success">${formatDuration(totalRunTime)}</h4>
@@ -5266,7 +5268,7 @@ function renderDetailTable(container, data, filters) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng TG canh máy</h6>
                         <h4 class="text-warning">${formatDuration(totalSetupTime)}</h4>
@@ -5274,7 +5276,7 @@ function renderDetailTable(container, data, filters) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng TG dừng máy</h6>
                         <h4 class="text-danger">${formatDuration(totalStopTime)}</h4>
@@ -8321,8 +8323,10 @@ function createMachineLeaderStackedChart(shiftLeaderData) {
     stackedContainer.className = 'mt-4';
 
     stackedContainer.innerHTML = `
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4><i class="fas fa-chart-line me-2"></i>Sản xuất theo ca - Trưởng máy</h4>
+    <hr>
+    <div class="card-custom-sub border-left-sub">
+    <div class="d-flex justify-content-between align-items-center mb-3 label-title-sub">
+        <div><i class="fas fa-chart-line me-2"></i>Sản xuất theo ca - Trưởng máy</div>
         <div>
             
             <select class="form-select d-inline-block" id="leaderSelect" style="width: 200px;">
@@ -8336,16 +8340,20 @@ function createMachineLeaderStackedChart(shiftLeaderData) {
                                         </button>
         <canvas id="leaderShiftStackedChart"></canvas>
     </div>
+    </div>
 
         <hr>
-        <div class="text-start mb-3">
-            <h4><i class="fas fa-chart-bar me-2"></i>So sánh sản xuất theo trưởng máy</h4>
+<div class="card-custom-sub border-left-sub">
+
+        <div class="text-start mb-3 label-title-sub">
+            <div><i class="fas fa-chart-bar me-2"></i>So sánh sản xuất theo trưởng máy</div>
         </div>
         <div style="height: 400px; position: relative;">
         <button class="chart-expand-btn" onclick="openFullscreen('machineLeaderStackedChart', 'So sánh sản xuất theo trưởng máy')">
                                             <i class="fas fa-expand"></i>
                                         </button>
             <canvas id="machineLeaderStackedChart"></canvas>
+        </div>
         </div>
     `;
 

@@ -334,3 +334,56 @@ CSS cho hệ thống biểu đồ sản xuất
     font-size: 0.85rem;
 }
 
+
+
+
+.card-custom {
+    border-radius: 1rem;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.06);
+    margin-left: 5px;
+    border-color: #a8b4bd;
+    overflow: hidden;
+  }
+
+.card-custom-sub {
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    /* margin-left: 5px; */
+    border: 1px solid #a8b4bda7;
+    overflow: hidden;
+  }
+
+  .border-left-main {
+    border-left: 7px solid #2e3192; /* Màu border Thống kê */
+  }
+
+  .border-left-sub {
+    border-left: 6px solid #A9C8C0; /* Màu border các card con */
+  }
+
+  .label-title {
+    background-color: #d3dff4;
+    padding: 1rem 1.25rem;
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: #5b7080 ; /* Màu chữ Thống kê */
+    /* border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem; */
+    border-bottom: 2px solid #dee2e6;
+  }
+
+  
+  .label-title-sub {
+    background-color: #d3f4d6;
+    padding: 1rem 1.25rem;
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: #5b7080 ; /* Màu chữ Thống kê */
+    /* border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem; */
+    border-bottom: 2px solid #dee2e6;
+  }
+
+  .text-softgreen {
+    color: #A9C8C0;
+  }
