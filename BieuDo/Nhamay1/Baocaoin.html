@@ -1,218 +1,319 @@
 <!DOCTYPE html>
 <html lang="vi">
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Báo cáo In - Biểu đồ</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo In - Biểu đồ</title>
 
-        <!-- Bootstrap CSS -->
-        <link
-            href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
-            rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
 
-        <!-- Font Awesome -->
-        <link
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-            rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
-        <link rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
-            integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
-            crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-        <!-- Chart.js -->
-        <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-        <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 
-        <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 
-        <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-        <!-- Custom CSS -->
-        <link rel="stylesheet" href="Bieudo.css">
-        <link rel="stylesheet" href="../../auth.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="Bieudo.css">
+    <link rel="stylesheet" href="../../auth.css">
 
-        <style>
-            .chart-expand-btn {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    padding: 3px 6px;
-    cursor: pointer;
-    font-size: 12px;
-    z-index: 100;
-    opacity: 0.8;
-}
+    <style>
+        .chart-expand-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 3px 6px;
+            cursor: pointer;
+            font-size: 12px;
+            z-index: 100;
+            opacity: 0.8;
+        }
 
-.chart-expand-btn:hover {
-    opacity: 1;
-    background: #f8f9fa;
-}
+        .chart-expand-btn:hover {
+            opacity: 1;
+            background: #f8f9fa;
+        }
 
-.fullscreen-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.9);
-    z-index: 9999;
-    display: none;
-}
+        .fullscreen-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            display: none;
+        }
 
-.fullscreen-content {
-    position: relative;
-    width: 95%;
-    height: 90%;
-    margin: 2.5% auto;
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-}
+        .fullscreen-content {
+            position: relative;
+            width: 95%;
+            height: 90%;
+            margin: 2.5% auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+        }
 
-.close-fullscreen {
-    position: absolute;
-    top: -5px;
-    right: 15px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #666;
-}
-        </style>
-    </head>
+        .close-fullscreen {
+            position: absolute;
+            top: -5px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+    </style>
+</head>
 
-    <body>
-        <div class="container-fluid">
-            <!-- Header -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card bg-info text-white">
-                        <div class="card-body">
-                            <div
-                                class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h3><i class="fas fa-print me-2"></i>Báo cáo
-                                        In - Biểu đồ</h3>
-                                    <p class="mb-0">Phân tích dữ liệu sản xuất
-                                        in offset</p>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3><i class="fas fa-print me-2"></i>Báo cáo
+                                    In - Biểu đồ</h3>
+                                <p class="mb-0">Phân tích dữ liệu sản xuất
+                                    in offset</p>
+                            </div>
+                            <a href="Dashboard.html" class="btn btn-light">
+                                <i class="fas fa-arrow-left me-1"></i>Về
+                                Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="row mb-4">
+            <div id="filterSection">
+                <div class="card card-custom border-left-main" style="border-left: 7px solid #d0bb2c;">
+                    <div class="d-flex justify-content-between align-items-center label-title"
+                        style=" background-color:rgb(242, 244, 211);">
+                        <div>
+                            <i class="fas fa-filter me-2"></i>Điều kiện
+                            lọc
+                        </div>
+
+                        <button id="toggleFilterBtn" class="btn btn-light btn-sm"><i class="fas fa-bars"></i></button>
+                    </div>
+                    <div class="card-body" id="filterContent">
+                        <div class="row g-3 d-flex justify-content-center align-items-center ">
+                            <div class="col-md-3">
+                                <label for="wsInput" class="form-label">Số
+                                    WS</label>
+                                <input type="text" class="form-control" id="wsInput" placeholder="Nhập WS...">
+                            </div>
+                            <div class="col-md-3">
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="caSelect" class="form-label">Mã Ca</label>
+                                        <select class="form-select" id="caSelect">
+                                            <option value>Tất cả ca</option>
+                                            <option value="A">A (6H -
+                                                14H)</option>
+                                            <option value="B">B (14H -
+                                                22H)</option>
+                                            <option value="C">C (22H -
+                                                6H)</option>
+                                            <option value="D">D (10H -
+                                                22H)</option>
+                                            <option value="A1">A1 (6H -
+                                                18H)</option>
+                                            <option value="B1">B1 (18H -
+                                                6H)</option>
+                                            <option value="AB">AB (7H -
+                                                16H)</option>
+                                            <option value="AB-">AB- (7H -
+                                                15H)</option>
+                                            <option value="AB+">AB+ (7H -
+                                                17H)</option>
+                                            <option value="HC">HC (8H -
+                                                17H)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col">
+                                        <label for="maySelect" class="form-label">Máy</label>
+                                        <select class="form-select" id="maySelect">
+                                            <option value>Tất cả
+                                                máy</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <a href="Dashboard.html" class="btn btn-light">
-                                    <i class="fas fa-arrow-left me-1"></i>Về
-                                    Dashboard
-                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="fromDate" class="form-label">Từ
+                                            ngày</label>
+                                        <input type="date" class="form-control" id="fromDate">
+                                    </div>
+                                    <div class="col">
+                                        <label for="toDate" class="form-label">Đến
+                                            ngày</label>
+                                        <input type="date" class="form-control" id="toDate">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex justify-content-center align-items-end">
+                                <button type="button" class="btn btn-primary me-2" id="btnViewReport">
+                                    <i class="fas fa-chart-line me-1"></i>Xem
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="btnReset">
+                                    <i class="fas fa-sync me-1"></i>Reset
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Filter Section -->
-            <div class="row mb-4">
-                <div id="filterSection">
-                    <div class="card card-custom border-left-main" style="border-left: 7px solid #d0bb2c;">
-                        <div
-                            class="d-flex justify-content-between align-items-center label-title" style=" background-color:rgb(242, 244, 211);">
-                            <div>
-                                <i class="fas fa-filter me-2"></i>Điều kiện
-                                lọc
-                            </div>
-                            
-                            <button id="toggleFilterBtn"
-                                class="btn btn-light btn-sm"><i
-                                    class="fas fa-bars"></i></button>
+        <!-- Report Section -->
+        <div id="reportSection" style="display: none;">
+            <!-- Summary Stats -->
+            <div class="row mb-4" style="margin: 10px 0px;">
+                <!-- Cột Thời gian -->
+                <div class="col-md-6">
+                    <div class="card card-custom border-left-main">
+                        <div class="label-title ">
+                            <i class="fas fa-clock me-2"></i>Thống kê
+                            thời gian
                         </div>
-                        <div class="card-body" id="filterContent">
-                            <div
-                                class="row g-3 d-flex justify-content-center align-items-center ">
-                                <div class="col-md-3">
-                                    <label for="wsInput" class="form-label">Số
-                                        WS</label>
-                                    <input type="text" class="form-control"
-                                        id="wsInput" placeholder="Nhập WS...">
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="row">
-                                        <div class="col">
-                                            <label for="caSelect"
-                                                class="form-label">Mã Ca</label>
-                                            <select class="form-select"
-                                                id="caSelect">
-                                                <option value>Tất cả ca</option>
-                                                <option value="A">A (6H -
-                                                    14H)</option>
-                                                <option value="B">B (14H -
-                                                    22H)</option>
-                                                <option value="C">C (22H -
-                                                    6H)</option>
-                                                <option value="D">D (10H -
-                                                    22H)</option>
-                                                <option value="A1">A1 (6H -
-                                                    18H)</option>
-                                                <option value="B1">B1 (18H -
-                                                    6H)</option>
-                                                <option value="AB">AB (7H -
-                                                    16H)</option>
-                                                <option value="AB-">AB- (7H -
-                                                    15H)</option>
-                                                <option value="AB+">AB+ (7H -
-                                                    17H)</option>
-                                                <option value="HC">HC (8H -
-                                                    17H)</option>
-                                            </select>
-                                        </div>
-                                        <div class="col">
-                                            <label for="maySelect"
-                                                class="form-label">Máy</label>
-                                            <select class="form-select"
-                                                id="maySelect">
-                                                <option value>Tất cả
-                                                    máy</option>
-                                            </select>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="card bg-primary text-white h-100">
+                                        <div class="card-body text-center">
+                                            <h6><i class="fas fa-clock me-2"></i>Tổng
+                                                Thời Gian</h6>
+                                            <h4 id="totalTimeDisplay">0
+                                                phút</h4>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="row">
-                                        <div class="col">
-                                            <label for="fromDate"
-                                                class="form-label">Từ
-                                                ngày</label>
-                                            <input type="date"
-                                                class="form-control"
-                                                id="fromDate">
-                                        </div>
-                                        <div class="col">
-                                            <label for="toDate"
-                                                class="form-label">Đến
-                                                ngày</label>
-                                            <input type="date"
-                                                class="form-control"
-                                                id="toDate">
+                                    <div class="card bg-success text-white h-100">
+                                        <div class="card-body text-center">
+                                            <h6><i class="fas fa-play me-2"></i>Thời
+                                                Gian Làm Việc</h6>
+                                            <h4 id="workTimeDisplay">0
+                                                phút</h4>
                                         </div>
                                     </div>
                                 </div>
-                                <div
-                                    class="col-md-2 d-flex justify-content-center align-items-end">
-                                    <button type="button"
-                                        class="btn btn-primary me-2"
-                                        id="btnViewReport">
-                                        <i
-                                            class="fas fa-chart-line me-1"></i>Xem
-                                    </button>
-                                    <button type="button"
-                                        class="btn btn-secondary" id="btnReset">
-                                        <i class="fas fa-sync me-1"></i>Reset
-                                    </button>
+                                <div class="col-md-4">
+                                    <div class="card bg-danger text-white h-100">
+                                        <div class="card-body text-center">
+                                            <h6><i class="fas fa-pause me-2"></i>Thời
+                                                Gian Dừng Máy</h6>
+                                            <h4 id="stopTimeDisplay">0
+                                                phút</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Progress Bar Thời gian -->
+                            <div class="progress" style="height: 30px;">
+                                <div class="progress-bar bg-success" role="progressbar" id="workTimeProgress"
+                                    style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                                <div class="progress-bar bg-danger" role="progressbar" id="stopTimeProgress"
+                                    style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6 text-start">
+                                    <small><i class="fas fa-square text-success me-1"></i>Làm
+                                        việc: <span id="workTimePercent">0%</span></small>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <small><i class="fas fa-square text-danger me-1"></i>Dừng
+                                        máy: <span id="stopTimePercent">0%</span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cột Số lượng -->
+                <div class="col-md-6">
+                    <div class="card card-custom border-left-main h-100">
+                        <div class="label-title">
+                            <i class="fas fa-chart-bar me-2"></i>Thống
+                            kê số lượng
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="card bg-primary text-white h-100">
+                                        <div class="card-body text-center">
+                                            <h6><i class="fas fa-calculator me-2"></i>Tổng
+                                                Số Lượng</h6>
+                                            <h4 id="totalData">0</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-success text-white h-100">
+                                        <div class="card-body text-center">
+                                            <h6><i class="fas fa-boxes me-2"></i>Thành
+                                                Phẩm In</h6>
+                                            <h4 id="totalPaper">0</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-danger text-white h-100">
+                                        <div class="card-body text-center">
+                                            <h6><i class="fas fa-trash me-2"></i>Phế
+                                                Liệu</h6>
+                                            <h4 id="totalWaste">0</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Progress Bar Số lượng -->
+                            <div class="progress" style="height: 30px;">
+                                <div class="progress-bar bg-success" role="progressbar" id="paperProgress"
+                                    style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                                <div class="progress-bar bg-danger" role="progressbar" id="wasteProgress"
+                                    style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6 text-start">
+                                    <small><i class="fas fa-square text-success me-1"></i>Thành
+                                        phẩm: <span id="paperPercent">0%</span></small>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <small><i class="fas fa-square text-danger me-1"></i>Phế
+                                        liệu: <span id="wastePercent">0%</span></small>
                                 </div>
                             </div>
                         </div>
@@ -220,580 +321,294 @@
                 </div>
             </div>
 
-            <!-- Report Section -->
-            <div id="reportSection" style="display: none;">
-                <!-- Summary Stats -->
-                <div class="row mb-4">
-                    <!-- Cột Thời gian -->
-                    <div class="col-md-6">
-                        <div class="card card-custom border-left-main">
-                            <div class="label-title ">
-                                <i class="fas fa-clock me-2"></i>Thống kê
-                                    thời gian
-                            </div>
-                            <div class="card-body">
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <div
-                                            class="card bg-primary text-white h-100">
-                                            <div class="card-body text-center">
-                                                <h6><i
-                                                        class="fas fa-clock me-2"></i>Tổng
-                                                    Thời Gian</h6>
-                                                <h4 id="totalTimeDisplay">0
-                                                    phút</h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div
-                                            class="card bg-success text-white h-100">
-                                            <div class="card-body text-center">
-                                                <h6><i
-                                                        class="fas fa-play me-2"></i>Thời
-                                                    Gian Làm Việc</h6>
-                                                <h4 id="workTimeDisplay">0
-                                                    phút</h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div
-                                            class="card bg-danger text-white h-100">
-                                            <div class="card-body text-center">
-                                                <h6><i
-                                                        class="fas fa-pause me-2"></i>Thời
-                                                    Gian Dừng Máy</h6>
-                                                <h4 id="stopTimeDisplay">0
-                                                    phút</h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Progress Bar Thời gian -->
-                                <div class="progress" style="height: 30px;">
-                                    <div class="progress-bar bg-success"
-                                        role="progressbar" id="workTimeProgress"
-                                        style="width: 0%" aria-valuenow="0"
-                                        aria-valuemin="0" aria-valuemax="100">
-                                    </div>
-                                    <div class="progress-bar bg-danger"
-                                        role="progressbar" id="stopTimeProgress"
-                                        style="width: 0%" aria-valuenow="0"
-                                        aria-valuemin="0" aria-valuemax="100">
-                                    </div>
-                                </div>
-                                <div class="row mt-2">
-                                    <div class="col-6 text-start">
-                                        <small><i
-                                                class="fas fa-square text-success me-1"></i>Làm
-                                            việc: <span
-                                                id="workTimePercent">0%</span></small>
-                                    </div>
-                                    <div class="col-6 text-end">
-                                        <small><i
-                                                class="fas fa-square text-danger me-1"></i>Dừng
-                                            máy: <span
-                                                id="stopTimePercent">0%</span></small>
-                                    </div>
-                                </div>
-                            </div>
+            <!-- Charts Section Row 1: Số lượng sản xuất -->
+            <div class="row mb-4" style="margin: 10px 0px;">
+                <!-- Biểu đồ số lượng sản xuất -->
+                <div class="col-md-6">
+                    <div class="card card-custom border-left-main ">
+                        <div class="label-title">
+                            <i class="fas fa-chart-pie me-2"></i>Số
+                            lượng sản xuất
                         </div>
-                    </div>
-
-                    <!-- Cột Số lượng -->
-                    <div class="col-md-6">
-                        <div class="card card-custom border-left-main">
-                            <div class="label-title">
-                                <i class="fas fa-chart-bar me-2"></i>Thống
-                                    kê số lượng
+                        <div class="card-body">
+                            <!-- Hiển thị biểu đồ tổng -->
+                            <div class="chart-container " style="display: none;">
+                                <canvas id="quantityChart"></canvas>
                             </div>
-                            <div class="card-body">
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <div
-                                            class="card bg-primary text-white h-100">
-                                            <div class="card-body text-center">
-                                                <h6><i
-                                                        class="fas fa-calculator me-2"></i>Tổng
-                                                    Số Lượng</h6>
-                                                <h4 id="totalData">0</h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div
-                                            class="card bg-success text-white h-100">
-                                            <div class="card-body text-center">
-                                                <h6><i
-                                                        class="fas fa-boxes me-2"></i>Thành
-                                                    Phẩm In</h6>
-                                                <h4 id="totalPaper">0</h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div
-                                            class="card bg-danger text-white h-100">
-                                            <div class="card-body text-center">
-                                                <h6><i
-                                                        class="fas fa-trash me-2"></i>Phế
-                                                    Liệu</h6>
-                                                <h4 id="totalWaste">0</h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Progress Bar Số lượng -->
-                                <div class="progress" style="height: 30px;">
-                                    <div class="progress-bar bg-success"
-                                        role="progressbar" id="paperProgress"
-                                        style="width: 0%" aria-valuenow="0"
-                                        aria-valuemin="0" aria-valuemax="100">
-                                    </div>
-                                    <div class="progress-bar bg-danger"
-                                        role="progressbar" id="wasteProgress"
-                                        style="width: 0%" aria-valuenow="0"
-                                        aria-valuemin="0" aria-valuemax="100">
-                                    </div>
-                                </div>
-                                <div class="row mt-2">
-                                    <div class="col-6 text-start">
-                                        <small><i
-                                                class="fas fa-square text-success me-1"></i>Thành
-                                            phẩm: <span
-                                                id="paperPercent">0%</span></small>
-                                    </div>
-                                    <div class="col-6 text-end">
-                                        <small><i
-                                                class="fas fa-square text-danger me-1"></i>Phế
-                                            liệu: <span
-                                                id="wastePercent">0%</span></small>
-                                    </div>
-                                </div>
+                            <!-- Hiển thị biểu đồ theo mã ca -->
+                            <div class="chart-container">
+                                <canvas id="macaChart"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Charts Section Row 1: Số lượng sản xuất -->
-                <div class="row mb-4">
-                    <!-- Biểu đồ số lượng sản xuất -->
-                    <div class="col-md-6">
-                        <div class="card card-custom border-left-main ">
-                            <div class="label-title">
-                                <i class="fas fa-chart-pie me-2"></i>Số
-                                    lượng sản xuất
-                            </div>
-                            <div class="card-body">
-                                <!-- Hiển thị biểu đồ tổng -->
-                                <div class="chart-container "
-                                    style="display: none;">
-                                    <canvas id="quantityChart"></canvas>
-                                </div>
-                                <!-- Hiển thị biểu đồ theo mã ca -->
-                                <div class="chart-container">
-                                    <canvas id="macaChart"></canvas>
-                                </div>
+                <!-- Phân tích sản xuất -->
+                <div class="col-md-6">
+                    <div class="card  card-custom border-left-main">
+                        <div class="label-title">
+                            <i class="fas fa-analytics me-2"></i>Phân
+                            tích sản xuất
+                        </div>
+                        <div class="card-body">
+                            <div id="quantityAnalysis">
+                                <!-- Nội dung phân tích sản xuất sẽ được load động -->
                             </div>
                         </div>
                     </div>
 
-                    <!-- Phân tích sản xuất -->
-                    <div class="col-md-6">
-                        <div class="card  card-custom border-left-main">
-                            <div class="label-title">
-                                <i class="fas fa-analytics me-2"></i>Phân
-                                    tích sản xuất
-                            </div>
-                            <div class="card-body">
-                                <div id="quantityAnalysis">
-                                    <!-- Nội dung phân tích sản xuất sẽ được load động -->
-                                </div>
+                    <div class="card mt-4 card-custom border-left-main">
+                        <div class="label-title">
+                            <i class="fas fa-chart-bar me-2"></i>Sản
+                            xuất theo máy
+                        </div>
+                        <div class="card-body">
+                            <div style="height: 400px; position: relative;">
+                                <button class="chart-expand-btn"
+                                    onclick="openFullscreen('machineStackedChart', 'Sản xuất theo máy')">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <canvas id="machineStackedChart"></canvas>
                             </div>
                         </div>
+                    </div>
 
-                            <div class="card mt-4 card-custom border-left-main">
-                                <div class="label-title">
-                                    <i class="fas fa-chart-bar me-2"></i>Sản
-                                        xuất theo máy
-                                </div>
-                                <div class="card-body">
-                                    <div
-                                        style="height: 400px; position: relative;">
-                                        <button class="chart-expand-btn"
-                                            onclick="openFullscreen('machineStackedChart', 'Sản xuất theo máy')">
-                                            <i class="fas fa-expand"></i>
-                                        </button>
-                                        <canvas
-                                            id="machineStackedChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Charts Section Row 2: Thời gian sản xuất -->
+            <div class="row" style="margin: 10px 0px;">
+                <!-- Biểu đồ thời gian sản xuất -->
+                <div class="col-md-6">
+                    <div class="card h-100  card-custom border-left-main">
+                        <div class="label-title">
+                            <i class="fas fa-chart-pie me-2"></i>Thời
+                            gian sản xuất
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <!-- Biểu đồ tổng thời gian -->
+                                <div class="col-6 mb-3">
+                                    <div class="text-center">
+                                        <h6>Tổng thời gian</h6>
+                                        <div class="chart-container" style="height: 300px;">
+                                            <button class="chart-expand-btn"
+                                                onclick="openFullscreen('timeChart', 'Tổng thời gian')">
+                                                <i class="fas fa-expand"></i>
+                                            </button>
+                                            <canvas id="timeChart"></canvas>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                                <div class="col-6 mb-3">
+                                    <div class="text-center">
+                                        <h6>Tổng thời gian</h6>
+                                        <div class="chart-container" style="height: 350px;">
+                                            <button class="chart-expand-btn"
+                                                onclick="openFullscreen('sampleProductTimeChart', 'Tổng thời gian')">
+                                                <i class="fas fa-expand"></i>
+                                            </button>
+                                            <canvas id="sampleProductTimeChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Biểu đồ lý do dừng máy -->
+                                <div class="col-12">
+                                    <div class="text-center">
+                                        <h6 class="mb-2">Lý do dừng máy</h6>
+                                        <div class="chart-container" style="height: 350px;">
+                                            <button class="chart-expand-btn"
+                                                onclick="openFullscreen('stopReasonChart', 'Lý do dừng máy')">
+                                                <i class="fas fa-expand"></i>
+                                            </button>
+                                            <canvas id="stopReasonChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
 
+                                <div class="col-12 mt-3">
+                                    <div class="text-center">
+                                        <h6 class="mb-2">Thời gian theo
+                                            máy</h6>
+                                        <div class="chart-container" style="height: 350px;">
+                                            <button class="chart-expand-btn"
+                                                onclick="openFullscreen('machineTimeChart', 'Thời gian theo máy')">
+                                                <i class="fas fa-expand"></i>
+                                            </button>
+                                            <canvas id="machineTimeChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="row mt-4 mb-4">
-                    <div class="col-12">
-
-                    </div>
-                </div>
-
-                <!-- Charts Section Row 2: Thời gian sản xuất -->
-                <div class="row">
-                    <!-- Biểu đồ thời gian sản xuất -->
-                    <div class="col-md-6">
-                        <div class="card h-100  card-custom border-left-main">
-                            <div class="label-title">
-                                <i class="fas fa-chart-pie me-2"></i>Thời
-                                    gian sản xuất
-                            </div>
-                            <div class="card-body">
+                <!-- Phân tích thời gian -->
+                <div class="col-md-6">
+                    <div class="card h-100  card-custom border-left-main">
+                        <div class="label-title">
+                            <h6><i class="fas fa-clock me-2"></i>Phân tích
+                                thời gian</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="timeAnalysis">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span><i class="fa-solid fa-clock me-2" style="color: green;"></i>Tổng
+                                            TG làm việc:</span>
+                                        <strong id="totalWorkHours">0 giờ 0
+                                            phút</strong>
+                                    </div>
+                                </div>
+                                <hr>
                                 <div class="row">
-                                    <!-- Biểu đồ tổng thời gian -->
-                                    <div class="col-6 mb-3">
-                                        <div class="text-center">
-                                            <h6>Tổng thời gian</h6>
-                                            <div class="chart-container"
-                                                style="height: 300px;">
-                                                <button class="chart-expand-btn"
-                                                    onclick="openFullscreen('timeChart', 'Tổng thời gian')">
-                                                    <i
-                                                        class="fas fa-expand"></i>
-                                                </button>
-                                                <canvas id="timeChart"></canvas>
+                                    <div class="col-6 border-end">
+                                        <div style="border-left: 4px solid #2495d2; padding-left: 10px;">
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fa-solid fa-circle-play me-2"
+                                                            style="color: rgb(174, 195, 214);"></i>Thời
+                                                        gian chạy
+                                                        máy:</span>
+                                                    <strong id="runTime">0
+                                                        giờ 0
+                                                        phút</strong>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fas fa-tools me-2"
+                                                            style="color: rgb(224, 202, 162);"></i>Thời
+                                                        gian canh
+                                                        máy:</span>
+                                                    <strong id="setupTime">0
+                                                        giờ
+                                                        0 phút</strong>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fas fa-pause-circle me-2"
+                                                            style="color: rgb(242, 174, 174);"></i>Thời
+                                                        gian khác:</span>
+                                                    <strong id="otherTime">0
+                                                        giờ
+                                                        0 phút</strong>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fas fa-clock text-primary me-2"></i>Tổng
+                                                        thời
+                                                        gian:</span>
+                                                    <strong id="totalTime">0
+                                                        giờ
+                                                        0 phút</strong>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="col-6 mb-3">
-                                        <div class="text-center">
-                                            <h6>Tổng thời gian</h6>
-                                            <div class="chart-container"
-                                                style="height: 350px;">
-                                                <button class="chart-expand-btn"
-                                                    onclick="openFullscreen('sampleProductTimeChart', 'Tổng thời gian')">
-                                                    <i
-                                                        class="fas fa-expand"></i>
-                                                </button>
-                                                <canvas
-                                                    id="sampleProductTimeChart"></canvas>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- Biểu đồ lý do dừng máy -->
-                                    <div class="col-12">
-                                        <div class="text-center">
-                                            <h6 class="mb-2">Lý do dừng máy</h6>
-                                            <div class="chart-container"
-                                                style="height: 350px;">
-                                                <button class="chart-expand-btn"
-                                                    onclick="openFullscreen('stopReasonChart', 'Lý do dừng máy')">
-                                                    <i
-                                                        class="fas fa-expand"></i>
-                                                </button>
-                                                <canvas
-                                                    id="stopReasonChart"></canvas>
-                                            </div>
-                                        </div>
+
                                     </div>
 
-                                    <div class="col-12 mt-3">
-                                        <div class="text-center">
-                                            <h6 class="mb-2">Thời gian theo
-                                                máy</h6>
-                                            <div class="chart-container"
-                                                style="height: 350px;">
-                                                <button class="chart-expand-btn"
-                                                    onclick="openFullscreen('machineTimeChart', 'Thời gian theo máy')">
-                                                    <i
-                                                        class="fas fa-expand"></i>
-                                                </button>
-                                                <canvas
-                                                    id="machineTimeChart"></canvas>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Phân tích thời gian -->
-                    <div class="col-md-6">
-                        <div class="card h-100  card-custom border-left-main">
-                            <div class="label-title">
-                                <h6><i class="fas fa-clock me-2"></i>Phân tích
-                                    thời gian</h6>
-                            </div>
-                            <div class="card-body">
-                                <div id="timeAnalysis">
-                                    <div class="mb-3">
+                                    <div class="col-6">
+                                        <!-- Nhóm Sản xuất -->
                                         <div
-                                            class="d-flex justify-content-between">
-                                            <span><i
-                                                    class="fa-solid fa-clock me-2"
-                                                    style="color: green;"></i>Tổng
-                                                TG làm việc:</span>
-                                            <strong id="totalWorkHours">0 giờ 0
-                                                phút</strong>
-                                        </div>
-                                    </div>
-                                    <hr>
-                                    <div class="row">
-                                        <div
-                                            class="col-6 border-end">
-                                            <div
-                                                style="border-left: 4px solid #2495d2; padding-left: 10px;">
-                                                <div class="mb-3">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fa-solid fa-circle-play me-2"
-                                                                style="color: rgb(174, 195, 214);"></i>Thời
-                                                            gian chạy
-                                                            máy:</span>
-                                                        <strong id="runTime">0
-                                                            giờ 0
-                                                            phút</strong>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fas fa-tools me-2"
-                                                                style="color: rgb(224, 202, 162);"></i>Thời
-                                                            gian canh
-                                                            máy:</span>
-                                                        <strong id="setupTime">0
-                                                            giờ
-                                                            0 phút</strong>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fas fa-pause-circle me-2"
-                                                                style="color: rgb(242, 174, 174);"></i>Thời
-                                                            gian khác:</span>
-                                                        <strong id="otherTime">0
-                                                            giờ
-                                                            0 phút</strong>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fas fa-clock text-primary me-2"></i>Tổng
-                                                            thời
-                                                            gian:</span>
-                                                        <strong id="totalTime">0
-                                                            giờ
-                                                            0 phút</strong>
-                                                    </div>
+                                            style="border-left: 4px solid #28a745; padding-left: 10px; margin-bottom: 15px;">
+                                            <h6 style="color: #28a745; margin-bottom: 10px;"><i
+                                                    class="fas fa-industry me-2"></i>Sản
+                                                xuất</h6>
+                                            <div class="mb-2">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fa-solid fa-circle-play me-2"
+                                                            style="color: rgb(119, 191, 220);"></i>Thời
+                                                        gian sản
+                                                        xuất:</span>
+                                                    <strong id="productionTime">0
+                                                        giờ 0 phút</strong>
                                                 </div>
                                             </div>
-
-                                        </div>
-
-                                        <div class="col-6">
-                                            <!-- Nhóm Sản xuất -->
-                                            <div
-                                                style="border-left: 4px solid #28a745; padding-left: 10px; margin-bottom: 15px;">
-                                                <h6
-                                                    style="color: #28a745; margin-bottom: 10px;"><i
-                                                        class="fas fa-industry me-2"></i>Sản
-                                                    xuất</h6>
-                                                <div class="mb-2">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fa-solid fa-circle-play me-2"
-                                                                style="color: rgb(119, 191, 220);"></i>Thời
-                                                            gian sản
-                                                            xuất:</span>
-                                                        <strong
-                                                            id="productionTime">0
-                                                            giờ 0 phút</strong>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-2">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fas fa-tools me-2"
-                                                                style="color: rgb(224, 202, 162);"></i>TG
-                                                            canh máy sản
-                                                            xuất:</span>
-                                                        <strong
-                                                            id="setupTimeRight">0
-                                                            giờ 0 phút</strong>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-2">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fas fa-pause-circle me-2"
-                                                                style="color: rgb(242, 174, 174);"></i>TG
-                                                            dừng máy sản
-                                                            xuất:</span>
-                                                        <strong
-                                                            id="stopTimeRight">0
-                                                            giờ 0 phút</strong>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-2"
-                                                    style="border-top: 1px solid #dee2e6; padding-top: 5px;">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fas fa-clock text-success me-2"></i><strong>Tổng
-                                                                TG sản
-                                                                xuất:</strong></span>
-                                                        <strong
-                                                            id="totalTimeRight"
-                                                            style="color: #28a745;">0
-                                                            giờ 0 phút</strong>
-                                                    </div>
+                                            <div class="mb-2">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fas fa-tools me-2"
+                                                            style="color: rgb(224, 202, 162);"></i>TG
+                                                        canh máy sản
+                                                        xuất:</span>
+                                                    <strong id="setupTimeRight">0
+                                                        giờ 0 phút</strong>
                                                 </div>
                                             </div>
+                                            <div class="mb-2">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fas fa-pause-circle me-2"
+                                                            style="color: rgb(242, 174, 174);"></i>TG
+                                                        dừng máy sản
+                                                        xuất:</span>
+                                                    <strong id="stopTimeRight">0
+                                                        giờ 0 phút</strong>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2" style="border-top: 1px solid #dee2e6; padding-top: 5px;">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fas fa-clock text-success me-2"></i><strong>Tổng
+                                                            TG sản
+                                                            xuất:</strong></span>
+                                                    <strong id="totalTimeRight" style="color: #28a745;">0
+                                                        giờ 0 phút</strong>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                            <!-- Nhóm Chạy mẫu -->
-                                            <div
-                                                style="border-left: 4px solid #ffc107; padding-left: 10px;">
-                                                <h6
-                                                    style="color: #ffc107; margin-bottom: 10px;"><i
-                                                        class="fas fa-flask me-2"></i>Chạy
-                                                    mẫu</h6>
-                                                <div class="mb-2">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fa-solid fa-circle-play me-2"
-                                                                style="color: rgb(119, 191, 220);"></i>Thời
-                                                            gian chạy
-                                                            mẫu:</span>
-                                                        <strong
-                                                            id="sampleTime">0
-                                                            giờ 0 phút</strong>
-                                                    </div>
+                                        <!-- Nhóm Chạy mẫu -->
+                                        <div style="border-left: 4px solid #ffc107; padding-left: 10px;">
+                                            <h6 style="color: #ffc107; margin-bottom: 10px;"><i
+                                                    class="fas fa-flask me-2"></i>Chạy
+                                                mẫu</h6>
+                                            <div class="mb-2">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fa-solid fa-circle-play me-2"
+                                                            style="color: rgb(119, 191, 220);"></i>Thời
+                                                        gian chạy
+                                                        mẫu:</span>
+                                                    <strong id="sampleTime">0
+                                                        giờ 0 phút</strong>
                                                 </div>
-                                                <div class="mb-2">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fas fa-tools me-2"
-                                                                style="color: rgb(224, 202, 162);"></i>TG
-                                                            canh mẫu:</span>
-                                                        <strong
-                                                            id="sampleSetupTime">0
-                                                            giờ 0 phút</strong>
-                                                    </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fas fa-tools me-2"
+                                                            style="color: rgb(224, 202, 162);"></i>TG
+                                                        canh mẫu:</span>
+                                                    <strong id="sampleSetupTime">0
+                                                        giờ 0 phút</strong>
                                                 </div>
-                                                <div class="mb-2">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fas fa-pause-circle me-2"
-                                                                style="color: rgb(242, 174, 174);"></i>TG
-                                                            dừng máy:</span>
-                                                        <strong
-                                                            id="sampleStopTime">0
-                                                            giờ 0 phút</strong>
-                                                    </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fas fa-pause-circle me-2"
+                                                            style="color: rgb(242, 174, 174);"></i>TG
+                                                        dừng máy:</span>
+                                                    <strong id="sampleStopTime">0
+                                                        giờ 0 phút</strong>
                                                 </div>
-                                                <div class="mb-2"
-                                                    style="border-top: 1px solid #dee2e6; padding-top: 5px;">
-                                                    <div
-                                                        class="d-flex justify-content-between">
-                                                        <span><i
-                                                                class="fas fa-clock text-warning me-2"></i><strong>Tổng
-                                                                TG chạy
-                                                                mẫu:</strong></span>
-                                                        <strong
-                                                            id="totalSampleTime"
-                                                            style="color: #ffc107;">0
-                                                            giờ 0 phút</strong>
-                                                    </div>
+                                            </div>
+                                            <div class="mb-2" style="border-top: 1px solid #dee2e6; padding-top: 5px;">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fas fa-clock text-warning me-2"></i><strong>Tổng
+                                                            TG chạy
+                                                            mẫu:</strong></span>
+                                                    <strong id="totalSampleTime" style="color: #ffc107;">0
+                                                        giờ 0 phút</strong>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-
-                                    <hr>
-                                    <div id="stopReasonsAnalysis">
-                                        <!-- Phân tích lý do dừng máy sẽ được load động -->
-                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="card  card-custom border-left-main" style="border-left: 7px solid #7fc88a;">
-                            <div class="label-title" style=" background-color:rgb(177, 223, 204);">
-                                <i class="fas fa-table me-2"></i>Bảng chi
-                                    tiết báo cáo
-                            </div>
-                            <div class="card-body">
-                                <div id="detailTableContainer">
-                                    <!-- Bảng chi tiết sẽ được load động -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Charts Section Row 3: Top 10 Analytics -->
-        <div class=" mt-4" style="display: none;" id="topAnalyticsSection">
-            <div class="row">
-                <div class="col-6">
-                    <!-- Top 10 Khách hàng -->
-                    <div class>
-                        <div class="card h-100">
-                            <div class="card-header">
-                                <h6><i class="fas fa-users me-2"></i>Top 10
-                                    Khách hàng</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="chart-container"
-                                    style="height: 400px;">
-                                    <button class="chart-expand-btn"
-                                        onclick="openFullscreen('topCustomersChart', 'Top 10 khách hàng')">
-                                        <i class="fas fa-expand"></i>
-                                    </button>
-                                    <canvas id="topCustomersChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <!-- Top 10 Mã sản phẩm -->
-                    <div class>
-                        <div class="card h-100">
-                            <div class="card-header">
-                                <h6><i class="fas fa-boxes me-2"></i>Top 10 Mã
-                                    sản phẩm</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="chart-container"
-                                    style="height: 400px;">
-                                    <button class="chart-expand-btn"
-                                        onclick="openFullscreen('topProductsChart', 'Top 10 mã sản phẩm')">
-                                        <i class="fas fa-expand"></i>
-                                    </button>
-                                    <canvas id="topProductsChart"></canvas>
+                                <hr>
+                                <div id="stopReasonsAnalysis">
+                                    <!-- Phân tích lý do dừng máy sẽ được load động -->
                                 </div>
                             </div>
                         </div>
@@ -801,57 +616,16 @@
                 </div>
             </div>
 
-            <div class="row mt-4">
-                <div class="col-6">
-                    <!-- Top 10 Tốc độ máy trái -->
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <div
-                                class="d-flex justify-content-between align-items-center">
-                                <h6><i
-                                        class="fas fa-tachometer-alt me-2"></i>Top
-                                    10 Tốc độ - Máy trái</h6>
-                                <select class="form-select form-select-sm"
-                                    id="speedMachineSelectLeft"
-                                    style="width: 150px;">
-                                    <option value>Chọn máy</option>
-                                </select>
-                            </div>
+            <div class="row mt-4" style="margin: 10px 0px;">
+                <div class="col-12">
+                    <div class="card  card-custom border-left-main" style="border-left: 7px solid #7fc88a;">
+                        <div class="label-title" style=" background-color:rgb(177, 223, 204);">
+                            <i class="fas fa-table me-2"></i>Bảng chi
+                            tiết báo cáo
                         </div>
                         <div class="card-body">
-                            <div class="chart-container" style="height: 400px;">
-                                <button class="chart-expand-btn"
-                                    onclick="openFullscreen('topSpeedLeftChart', 'Top 10 tốc độ máy trái')">
-                                    <i class="fas fa-expand"></i>
-                                </button>
-                                <canvas id="topSpeedLeftChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <!-- Top 10 Tốc độ máy phải -->
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <div
-                                class="d-flex justify-content-between align-items-center">
-                                <h6><i
-                                        class="fas fa-tachometer-alt me-2"></i>Top
-                                    10 Tốc độ - Máy phải</h6>
-                                <select class="form-select form-select-sm"
-                                    id="speedMachineSelectRight"
-                                    style="width: 150px;">
-                                    <option value>Chọn máy</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="chart-container" style="height: 400px;">
-                                <button class="chart-expand-btn"
-                                    onclick="openFullscreen('topSpeedRightChart', 'Top 10 tốc độ máy phải')">
-                                    <i class="fas fa-expand"></i>
-                                </button>
-                                <canvas id="topSpeedRightChart"></canvas>
+                            <div id="detailTableContainer">
+                                <!-- Bảng chi tiết sẽ được load động -->
                             </div>
                         </div>
                     </div>
@@ -859,59 +633,159 @@
             </div>
 
         </div>
+    </div>
 
-        <!-- Thêm section mới sau bảng chi tiết -->
-        <div class="row mt-4" id="yearlyChartsSection">
-            <div class="col-12">
-                <div class="card">
-                    <div
-                        class="card-header d-flex justify-content-between align-items-center">
-                        <h6><i class="fas fa-chart-line me-2"></i>Biểu đồ theo
-                            năm - Tất cả máy (12 tháng)</h6>
-                        <div>
-                            <label for="yearSelectChart"
-                                class="form-label me-2">Năm:</label>
-                            <select class="form-select d-inline-block"
-                                id="yearSelectChart" style="width: auto;">
-                                <!-- Sẽ được load động -->
+    <!-- Charts Section Row 3: Top 10 Analytics -->
+    <div class=" mt-4 mx-2" style="display: none;" id="topAnalyticsSection">
+        <div class="row" style="margin: 10px 0px;">
+            <div class="col-6">
+                <!-- Top 10 Khách hàng -->
+                <div class>
+                    <div class="card h-100 card-custom border-left-main">
+                        <div class="label-title">
+                            <i class="fas fa-users me-2"></i>Top 10
+                            Khách hàng
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="height: 400px;">
+                                <button class="chart-expand-btn"
+                                    onclick="openFullscreen('topCustomersChart', 'Top 10 khách hàng')">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <canvas id="topCustomersChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <!-- Top 10 Mã sản phẩm -->
+                <div class>
+                    <div class="card h-100 card-custom border-left-main">
+                        <div class="label-title">
+                            <i class="fas fa-boxes me-2"></i>Top 10 Mã
+                            sản phẩm
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="height: 400px;">
+                                <button class="chart-expand-btn"
+                                    onclick="openFullscreen('topProductsChart', 'Top 10 mã sản phẩm')">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <canvas id="topProductsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4" style="margin: 10px 0px;">
+            <div class="col-6">
+                <!-- Top 10 Tốc độ máy trái -->
+                <div class="card h-100 card-custom border-left-main">
+                    <div class="label-title">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-tachometer-alt me-2"></i>Top
+                            10 Tốc độ - Máy trái
+                            </div>
+                            
+                            <select class="form-select form-select-sm" id="speedMachineSelectLeft"
+                                style="width: 150px;">
+                                <option value>Chọn máy</option>
                             </select>
                         </div>
                     </div>
-                    <div class="card-body" id="yearlyChartsContainer">
-                        <!-- Biểu đồ sẽ được tạo động -->
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 400px;">
+                            <button class="chart-expand-btn"
+                                onclick="openFullscreen('topSpeedLeftChart', 'Top 10 tốc độ máy trái')">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <canvas id="topSpeedLeftChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <!-- Top 10 Tốc độ máy phải -->
+                <div class="card h-100 card-custom border-left-main">
+                    <div class="label-title">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                              <i class="fas fa-tachometer-alt me-2"></i>Top
+                            10 Tốc độ - Máy phải  
+                            </div>
+                            
+                            <select class="form-select form-select-sm" id="speedMachineSelectRight"
+                                style="width: 150px;">
+                                <option value>Chọn máy</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 400px;">
+                            <button class="chart-expand-btn"
+                                onclick="openFullscreen('topSpeedRightChart', 'Top 10 tốc độ máy phải')">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <canvas id="topSpeedRightChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Loading Overlay -->
-        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-            <div class="text-center text-white">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Đang tải...</span>
+    </div>
+
+    <!-- Thêm section mới sau bảng chi tiết -->
+    <div class="row mt-4 mx-1" id="yearlyChartsSection">
+        <div class="col-12">
+            <div class="card card-custom border-left-main">
+                <div class="label-title d-flex justify-content-between align-items-center">
+                    <div><i class="fas fa-chart-line me-2"></i>Biểu đồ theo
+                        năm - Tất cả máy (12 tháng)</div>
+                    <div>
+                        <label for="yearSelectChart" class="form-label me-2">Năm:</label>
+                        <select class="form-select d-inline-block" id="yearSelectChart" style="width: auto;">
+                            <!-- Sẽ được load động -->
+                        </select>
+                    </div>
                 </div>
-                <div class="mt-2">Đang tải dữ liệu...</div>
+                <div class="card-body" id="yearlyChartsContainer">
+                    <!-- Biểu đồ sẽ được tạo động -->
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- Fullscreen Chart Modal -->
-        <div id="fullscreenModal" class="fullscreen-modal">
-            <div class="fullscreen-content">
-                <button class="close-fullscreen"
-                    onclick="closeFullscreen()">&times;</button>
-                <div id="fullscreenTitle"
-                    style="text-align: center; margin-bottom: 20px; font-size: 23px; font-weight: bold;"></div>
-                <div style="height: calc(100% - 60px); position: relative;">
-                    <canvas id="fullscreenCanvas"></canvas>
-                </div>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="text-center text-white">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+            <div class="mt-2">Đang tải dữ liệu...</div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Chart Modal -->
+    <div id="fullscreenModal" class="fullscreen-modal">
+        <div class="fullscreen-content">
+            <button class="close-fullscreen" onclick="closeFullscreen()">&times;</button>
+            <div id="fullscreenTitle"
+                style="text-align: center; margin-bottom: 20px; font-size: 23px; font-weight: bold;"></div>
+            <div style="height: calc(100% - 60px); position: relative;">
+                <canvas id="fullscreenCanvas"></canvas>
             </div>
         </div>
+    </div>
 
-        <!-- Scripts -->
-        <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-        <script src="Bieudo.js"></script>
-        <script src="../../auth.js"></script>
-    </body>
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="Bieudo.js"></script>
+    <script src="../../auth.js"></script>
+</body>
 
 </html>

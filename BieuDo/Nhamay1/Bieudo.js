@@ -143,8 +143,8 @@ function renderModules(modules) {
 
     container.innerHTML = modules.map(module => `
         <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card module-card ${module.color}" onclick="navigateToModule('${module.url}')">
-                <div class="card-body">
+            <div class="card module-card card-custom-sub border-left-sub ${module.color}" onclick="navigateToModule('${module.url}')">
+                <div class="label-title-sub">
                     <div class="module-icon">
                         <i class="${module.icon}"></i>
                     </div>
@@ -217,27 +217,209 @@ function setupInEvents() {
     const fromDate = document.getElementById('fromDate');
     const toDate = document.getElementById('toDate');
 
-    if (fromDate) {
-        fromDate.addEventListener('focus', function () {
-            if (!this.value) {
-                const today = new Date().toISOString().split('T')[0];
-                this.value = today;
-            }
-        });
-    }
-
-    if (toDate) {
-        toDate.addEventListener('focus', function () {
-            if (!this.value) {
-                const today = new Date().toISOString().split('T')[0];
-                this.value = today;
-            }
-        });
-    }
+    
+    // Thêm xử lý sticky filter
+setupStickyFilter();
 
 
 }
 
+
+
+
+// Hàm debounce để tối ưu performance
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+
+
+// Hàm xử lý sticky filter
+function setupStickyFilter() {
+    const filterSection = document.getElementById('filterSection');
+    if (!filterSection) return;
+
+    // Tạo bản sao sticky
+    const stickyFilter = filterSection.cloneNode(true);
+    stickyFilter.id = 'filterSectionSticky';
+    stickyFilter.className = 'filter-section-sticky';
+    
+    // Tạo placeholder
+    const placeholder = document.createElement('div');
+    placeholder.className = 'filter-placeholder';
+    placeholder.id = 'filterPlaceholder';
+    
+    // Chèn sticky filter và placeholder vào đầu body
+    document.body.insertBefore(stickyFilter, document.body.firstChild);
+    filterSection.parentNode.insertBefore(placeholder, filterSection);
+    
+    // Đồng bộ sự kiện giữa filter gốc và sticky
+    syncFilterEvents(filterSection, stickyFilter);
+    
+    // Xử lý scroll
+let isSticky = false;
+let lastScrollTop = 0;
+const filterHeight = filterSection.offsetHeight;
+
+window.addEventListener('scroll', function() {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const filterTop = filterSection.offsetTop;
+    const shouldSticky = scrollTop > filterTop + filterHeight;
+    
+    // Xác định hướng scroll
+    const isScrollingDown = scrollTop > lastScrollTop;
+    const isScrollingUp = scrollTop < lastScrollTop;
+    
+    if (shouldSticky && isScrollingDown && !isSticky) {
+        // Scroll xuống qua filter -> hiện sticky
+        isSticky = true;
+        stickyFilter.classList.add('show');
+        filterSection.classList.add('hide');
+        placeholder.style.height = filterHeight + 'px';
+        
+        // Đồng bộ giá trị hiện tại
+        syncFilterValues(filterSection, stickyFilter);
+        
+    } else if (shouldSticky && isScrollingUp && isSticky) {
+        // Scroll lên khi đang sticky -> ẩn sticky để xem dữ liệu
+        isSticky = false;
+        stickyFilter.classList.remove('show');
+        filterSection.classList.remove('hide');
+        placeholder.style.height = '0px';
+        
+        // Đồng bộ giá trị về filter gốc
+        syncFilterValues(stickyFilter, filterSection);
+        
+    } else if (!shouldSticky && isSticky) {
+        // Scroll về vị trí ban đầu -> ẩn sticky
+        isSticky = false;
+        stickyFilter.classList.remove('show');
+        filterSection.classList.remove('hide');
+        placeholder.style.height = '0px';
+        
+        // Đồng bộ giá trị về filter gốc
+        syncFilterValues(stickyFilter, filterSection);
+    }
+    
+    // Lưu vị trí scroll hiện tại
+    lastScrollTop = scrollTop;
+});
+}
+
+
+
+// Hàm đồng bộ sự kiện giữa filter gốc và sticky
+function syncFilterEvents(originalFilter, stickyFilter) {
+    // Đồng bộ input text
+    const textInputs = ['wsInput', 'fromDate', 'toDate'];
+    textInputs.forEach(inputId => {
+        const originalInput = originalFilter.querySelector(`#${inputId}`);
+        const stickyInput = stickyFilter.querySelector(`#${inputId}`);
+        
+        if (originalInput && stickyInput) {
+            stickyInput.id = inputId + 'Sticky';
+            
+            originalInput.addEventListener('input', function() {
+                stickyInput.value = this.value;
+            });
+            
+            stickyInput.addEventListener('input', function() {
+                originalInput.value = this.value;
+            });
+        }
+    });
+    
+    // Đồng bộ select
+    const selects = ['caSelect', 'maySelect'];
+    selects.forEach(selectId => {
+        const originalSelect = originalFilter.querySelector(`#${selectId}`);
+        const stickySelect = stickyFilter.querySelector(`#${selectId}`);
+        
+        if (originalSelect && stickySelect) {
+            stickySelect.id = selectId + 'Sticky';
+            
+            originalSelect.addEventListener('change', function() {
+                stickySelect.value = this.value;
+            });
+            
+            stickySelect.addEventListener('change', function() {
+                originalSelect.value = this.value;
+            });
+        }
+    });
+    
+    // Đồng bộ button events
+    const originalViewBtn = originalFilter.querySelector('#btnViewReport');
+    const stickyViewBtn = stickyFilter.querySelector('#btnViewReport');
+    const originalResetBtn = originalFilter.querySelector('#btnReset');
+    const stickyResetBtn = stickyFilter.querySelector('#btnReset');
+    
+    if (originalViewBtn && stickyViewBtn) {
+        stickyViewBtn.id = 'btnViewReportSticky';
+        stickyViewBtn.addEventListener('click', function() {
+            // Đồng bộ giá trị trước khi xử lý
+            syncFilterValues(stickyFilter, originalFilter);
+            handleViewInReport();
+        });
+    }
+    
+    if (originalResetBtn && stickyResetBtn) {
+        stickyResetBtn.id = 'btnResetSticky';
+        stickyResetBtn.addEventListener('click', function() {
+            handleResetFilters();
+            // Đồng bộ lại sau khi reset
+            setTimeout(() => {
+                syncFilterValues(originalFilter, stickyFilter);
+            }, 100);
+        });
+    }
+}
+
+// Hàm đồng bộ giá trị
+function syncFilterValues(fromFilter, toFilter) {
+    // Đồng bộ text inputs
+    const textInputs = [
+        { from: 'wsInput', to: 'wsInputSticky' },
+        { from: 'fromDate', to: 'fromDateSticky' },
+        { from: 'toDate', to: 'toDateSticky' }
+    ];
+    
+    textInputs.forEach(mapping => {
+        const fromInput = fromFilter.querySelector(`#${mapping.from}`) || 
+                         fromFilter.querySelector(`#${mapping.from}Sticky`);
+        const toInput = toFilter.querySelector(`#${mapping.to}`) || 
+                       toFilter.querySelector(`#${mapping.from}`);
+        
+        if (fromInput && toInput) {
+            toInput.value = fromInput.value;
+        }
+    });
+    
+    // Đồng bộ selects
+    const selects = [
+        { from: 'caSelect', to: 'caSelectSticky' },
+        { from: 'maySelect', to: 'maySelectSticky' }
+    ];
+    
+    selects.forEach(mapping => {
+        const fromSelect = fromFilter.querySelector(`#${mapping.from}`) || 
+                          fromFilter.querySelector(`#${mapping.from}Sticky`);
+        const toSelect = toFilter.querySelector(`#${mapping.to}`) || 
+                        toFilter.querySelector(`#${mapping.from}`);
+        
+        if (fromSelect && toSelect) {
+            toSelect.value = fromSelect.value;
+        }
+    });
+}
 
 
 async function loadMachineList() {
@@ -384,9 +566,9 @@ function displayYearlyMachineCharts(yearlyData, year) {
     let html = `
         <div class="row">
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Biểu đồ thành phẩm theo tháng</h6>
+                <div class="card card-custom-sub border-left-sub">
+                    <div class="label-title-sub" >
+                        <i class="fas fa-chart-line me-2"></i>Biểu đồ thành phẩm theo tháng
                     </div>
                     <div class="card-body">
                         <div style="height: 400px; position: relative;">
@@ -399,9 +581,9 @@ function displayYearlyMachineCharts(yearlyData, year) {
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-danger text-white">
-                        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Biểu đồ phế liệu theo tháng</h6>
+                <div class="card card-custom-sub border-left-sub">
+                    <div class="label-title-sub">
+                        <i class="fas fa-chart-line me-2"></i>Biểu đồ phế liệu theo tháng
                     </div>
                     <div class="card-body">
                         <div style="height: 400px; position: relative;">
@@ -414,13 +596,15 @@ function displayYearlyMachineCharts(yearlyData, year) {
                 </div>
             </div>
         </div>
+
+        <hr>
         
         <div class="row mt-4">
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
+                <div class="card card-custom-sub border-left-sub">
+                    <div class="label-title-sub ">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Sản xuất theo trưởng máy - Trái</h6>
+                            <div class="mb-0"><i class="fas fa-chart-bar me-2"></i>Sản xuất theo trưởng máy - Trái</div>
                             <select class="form-select form-select-sm" id="leaderSelectLeft" style="width: 200px;">
                                 <option value="">Chọn trưởng máy</option>
                             </select>
@@ -437,10 +621,10 @@ function displayYearlyMachineCharts(yearlyData, year) {
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-warning text-white">
+                <div class="card card-custom-sub border-left-sub">
+                    <div class="label-title-sub ">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Sản xuất theo trưởng máy - Phải</h6>
+                            <div class="mb-0"><i class="fas fa-chart-bar me-2"></i>Sản xuất theo trưởng máy - Phải</div>
                             <select class="form-select form-select-sm" id="leaderSelectRight" style="width: 200px;">
                                 <option value="">Chọn trưởng máy</option>
                             </select>
@@ -458,14 +642,16 @@ function displayYearlyMachineCharts(yearlyData, year) {
             </div>
         </div>
 
+        <hr>
+
 
 
 
         <div class="row mt-4">
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Biểu đồ thành phẩm theo trưởng máy</h6>
+        <div class="card card-custom-sub border-left-sub">
+            <div class="label-title-sub">
+                <div class="mb-0"><i class="fas fa-chart-line me-2"></i>Biểu đồ thành phẩm theo trưởng máy</div>
             </div>
             <div class="card-body">
                 <div style="height: 400px; position: relative;">
@@ -478,9 +664,9 @@ function displayYearlyMachineCharts(yearlyData, year) {
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-danger text-white">
-                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Biểu đồ phế liệu theo trưởng máy</h6>
+        <div class="card card-custom-sub border-left-sub">
+            <div class="label-title-sub">
+                <div class="mb-0"><i class="fas fa-chart-line me-2"></i>Biểu đồ phế liệu theo trưởng máy</div>
             </div>
             <div class="card-body">
                 <div style="height: 400px; position: relative;">
@@ -1064,6 +1250,25 @@ async function handleViewInReport() {
         // Reset dữ liệu cũ và UI trước khi lọc mới
         currentChartData = null;
         destroyAllCharts();
+
+        // Reset tất cả biến global
+originalTableData = [];
+filteredTableData = [];
+currentPageData = [];
+totalItems = 0;
+currentPage = 1;
+currentDetailFilters = {
+    soMau: [],
+    maSp: [],
+    khachHang: [],
+    may: [],
+    maCa: [],
+    speedFilter: { type: 'range', min: '', max: '' },
+    orderFilter: { type: 'range', min: '', max: '' }
+};
+
+
+
         hideReportSection();
 
         // Thu thập điều kiện lọc
@@ -3379,6 +3584,15 @@ function handleResetFilters() {
 
     showNotification('Đã reset bộ lọc', 'info');
 
+    // Đồng bộ sticky filter nếu có
+const stickyFilter = document.getElementById('filterSectionSticky');
+const originalFilter = document.getElementById('filterSection');
+if (stickyFilter && originalFilter) {
+    setTimeout(() => {
+        syncFilterValues(originalFilter, stickyFilter);
+    }, 100);
+}
+
 }
 
 
@@ -4616,7 +4830,7 @@ function displayDetailTable(data, filters) {
 
             // QUAN TRỌNG: Lưu dữ liệu đã lọc theo điều kiện 1 làm dữ liệu gốc
             originalTableData = filteredByCondition1;
-            filteredTableData = filteredByCondition1;
+            filteredTableData = [...filteredByCondition1];
 
             renderDetailTable(container, filteredByCondition1, filters);
         })
@@ -4700,7 +4914,7 @@ function renderDetailTable(container, data, filters) {
     // Tạo filter HTML NGAY ĐẦU HÀM
     const filterHtml = `
     <div class="row d-flex align-items-center">
-        <div class="col-10">
+        <div class="col-8">
             <div class="card-body">
                 <div class="d-flex flex-wrap gap-2 align-items-center">
                     <div class="flex-shrink-0">
@@ -4898,7 +5112,10 @@ function renderDetailTable(container, data, filters) {
                 </div>
             </div>
         </div>
-        <div class="col-2 text-end">
+        <div class="col-4 text-end">
+        <button class="btn btn-outline-success btn-sm me-2" onclick="exportToExcel()">
+            <i class="fas fa-file-excel me-1"></i>Xuất Excel
+        </button>
             <button class="btn btn-outline-warning btn-sm" onclick="switchToIncompleteTable()">
                 <i class="fas fa-exclamation-triangle me-1"></i>Xem WS chưa hoàn thành
             </button>
@@ -4907,113 +5124,96 @@ function renderDetailTable(container, data, filters) {
 `;
 
 
-    const switchButtonHtml = `
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h6><i class="fas fa-table me-2"></i>Bảng chi tiết báo cáo</h6>
-    <div>
-        <button class="btn btn-outline-success btn-sm me-2" onclick="exportToExcel()">
-            <i class="fas fa-file-excel me-1"></i>Xuất Excel
-        </button>
-        <button class="btn btn-outline-warning btn-sm" id="switchToIncompleteBtn" onclick="switchToIncompleteTable()">
-            <i class="fas fa-exclamation-triangle me-1"></i>Xem WS chưa hoàn thành
-        </button>
-    </div>
-</div>
-`;
+//     const switchButtonHtml = `
+// <div class="d-flex justify-content-between align-items-center mb-3">
+//     <h6><i class="fas fa-table me-2"></i>Bảng chi tiết báo cáo</h6>
+//     <div>
+//         <button class="btn btn-outline-success btn-sm me-2" onclick="exportToExcel()">
+//             <i class="fas fa-file-excel me-1"></i>Xuất Excel
+//         </button>
+//         <button class="btn btn-outline-warning btn-sm" id="switchToIncompleteBtn" onclick="switchToIncompleteTable()">
+//             <i class="fas fa-exclamation-triangle me-1"></i>Xem WS chưa hoàn thành
+//         </button>
+//     </div>
+// </div>
+// `;
 
 
 
-    if (!data || data.length === 0) {
-        const noDataMessage = filters && filters.maca ?
-            `Không có dữ liệu chi tiết cho mã ca ${filters.maca}` :
-            'Không có dữ liệu chi tiết';
+if (!data || data.length === 0) {
+    const noDataMessage = filters && filters.maca ?
+        `Không có dữ liệu chi tiết cho mã ca ${filters.maca}` :
+        'Không có dữ liệu chi tiết';
 
-        // Chỉ thay thế phần sau filter, giữ nguyên phần filter
-        const existingFilter = container.querySelector('.card-body');
-        let tableHTML = `
-            <div class="text-center text-muted p-4">
-                <i class="fas fa-table fa-2x mb-3"></i>
-                <h6>${noDataMessage}</h6>
-                <p>Vui lòng chọn lại điều kiện lọc.</p>
-            </div>
-            
-            <div class="row mt-3">
-                <div class="col-md-2">
-                    <div class="card bg-light">
-                        <div class="card-body text-center">
-                            <h6>Tổng WS</h6>
-                            <h4 class="text-primary">0</h4>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card bg-light">
-                        <div class="card-body text-center">
-                            <h6>Tổng thành phẩm</h6>
-                            <h4 class="text-success">0</h4>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card bg-light">
-                        <div class="card-body text-center">
-                            <h6>Tổng phế liệu</h6>
-                            <h4 class="text-danger">0</h4>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card bg-light">
-                        <div class="card-body text-center">
-                            <h6>Tổng TG chạy máy</h6>
-                            <h4 class="text-success">0 phút</h4>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card bg-light">
-                        <div class="card-body text-center">
-                            <h6>Tổng TG canh máy</h6>
-                            <h4 class="text-warning">0 phút</h4>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card bg-light">
-                        <div class="card-body text-center">
-                            <h6>Tổng TG dừng máy</h6>
-                            <h4 class="text-danger">0 phút</h4>
-                        </div>
+    // Reset các biến global
+    originalTableData = [];
+    filteredTableData = [];
+    currentPageData = [];
+    totalItems = 0;
+    currentPage = 1;
+
+    const html = `
+        <div class="text-center text-muted p-4">
+            <i class="fas fa-table fa-2x mb-3"></i>
+            <h6>${noDataMessage}</h6>
+            <p>Vui lòng chọn lại điều kiện lọc.</p>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng WS</h6>
+                        <h4 class="text-primary">0</h4>
                     </div>
                 </div>
             </div>
-        `;
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng thành phẩm</h6>
+                        <h4 class="text-success">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng phế liệu</h6>
+                        <h4 class="text-danger">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng TG chạy máy</h6>
+                        <h4 class="text-success">0 phút</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng TG canh máy</h6>
+                        <h4 class="text-warning">0 phút</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6>Tổng TG dừng máy</h6>
+                        <h4 class="text-danger">0 phút</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 
-        if (existingFilter) {
-            // Nếu đã có filter, xóa phần sau filter và thêm mới
-            const afterFilter = existingFilter.nextElementSibling;
-            while (afterFilter) {
-                const nextSibling = afterFilter.nextElementSibling;
-                container.removeChild(afterFilter);
-                afterFilter = nextSibling;
-            }
-            container.insertAdjacentHTML('beforeend', tableHTML);
-        } else {
-            // Nếu chưa có filter, hiển thị filter + thông báo
-            container.innerHTML = filterHtml + switchButtonHtml + html;
-        }
-
-        // Tạo filter options sau khi render HTML
-        setTimeout(() => {
-            const filterContainer = document.getElementById('soMauOptions');
-            if (!filterContainer || filterContainer.children.length === 0) {
-                createFilterOptions(originalTableData);
-                restoreFilterState();
-            }
-        }, 100);
-
-        return;
-    }
+    container.innerHTML = filterHtml + html;
+    return;
+}
 
     // Lưu dữ liệu gốc
     currentPageData = data;
@@ -5199,9 +5399,7 @@ function renderDetailTable(container, data, filters) {
 
 </div>
 
-        <button class="btn btn-outline-success btn-sm" onclick="exportToExcel()">
-            <i class="fas fa-file-excel me-1"></i>Xuất Excel
-        </button>
+
 
         `;
     }
