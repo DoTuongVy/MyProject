@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Order Tracking</title>
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+            rel="stylesheet">
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+            rel="stylesheet">
+        <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .search-container {
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        
+        .search-input {
+            border: none;
+            outline: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            width: 100%;
+            border-radius: 25px;
+        }
+        
+        .search-icon {
+            color: #6c757d;
+            font-size: 18px;
+            margin-left: 15px;
+        }
+        
+        .order-number {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 20px 0;
+        }
+        
+        .stage-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stage-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-width: 280px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stage-header {
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .scl-header {
+            background: #28a745;
+        }
+        
+        .gmc-header {
+            background: #28a745;
+        }
+        
+        .stage-connector {
+            position: absolute;
+            top: 50%;
+            right: -30px;
+            width: 60px;
+            height: 4px;
+            background: #28a745;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+        
+        .stage-connector::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 12px solid #28a745;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+        
+        .stage-card:last-child .stage-connector {
+            display: none;
+        }
+        
+        .quantity-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .quantity-item {
+            text-align: center;
+        }
+        
+        .quantity-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .quantity-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .time-info {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .detail-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .detail-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+        
+        .detail-table-container {
+            background: rgba(173, 216, 230, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: none;
+        }
+        
+        .detail-table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .detail-table-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+        
+        .detail-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .detail-table th {
+            background: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 12px 8px;
+            text-align: center;
+            border: none;
+        }
+        
+        .detail-table td {
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 13px;
+            border: none;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .detail-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .filter-dropdown {
+            margin-bottom: 15px;
+        }
+        
+        .filter-select {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        
+        @media (max-width: 768px) {
+            .stage-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .stage-connector {
+                display: none;
+            }
+            
+            .stage-card {
+                min-width: 100%;
+                max-width: 400px;
+            }
+        }
+    </style>
+    </head>
+    <body>
+
+
+
+        <!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Card Phân Lớp Tuỳ Màu</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .card-custom {
+      border-radius: 1rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .border-left-main {
+      border-left: 6px solid #698396; /* Màu border Thống kê */
+    }
+
+    .border-left-sub {
+      border-left: 5px solid #A9C8C0; /* Màu border các card con */
+    }
+
+    .label-title {
+      background-color: #f0f4f8;
+      padding: 1rem 1.25rem;
+      font-weight: 800;
+      font-size: 1.5rem;
+      color: #698396; /* Màu chữ Thống kê */
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .text-softgreen {
+      color: #A9C8C0;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+
+  <!-- Card cha -->
+  <div class="card card-custom border-left-main mb-4">
+    
+    <!-- Tiêu đề chính: Thống kê -->
+    <div class="label-title">
+      📊 Thống kê
+    </div>
+
+    <!-- Nội dung trong card -->
+    <div class="card-body bg-white">
+
+      <!-- Card con: Tổng -->
+      <div class="card card-custom border-left-sub mb-3 p-3 bg-light">
+        <h5 class="fw-semibold text-softgreen mb-2">Tổng</h5>
+        <!-- nội dung -->
+      </div>
+
+      <!-- Card con: con -->
+      <div class="card card-custom border-left-sub p-3 bg-light">
+        <h5 class="fw-semibold text-softgreen mb-2">COn</h5>
+        <!-- Noi dung -->
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
+
+
+
+        
+        <div class="row d-flex justify-content-between align-items-center">
+<div class="col"></div>
+<div class="col"></div>
+        </div>
+
+                    <div class="card-body mt-2">
+                        <div class="row g-2 d-flex align-items-center">
+                            <div class="col-md-1">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterSoMau"
+                                        data-bs-toggle="dropdown">
+                                        Số màu
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 250px;">
+                                        <div class="mb-2">
+                                            <input type="text"
+                                                class="form-control form-control-sm"
+                                                id="searchSoMau"
+                                                placeholder="Tìm kiếm...">
+                                        </div>
+                                        <div class="mb-2">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary me-1"
+                                                onclick="selectAllFilter('soMau')">Tất
+                                                cả</button>
+                                        </div>
+                                        <div class="filter-options"
+                                            id="soMauOptions"
+                                            style="max-height: 200px; overflow-y: auto;">
+                                            <!-- Sẽ được tạo động -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterMaSp"
+                                        data-bs-toggle="dropdown">
+                                        Mã SP
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 250px;">
+                                        <div class="mb-2">
+                                            <input type="text"
+                                                class="form-control form-control-sm"
+                                                id="searchMaSp"
+                                                placeholder="Tìm kiếm...">
+                                        </div>
+                                        <div class="mb-2">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary me-1"
+                                                onclick="selectAllFilter('maSp')">Tất
+                                                cả</button>
+                                        </div>
+                                        <div class="filter-options"
+                                            id="maSpOptions"
+                                            style="max-height: 200px; overflow-y: auto;">
+                                            <!-- Sẽ được tạo động -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterKhachHang"
+                                        data-bs-toggle="dropdown">
+                                        Khách hàng
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 250px;">
+                                        <div class="mb-2">
+                                            <input type="text"
+                                                class="form-control form-control-sm"
+                                                id="searchKhachHang"
+                                                placeholder="Tìm kiếm...">
+                                        </div>
+                                        <div class="mb-2">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary me-1"
+                                                onclick="selectAllFilter('khachHang')">Tất
+                                                cả</button>
+                                        </div>
+                                        <div class="filter-options"
+                                            id="khachHangOptions"
+                                            style="max-height: 200px; overflow-y: auto;">
+                                            <!-- Sẽ được tạo động -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-1">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterMay"
+                                        data-bs-toggle="dropdown">
+                                        Máy
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 200px;">
+                                        <div class="mb-2">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary me-1"
+                                                onclick="selectAllFilter('may')">Tất
+                                                cả</button>
+                                        </div>
+                                        <div class="filter-options"
+                                            id="mayOptions"
+                                            style="max-height: 200px; overflow-y: auto;">
+                                            <!-- Sẽ được tạo động -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-1">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-primary btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterMaCa"
+                                        data-bs-toggle="dropdown">
+                                        Mã ca
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 150px;">
+                                        <div class="mb-2">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary me-1"
+                                                onclick="selectAllFilter('maCa')">Tất
+                                                cả</button>
+                                        </div>
+                                        <div class="filter-options"
+                                            id="maCaOptions"
+                                            style="max-height: 200px; overflow-y: auto;">
+                                            <!-- Sẽ được tạo động -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-success btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterTocDo"
+                                        data-bs-toggle="dropdown">
+                                        Tốc độ
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 200px;">
+                                        <div class="mb-2">
+                                            <select
+                                                class="form-select form-select-sm"
+                                                id="speedFilterType"
+                                                onclick="event.stopPropagation()">
+                                                <option
+                                                    value="range">Khoảng</option>
+                                                <option value="greater">Lớn
+                                                    hơn</option>
+                                                <option value="less">Nhỏ
+                                                    hơn</option>
+                                                <option
+                                                    value="equal">Bằng</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number"
+                                                class="form-control"
+                                                id="speedMin" placeholder="Từ"
+                                                onclick="event.stopPropagation()"
+                                                onkeydown="event.stopPropagation()"
+                                                oninput="event.stopPropagation()">
+                                            <input type="number"
+                                                class="form-control"
+                                                id="speedMax" placeholder="Đến"
+                                                onclick="event.stopPropagation()"
+                                                onkeydown="event.stopPropagation()"
+                                                oninput="event.stopPropagation()">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <div class="dropdown">
+                                    <button
+                                        class="btn btn-outline-warning btn-sm dropdown-toggle w-100"
+                                        type="button" id="filterDonHang"
+                                        data-bs-toggle="dropdown">
+                                        SL đơn hàng
+                                    </button>
+                                    <div class="dropdown-menu p-2"
+                                        style="min-width: 200px;">
+                                        <div class="mb-2">
+                                            <select
+                                                class="form-select form-select-sm"
+                                                id="orderFilterType"
+                                                onclick="event.stopPropagation()">
+                                                <option
+                                                    value="range">Khoảng</option>
+                                                <option value="greater">Lớn
+                                                    hơn</option>
+                                                <option value="less">Nhỏ
+                                                    hơn</option>
+                                                <option
+                                                    value="equal">Bằng</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number"
+                                                class="form-control"
+                                                id="orderMin" placeholder="Từ"
+                                                onclick="event.stopPropagation()"
+                                                onkeydown="event.stopPropagation()"
+                                                oninput="event.stopPropagation()">
+                                            <input type="number"
+                                                class="form-control"
+                                                id="orderMax" placeholder="Đến"
+                                                onclick="event.stopPropagation()"
+                                                onkeydown="event.stopPropagation()"
+                                                oninput="event.stopPropagation()">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-1">
+                                <button class="btn btn-secondary btn-sm w-100"
+                                    onclick="resetDetailFilters()">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+        <script>
+
+    </script>
+    </body>
+</html>

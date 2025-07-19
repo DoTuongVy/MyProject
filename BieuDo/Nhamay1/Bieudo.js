@@ -1508,6 +1508,33 @@ function displayInReport(data, filters) {
         // Reset tất cả displays về 0
         displaySummaryStats({ totalPaper: 0, totalWaste: 0 }, filters);
         displayProgressBar({ totalPaper: 0, totalWaste: 0 }, filters);
+        // Reset thống kê thời gian về 0
+displayTimeStats({ totalPaper: 0, totalWaste: 0, timeData: { totalTime: 0, setupTime: 0, otherTime: 0 }, stopReasons: [] }, filters);
+
+// Reset phân tích thời gian về 0  
+displayTimeAnalysis({ timeData: { otherTime: 0 }, stopReasons: [] }, filters);
+
+// Reset biểu đồ thời gian về trống
+displayTimeCharts({ totalPaper: 0, totalWaste: 0, timeData: { totalTime: 0, setupTime: 0, otherTime: 0 }, stopReasons: [] }, filters);
+
+// Reset trực tiếp các element phần sản xuất/chạy mẫu bên phải
+const productionTimeEl = document.getElementById('productionTime');
+const sampleTimeEl = document.getElementById('sampleTime');
+const setupTimeRightEl = document.getElementById('setupTimeRight');
+const stopTimeRightEl = document.getElementById('stopTimeRight');
+const sampleSetupTimeEl = document.getElementById('sampleSetupTime');
+const sampleStopTimeEl = document.getElementById('sampleStopTime');
+const totalTimeRightEl = document.getElementById('totalTimeRight');
+const totalSampleTimeEl = document.getElementById('totalSampleTime');
+
+if (productionTimeEl) productionTimeEl.textContent = '0 phút';
+if (sampleTimeEl) sampleTimeEl.textContent = '0 phút';
+if (setupTimeRightEl) setupTimeRightEl.textContent = '0 phút';
+if (stopTimeRightEl) stopTimeRightEl.textContent = '0 phút';
+if (sampleSetupTimeEl) sampleSetupTimeEl.textContent = '0 phút';
+if (sampleStopTimeEl) sampleStopTimeEl.textContent = '0 phút';
+if (totalTimeRightEl) totalTimeRightEl.textContent = '0 phút';
+if (totalSampleTimeEl) totalSampleTimeEl.textContent = '0 phút';
 
         // Hiển thị thông báo trong phần phân tích
         const analysisContainer = document.getElementById('quantityAnalysis');
@@ -2647,6 +2674,12 @@ function displayQuantityAnalysis(data, filters) {
 // Thêm hàm hiển thị biểu đồ trống
 // Tạo biểu đồ trống
 function createEmptyChart(canvas, message) {
+    // Destroy chart cũ nếu có
+const existingChart = Chart.getChart(canvas);
+if (existingChart) {
+    existingChart.destroy();
+}
+
     return new Chart(canvas, {
         type: 'pie',
         data: {
@@ -3852,7 +3885,7 @@ function openFullscreen(canvasId, title) {
                         x: {
                             stacked: true,
                             title: {
-                                display: true,
+                                display: false,
                                 // text: 'Khách hàng'
                             },
                             ticks: {
@@ -3881,7 +3914,7 @@ function openFullscreen(canvasId, title) {
                     },
                     plugins: {
                         title: {
-                            display: true,
+                            display: false,
                             text: title,
                             font: { size: 18, weight: 'bold' }
                         },
@@ -4199,6 +4232,22 @@ function openFullscreen(canvasId, title) {
                                                 datasetIndex: datasetIndex
                                             };
                                         });
+                                    },
+                                    onClick: function(event, legendItem, legend) {
+                                        const chart = legend.chart;
+                                        const index = legendItem.datasetIndex;
+                                        
+                                        // Toggle visibility của dataset
+                                        if (chart.isDatasetVisible(index)) {
+                                            chart.hide(index);
+                                            legendItem.hidden = true;
+                                        } else {
+                                            chart.show(index);
+                                            legendItem.hidden = false;
+                                        }
+                                        
+                                        // Update chart
+                                        chart.update();
                                     }
                                 }
                             },
@@ -8893,7 +8942,7 @@ function updateLeaderShiftChart(shiftLeaderData, selectedLeader) {
             },
             plugins: {
                 title: {
-                    display: true,
+                    display: false,
                     text: chartTitle,
                     font: {
                         size: 14,
@@ -10392,6 +10441,7 @@ function displayTimeTableByLeader(container) {
         tableRows += `
             <tr style="background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
                 <td class="text-center p-2"><strong style="color: #0066cc;">Tổng cộng</strong></td>
+                <td></td>
                 <td></td>
                 <td class="text-center p-2"><strong style="color: #0066cc;">${leaderItems.reduce((sum, item) => sum + (wsCountByLeaderShiftMachine[`${item.leader}_${item.shift}_${item.may}`]?.size || 0), 0)}</strong></td>
                 <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.runTime)}</strong></td>

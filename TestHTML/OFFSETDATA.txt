@@ -1,0 +1,56 @@
+STT
+Ngày
+Máy : Option ( 6M1 6M5 5M2 6K 2M KTS )
+Quản đốc :
+Ca : 
+Trưởng máy :
+Số WS :
+Số lần chạy : - 
+
+
+
+
+SỐ WS
+SỐ PO
+K.HÀNG	
+MÃ SP	
+SL ĐH	
+S.CON	
+SỐ MÀU IN	
+MÃ KHUÔN BẾ ĐỨT	
+MÃ KHUÔN BẾ NỔI	
+BẾ NỔI - BẾ ĐỨT	
+LOẠI CÁN PHỦ	
+MÀNG ACETAT	
+QC DÁN LG	
+QC ĐÓNG GÓI	
+THÙNG OR GIẤY GÓI	
+LOẠI GIẤY	
+KHỔ	
+CHẶT	
+KG	
+LOẠI GIẤY	
+KHỔ GIẤY	
+KG	
+LOẠI GIẤY	
+KHỔ GIẤY	
+KG	CHẶT	
+KHỔ	CHẶT	
+KHỔ	LOẠI SÓNG	
+CHẶT	
+KHỔ	
+CHẶT	
+KHỔ	
+CÔNG ĐOẠN SẢN XUẤT	
+NGÀY NHẬN WS	
+SL GIẤY CẦN CẮT	
+CÔNG ĐOẠN SẢN XUẤT	
+SL BÙ HAO IN	
+SL BÙ HAO T.Phẩm	
+SL GIẤY	
+SL CẮT GIẤY	
+SL GIẤY KH	
+GIA CÔNG IN	
+GIA CÔNG ÉP KIM	
+GIA CÔNG CÁN PHỦ	
+GIA CÔNG BẾ
