@@ -195,6 +195,19 @@ autoCalcFields.forEach(fieldId => {
     }
 
 
+
+    // Thêm event cho scroll để xử lý nút mini
+window.addEventListener('scroll', handleMiniStopButtonScroll);
+
+// Thêm event cho modal
+const stopMachineModal = document.getElementById('stopMachineModal');
+if (stopMachineModal) {
+    stopMachineModal.addEventListener('hidden.bs.modal', function() {
+        // Reset modal state khi đóng
+    });
+}
+
+
     setupMachineStopHandling();
 
 
@@ -1758,6 +1771,34 @@ function setupMachineStopHandling() {
 
         });
     }
+
+
+// Thay thế phần sync cũ trong setupMachineStopHandling()
+if (newBtnYes) {
+    newBtnYes.addEventListener('click', function() {
+        const miniBtn = document.getElementById('miniStopButton');
+        const miniText = document.getElementById('miniStopText');
+        if (miniBtn && miniText) {
+            miniBtn.classList.remove('has-no-stop-selection');
+            miniBtn.classList.add('has-stop-selection');
+            miniText.innerHTML = '<i class="fas fa-stop-circle me-1"></i>CÓ DỪNG';
+        }
+    });
+}
+
+if (newBtnNo) {
+    newBtnNo.addEventListener('click', function() {
+        const miniBtn = document.getElementById('miniStopButton');
+        const miniText = document.getElementById('miniStopText');
+        if (miniBtn && miniText) {
+            miniBtn.classList.remove('has-stop-selection');
+            miniBtn.classList.add('has-no-stop-selection');
+            miniText.innerHTML = '<i class="fas fa-play-circle me-1"></i>KHÔNG DỪNG';
+        }
+    });
+}
+
+
 }
 
 
@@ -3153,6 +3194,17 @@ function resetAllFormElements() {
         btnNo.style.backgroundColor = '';
         btnNo.style.color = '';
     }
+
+
+
+// Thay thế phần reset cũ
+const miniBtn = document.getElementById('miniStopButton');
+const miniText = document.getElementById('miniStopText');
+if (miniBtn && miniText) {
+    miniBtn.classList.remove('has-stop-selection', 'has-no-stop-selection', 'moved-down', 'moved-up');
+    miniText.innerHTML = '<i class="fas fa-stop-circle me-1"></i>DỪNG MÁY';
+}
+
 
 
 }
@@ -5099,6 +5151,573 @@ function applyColumnVisibility() {
 
 
 
+
+
+// Thay thế hàm toggleStopMachineModal() cũ
+function toggleStopMachineModal() {
+    const modal = new bootstrap.Modal(document.getElementById('stopMachineModal'));
+    
+    // Sync trạng thái hiện tại từ form chính
+    syncModalWithMainForm();
+    
+    modal.show();
+}
+
+// Thay thế hàm handleModalStopChoice() cũ
+function handleModalStopChoiceClick(isStop) {
+    const modalBtnYes = document.getElementById('modalBtnYes');
+    const modalBtnNo = document.getElementById('modalBtnNo');
+    const modalChoice = document.getElementById('modalStopChoice');
+    const modalReport = document.getElementById('modalMachineReport');
+    const miniBtn = document.getElementById('miniStopButton');
+    const miniText = document.getElementById('miniStopText');
+    
+    if (isStop) {
+        // Chọn CÓ dừng máy
+        modalBtnYes.style.backgroundColor = 'rgb(208, 0, 0)';
+        modalBtnYes.style.color = 'white';
+        modalBtnNo.style.backgroundColor = '';
+        modalBtnNo.style.color = '';
+        modalChoice.style.display = 'none';
+        modalReport.style.display = 'block';
+        
+        // Sync với form chính
+        document.getElementById('btnYes').click();
+        
+        // Cập nhật nút mini
+        miniBtn.classList.remove('has-no-stop-selection');
+        miniBtn.classList.add('has-stop-selection');
+        miniText.innerHTML = '<i class="fas fa-stop-circle me-1"></i>CÓ DỪNG';
+        
+        // Setup modal stop reason handling
+        setupModalStopReasonHandling();
+
+
+        // Hiển thị nút dừng máy không có WS trong modal
+const modalSubmitStopBtn = document.getElementById('modalSubmitStopOnlyButton');
+if (modalSubmitStopBtn) {
+    modalSubmitStopBtn.style.display = 'inline-block';
+}
+
+
+        
+    } else {
+        // Chọn KHÔNG dừng máy
+        modalBtnNo.style.backgroundColor = 'rgb(74, 144, 226)';
+        modalBtnNo.style.color = 'white';
+        modalBtnYes.style.backgroundColor = '';
+        modalBtnYes.style.color = '';
+        modalChoice.style.display = 'block';
+        modalReport.style.display = 'none';
+        
+        // Sync với form chính
+        document.getElementById('btnNo').click();
+
+
+        // Ẩn nút dừng máy không có WS trong modal
+const modalSubmitStopBtn = document.getElementById('modalSubmitStopOnlyButton');
+if (modalSubmitStopBtn) {
+    modalSubmitStopBtn.style.display = 'none';
+}
+        
+        // Cập nhật nút mini
+        miniBtn.classList.remove('has-stop-selection');
+        miniBtn.classList.add('has-no-stop-selection');
+        miniText.innerHTML = '<i class="fas fa-play-circle me-1"></i>KHÔNG DỪNG';
+    }
+}
+// Thay thế hàm handleMiniStopButtonScroll() cũ
+function handleMiniStopButtonScroll() {
+    const miniButton = document.getElementById('miniStopButton');
+    const machineReportSection = document.getElementById('machineReport');
+    
+    if (!miniButton || !machineReportSection) return;
+    
+    const machineReportRect = machineReportSection.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    
+    // Kiểm tra xem phần dừng máy có đang hiển thị không
+    const isMachineReportVisible = machineReportRect.top < windowHeight && machineReportRect.bottom > 0;
+    
+    // Xóa các class cũ
+    miniButton.classList.remove('moved-down', 'moved-up');
+    
+    if (isMachineReportVisible) {
+        // Phần dừng máy đang hiển thị -> thu xuống dưới
+        miniButton.classList.add('moved-down');
+    } else if (machineReportRect.top > windowHeight) {
+        // Phần dừng máy ở dưới tầm nhìn -> nút ở vị trí bình thường
+        // Không cần thêm class gì
+    } else {
+        // Phần dừng máy ở trên tầm nhìn -> phóng to lên
+        miniButton.classList.add('moved-up');
+    }
+}
+
+
+
+
+// Thêm hàm mới - sync dữ liệu giữa modal và form chính
+function syncModalWithMainForm() {
+    const btnYes = document.getElementById('btnYes');
+    const btnNo = document.getElementById('btnNo');
+    const modalBtnYes = document.getElementById('modalBtnYes');
+    const modalBtnNo = document.getElementById('modalBtnNo');
+    const modalChoice = document.getElementById('modalStopChoice');
+    const modalReport = document.getElementById('modalMachineReport');
+    
+    // Sync trạng thái nút
+    if (btnYes.style.backgroundColor === 'rgb(208, 0, 0)') {
+        modalBtnYes.style.backgroundColor = 'rgb(208, 0, 0)';
+        modalBtnYes.style.color = 'white';
+        modalBtnNo.style.backgroundColor = '';
+        modalBtnNo.style.color = '';
+        modalChoice.style.display = 'none';
+        modalReport.style.display = 'block';
+        
+        // Sync các lý do dừng máy
+        syncStopReasons();
+    } else if (btnNo.style.backgroundColor === 'rgb(74, 144, 226)') {
+        modalBtnNo.style.backgroundColor = 'rgb(74, 144, 226)';
+        modalBtnNo.style.color = 'white';
+        modalBtnYes.style.backgroundColor = '';
+        modalBtnYes.style.color = '';
+        modalChoice.style.display = 'block';
+        modalReport.style.display = 'none';
+    } else {
+        // Chưa chọn gì
+        modalBtnYes.style.backgroundColor = '';
+        modalBtnYes.style.color = '';
+        modalBtnNo.style.backgroundColor = '';
+        modalBtnNo.style.color = '';
+        modalChoice.style.display = 'block';
+        modalReport.style.display = 'none';
+    }
+
+
+    // Thêm vào cuối hàm syncModalWithMainForm()
+const modalSubmitStopBtn = document.getElementById('modalSubmitStopOnlyButton');
+const mainSubmitStopBtn = document.getElementById('submitStopOnlyButton');
+
+if (modalSubmitStopBtn && mainSubmitStopBtn) {
+    // Sync trạng thái hiển thị nút
+    if (mainSubmitStopBtn.style.display === 'inline-block') {
+        modalSubmitStopBtn.style.display = 'inline-block';
+    } else {
+        modalSubmitStopBtn.style.display = 'none';
+    }
+}
+
+
+}
+
+
+
+
+// Thêm hàm mới - xử lý submit stop report từ modal
+async function submitModalStopReportOnly() {
+    try {
+        console.log('Submit báo cáo dừng máy từ modal...');
+
+        // Thu thập dữ liệu từ modal
+        const modalStopBoxes = document.querySelectorAll('#modalAdditionalReasonsContainer .stop-reason-box');
+        if (modalStopBoxes.length === 0) {
+            showNotification('Vui lòng chọn lý do dừng máy', 'error');
+            return;
+        }
+
+        // Kiểm tra có dữ liệu hợp lệ không
+        let hasValidModalStopData = false;
+        let modalStopData = null;
+
+        for (let box of modalStopBoxes) {
+            const reasonValue = box.querySelector('.reason-value')?.value || '';
+            const stopTime = box.querySelector('.stop-time-input')?.value || '';
+            const resumeTime = box.querySelector('.resume-time-input')?.value || '';
+            const otherReason = box.querySelector('.other-reason-input')?.value || '';
+            const duration = box.querySelector('.duration-display')?.value || '';
+            
+            if (reasonValue && stopTime && resumeTime) {
+                hasValidModalStopData = true;
+                
+                modalStopData = {
+                    ly_do: reasonValue === 'Khác' ? (otherReason || reasonValue) : reasonValue,
+                    thoi_gian_dung: formatStopMachineTime(stopTime),
+                    thoi_gian_chay_lai: formatStopMachineTime(resumeTime),
+                    thoi_gian_dung_may: duration || '0 phút'
+                };
+                break;
+            }
+        }
+
+        if (!hasValidModalStopData) {
+            showNotification('Vui lòng nhập đầy đủ thời gian dừng và chạy lại', 'error');
+            return;
+        }
+
+        // Thu thập dữ liệu form
+        const reportData = {
+            ca: String(getInputValue('ca') || ''),
+            gio_lam_viec: String(getSelectText('gioLamViec') || ''),
+            ma_ca: String(getInputValue('maCa') || ''),
+            truong_may: String(getInputValue('truongmay') || ''),
+            may: String(getCurrentMachineId() || ''),
+            ws: '',
+            ly_do: String(modalStopData.ly_do || ''),
+            thoi_gian_dung: modalStopData.thoi_gian_dung,
+            thoi_gian_chay_lai: modalStopData.thoi_gian_chay_lai,
+            thoi_gian_dung_may: String(modalStopData.thoi_gian_dung_may || '0 phút'),
+            ghi_chu: String(getInputValue('ghiChu') || '')
+        };
+
+        console.log('📤 Dữ liệu gửi từ modal:', reportData);
+
+        // Đóng modal trước khi gửi
+        const modal = bootstrap.Modal.getInstance(document.getElementById('stopMachineModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        showInLoading('Đang gửi báo cáo dừng máy...', 'Lưu thông tin');
+
+        // Gửi API
+        const response = await fetch('/api/bao-cao-in/dung-may/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(reportData),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            let errorMessage = `HTTP ${response.status}`;
+            
+            try {
+                const parsedError = JSON.parse(errorData);
+                errorMessage = parsedError.error || errorMessage;
+            } catch (e) {
+                errorMessage = errorData || errorMessage;
+            }
+            
+            throw new Error(errorMessage);
+        }
+
+        const result = await response.json();
+
+        hideInLoading();
+        showNotification('Đã lưu báo cáo dừng máy thành công!', 'success');
+
+        // Reset UI sau khi gửi thành công
+        resetModalAfterSubmit();
+
+        console.log('✅ Đã gửi báo cáo dừng máy từ modal thành công');
+
+    } catch (error) {
+        console.error('Lỗi khi gửi báo cáo dừng máy từ modal:', error);
+        hideInLoading();
+        showNotification('Lỗi khi gửi báo cáo dừng máy: ' + error.message, 'error');
+    }
+}
+
+
+
+
+// Thêm hàm mới - reset modal sau khi submit
+function resetModalAfterSubmit() {
+    // Reset trong modal
+    const modalStopBoxes = document.querySelectorAll('#modalAdditionalReasonsContainer .stop-reason-box');
+    modalStopBoxes.forEach(box => box.remove());
+
+    const modalStopReasonSelect = document.getElementById('modalStopReason');
+    if (modalStopReasonSelect) {
+        modalStopReasonSelect.selectedIndex = 0;
+    }
+    
+    const modalReport = document.getElementById('modalMachineReport');
+    const modalChoice = document.getElementById('modalStopChoice');
+    const modalSubmitBtn = document.getElementById('modalSubmitStopOnlyButton');
+    
+    if (modalReport) modalReport.style.display = 'none';
+    if (modalChoice) modalChoice.style.display = 'block';
+    if (modalSubmitBtn) modalSubmitBtn.style.display = 'none';
+    
+    const modalBtnYes = document.getElementById('modalBtnYes');
+    const modalBtnNo = document.getElementById('modalBtnNo');
+    if (modalBtnYes) {
+        modalBtnYes.style.backgroundColor = '';
+        modalBtnYes.style.color = '';
+    }
+    if (modalBtnNo) {
+        modalBtnNo.style.backgroundColor = '';
+        modalBtnNo.style.color = '';
+    }
+
+    // Reset form chính (sử dụng logic có sẵn)
+    const stopBoxes = document.querySelectorAll('#additionalReasonsContainer .stop-reason-box');
+    stopBoxes.forEach(box => box.remove());
+
+    const stopReasonSelect = document.getElementById('stopReason');
+    if (stopReasonSelect) {
+        stopReasonSelect.selectedIndex = 0;
+    }
+    
+    const machineReport = document.getElementById('machineReport');
+    if (machineReport) {
+        machineReport.style.display = 'none';
+        machineReport.removeAttribute('data-setup-done');
+    }
+    
+    const btnYes = document.getElementById('btnYes');
+    const btnNo = document.getElementById('btnNo');
+    const submitStopOnlyButton = document.getElementById('submitStopOnlyButton');
+    
+    if (btnYes) {
+        btnYes.style.backgroundColor = '';
+        btnYes.style.color = '';
+    }
+    if (btnNo) {
+        btnNo.style.backgroundColor = '';
+        btnNo.style.color = '';
+    }
+    if (submitStopOnlyButton) {
+        submitStopOnlyButton.style.display = 'none';
+    }
+    
+    // Reset nút mini
+    const miniBtn = document.getElementById('miniStopButton');
+    const miniText = document.getElementById('miniStopText');
+    if (miniBtn && miniText) {
+        miniBtn.classList.remove('has-stop-selection', 'has-no-stop-selection');
+        miniText.innerHTML = '<i class="fas fa-stop-circle me-1"></i>DỪNG MÁY';
+    }
+    
+    updateInProgress();
+}
+
+
+
+// Thêm hàm mới - sync các lý do dừng máy
+function syncStopReasons() {
+    const mainContainer = document.querySelector('#additionalReasonsContainer');
+    const modalContainer = document.getElementById('modalAdditionalReasonsContainer');
+    
+    if (!mainContainer || !modalContainer) return;
+    
+    // Xóa nội dung cũ trong modal
+    modalContainer.innerHTML = '';
+    
+    // Copy tất cả stop-reason-box từ form chính sang modal
+    const stopBoxes = mainContainer.querySelectorAll('.stop-reason-box');
+    stopBoxes.forEach(box => {
+        const clonedBox = box.cloneNode(true);
+        
+        // Thay đổi ID để tránh trùng lặp
+        const boxId = clonedBox.id;
+        const modalBoxId = 'modal_' + boxId;
+        clonedBox.id = modalBoxId;
+        
+        // Cập nhật các ID con
+        const childElements = clonedBox.querySelectorAll('[id]');
+        childElements.forEach(el => {
+            if (el.id.startsWith(boxId)) {
+                el.id = el.id.replace(boxId, modalBoxId);
+            }
+        });
+        
+        // Cập nhật onclick của nút xóa
+        const deleteBtn = clonedBox.querySelector('button[onclick*="removeStopReasonBox"]');
+        if (deleteBtn) {
+            deleteBtn.setAttribute('onclick', `removeModalStopReasonBox('${modalBoxId}')`);
+        }
+        
+        modalContainer.appendChild(clonedBox);
+    });
+}
+
+
+
+
+// Thêm hàm mới - setup xử lý lý do dừng máy trong modal
+function setupModalStopReasonHandling() {
+    const modalStopReason = document.getElementById('modalStopReason');
+    
+    if (modalStopReason) {
+        modalStopReason.onchange = function() {
+            const reason = this.value;
+            if (reason) {
+                // Tạo box trong modal
+                createModalStopReasonBox(reason);
+                // Đồng thời tạo box trong form chính
+                createNewStopReasonBox(reason);
+                // Reset select
+                this.selectedIndex = 0;
+            }
+        };
+    }
+}
+
+// Thêm hàm mới - tạo stop reason box trong modal
+function createModalStopReasonBox(selectedReason) {
+    const container = document.getElementById('modalAdditionalReasonsContainer');
+    if (!container) return;
+    
+    const boxId = 'modal_stopReasonBox_' + Date.now();
+    
+    const boxHTML = `
+        <div class="stop-reason-box border rounded p-3 mb-3" id="${boxId}" style="background-color: #f8f9fa;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="text-danger mb-0">Lý do dừng máy: ${selectedReason}</h6>
+                <button class="btn btn-sm btn-danger" onclick="removeModalStopReasonBox('${boxId}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="fw-bold mb-1">Thời gian dừng máy</label>
+                    <div class="position-relative">
+                        <input type="datetime-local" class="form-control stop-time-input" id="${boxId}_stopTime">
+                        <button class="btn btn-primary btn-sm position-absolute top-0 end-0 h-100" 
+                                onclick="setModalCurrentTime('${boxId}_stopTime', '${boxId}_stopDisplay')" 
+                                style="z-index: 10; font-size: 12px;">
+                            Dừng máy
+                        </button>
+                    </div>
+                    <div class="form-text" id="${boxId}_stopDisplay"></div>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="fw-bold mb-1">Thời gian chạy lại</label>
+                    <div class="position-relative">
+                        <input type="datetime-local" class="form-control resume-time-input" id="${boxId}_resumeTime">
+                        <button class="btn btn-success btn-sm position-absolute top-0 end-0 h-100" 
+                                onclick="setModalCurrentTime('${boxId}_resumeTime', '${boxId}_resumeDisplay')" 
+                                style="z-index: 10; font-size: 12px;">
+                            Chạy lại
+                        </button>
+                    </div>
+                    <div class="form-text" id="${boxId}_resumeDisplay"></div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <label class="fw-bold mb-1">Lý do khác</label>
+                    <input type="text" class="form-control other-reason-input" 
+                           placeholder="Nhập lý do khác (nếu có)..." id="${boxId}_otherReason">
+                </div>
+                <div class="col-md-4">
+                    <label class="fw-bold mb-1 text-primary">Thời gian dừng máy</label>
+                    <input type="text" class="form-control bg-light duration-display" 
+                           id="${boxId}_duration" readonly>
+                </div>
+            </div>
+            
+            <input type="hidden" class="reason-value" value="${selectedReason}">
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', boxHTML);
+    setupModalDurationCalculation(boxId);
+}
+
+// Thêm các hàm helper cho modal
+function removeModalStopReasonBox(boxId) {
+    const box = document.getElementById(boxId);
+    if (box) {
+        box.remove();
+        // Đồng bộ xóa trong form chính
+        const mainBoxId = boxId.replace('modal_', '');
+        const mainBox = document.getElementById(mainBoxId);
+        if (mainBox) {
+            mainBox.remove();
+        }
+    }
+}
+
+function setModalCurrentTime(inputId, displayId) {
+    const now = new Date();
+    const input = document.getElementById(inputId);
+    const display = document.getElementById(displayId);
+
+    if (input) {
+        input.value = formatDateTimeLocal(now);
+        input.dispatchEvent(new Event('change'));
+    }
+
+    if (display) {
+        display.textContent = formatDisplayTime(now);
+    }
+
+    // Ẩn nút vừa bấm
+    const button = document.querySelector(`button[onclick*="${inputId}"]`);
+    if (button) {
+        button.style.display = 'none';
+    }
+
+    // Tính thời gian dừng máy
+    const boxId = inputId.split('_')[0] + '_' + inputId.split('_')[1];
+    setTimeout(() => {
+        calculateModalStopDuration(boxId);
+    }, 100);
+}
+
+function setupModalDurationCalculation(boxId) {
+    const stopTimeInput = document.getElementById(boxId + '_stopTime');
+    const resumeTimeInput = document.getElementById(boxId + '_resumeTime');
+
+    if (stopTimeInput) {
+        stopTimeInput.onchange = function() {
+            setTimeout(() => calculateModalStopDuration(boxId), 100);
+        };
+    }
+
+    if (resumeTimeInput) {
+        resumeTimeInput.onchange = function() {
+            setTimeout(() => calculateModalStopDuration(boxId), 100);
+        };
+    }
+}
+
+function calculateModalStopDuration(boxId) {
+    const stopTimeInput = document.getElementById(boxId + '_stopTime');
+    const resumeTimeInput = document.getElementById(boxId + '_resumeTime');
+    const durationDisplay = document.getElementById(boxId + '_duration');
+
+    if (stopTimeInput && resumeTimeInput && durationDisplay) {
+        const stopValue = stopTimeInput.value;
+        const resumeValue = resumeTimeInput.value;
+
+        if (stopValue && resumeValue) {
+            const stopTime = new Date(stopValue);
+            const resumeTime = new Date(resumeValue);
+
+            if (resumeTime > stopTime) {
+                const diff = resumeTime - stopTime;
+                const totalMinutes = Math.floor(diff / (1000 * 60));
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                
+                let durationText = '';
+                if (hours > 0) {
+                    durationText += `${hours} giờ`;
+                    if (minutes > 0) {
+                        durationText += ` ${minutes} phút`;
+                    }
+                } else if (minutes > 0) {
+                    durationText += `${minutes} phút`;
+                } else {
+                    durationText = '0 phút';
+                }
+                
+                durationDisplay.value = durationText.trim();
+            } else {
+                durationDisplay.value = '0 phút';
+            }
+        }
+    }
+}
 
 
 

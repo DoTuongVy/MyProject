@@ -25,6 +25,17 @@
 
     <body class="bg-light p-4">
 
+                            <!-- Nút Thu nhỏ Dừng Máy - Thêm sau dòng 106 -->
+<div class="position-absolute" id="miniStopButton" 
+style="top: 200px; right: 20px; z-index: 100;">
+<button class="btn btn-danger btn-sm px-3 py-2" 
+       onclick="toggleStopMachineModal()"
+       style="border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+   <i class="fas fa-stop-circle me-1"></i>
+   <span id="miniStopText">DỪNG MÁY</span>
+</button>
+</div>
+
         <!-- Tab Nav -->
         <nav>
             <div class="nav nav-tabs justify-content-center" id="nav-tab"
@@ -57,10 +68,14 @@
                 aria-labelledby="nav-baocaoinoffset-tab"
                 tabindex="0">
 
+                
+
                 <!-- Bắt đầu báo cáo -->
                 <div
                     class="container bg-white p-4 rounded shadow position-relative border border-success rounded-top p-3 mt-5 "
                     style="border-width: 2px;">
+
+                    
 
                     <div class="d-flex justify-content-end mb-3">
                         <button type="button" id="btnResetForm"
@@ -75,6 +90,8 @@
                         <strong style="font-size: 30px;">MÁY : <span
                                 id="displayMachineName"></span></strong>
                     </div>
+
+
 
                     <div class="row g-2">
 
@@ -1183,6 +1200,81 @@
             </div>
 
         </div>
+
+
+
+
+
+<!-- Modal Dừng Máy - Thay thế modal cũ -->
+<div class="modal fade" id="stopMachineModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(270deg, #D00000, #FF7272, #FFE0E0, #FF7272, #D00000); background-size: 500% 500%; animation: triColorGradient 4s ease infinite;">
+                <h5 class="modal-title text-white fw-bold">
+                    <span class="text-warning me-2" style="font-size: 1.5rem;">⚠</span>
+                    DỪNG MÁY
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Phần chọn có/không dừng máy -->
+                <div class="text-center mb-4" id="modalStopChoice">
+                    <p class="fs-5 mb-4 fw-bold">Máy có dừng không?</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <button id="modalBtnNo" class="btn btn-light border px-4 py-2 fw-bold"
+                                onclick="handleModalStopChoiceClick(false)">KHÔNG</button>
+                        <button id="modalBtnYes" class="btn btn-light border px-4 py-2 fw-bold"
+                                onclick="handleModalStopChoiceClick(true)">CÓ</button>
+                    </div>
+                </div>
+
+                <!-- Phần báo cáo dừng máy (ẩn ban đầu) -->
+                <div id="modalMachineReport" style="display: none;" 
+                     class="p-3 border border-danger rounded" 
+                     style="background-color: #FFC9CD;">
+                    <h6 class="text-center fw-bold mb-3">BÁO CÁO DỪNG MÁY</h6>
+
+                    <div class="row mb-3">
+                        <div class="col-4">
+                            <label class="fw-bold mb-1">Lý do dừng máy</label>
+                            <select class="form-select" id="modalStopReason">
+                                <option value>-- Lý do --</option>
+                                <option value="Máy hư">F1 : Máy hư</option>
+                                <option value="Chờ giấy">F2 : Chờ giấy</option>
+                                <option value="Chờ tiếp thị">F3 : Chờ tiếp thị</option>
+                                <option value="Chờ kế hoạch">F4 : Chờ kế hoạch</option>
+                                <option value="Vệ sinh">F5 : Vệ sinh</option>
+                                <option value="Khác">F6 : Khác</option>
+                                <option value="Bảo dưỡng">F7 : Bảo dưỡng</option>
+                                <option value="Sửa kẽm">F8 : Sửa kẽm</option>
+                                <option value="Thay su">F9 : Thay su</option>
+                                <option value="CHỜ KHÁCH TỚI KÝ BÀI">F10 : CHỜ KHÁCH TỚI KÝ BÀI</option>
+                                <option value="Cắt bảng DB">F11 : Cắt bảng DB</option>
+                                <option value="Giải lao">F12 : Giải lao</option>
+                                <option value="Cúp điện">F13 : Cúp điện</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Container cho các lý do được thêm -->
+                    <div id="modalAdditionalReasonsContainer"></div>
+
+                    <div class="text-center mt-3">
+                        <button class="btn btn-danger me-3" id="modalSubmitStopOnlyButton"
+                                onclick="submitModalStopReportOnly()" style="display: none;">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Dừng máy không có WS
+                        </button>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 
         <script src="./in.js"></script>
         <script src="../auth.js"></script>
