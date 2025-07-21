@@ -53,10 +53,10 @@ router.get('/in/chart-data', async (req, res) => {
         const reports = await new Promise((resolve, reject) => {
             db.all(`SELECT 
     thanh_pham_in, phe_lieu, phe_lieu_trang, thoi_gian_canh_may,
-    thoi_gian_bat_dau, thoi_gian_ket_thuc, khach_hang, ma_sp, id, ws, ma_ca, may,
+    thoi_gian_bat_dau, thoi_gian_ket_thuc, khach_hang, ma_sp, id, ws, ma_ca, may, stt,
     sl_don_hang, so_mau, so_con, ngay_phu, truong_may, tong_so_luong, thanh_pham, tuy_chon
 FROM bao_cao_in ${whereClause}
-ORDER BY created_at DESC`,
+ORDER BY stt DESC`,
                 params, (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows || []);
