@@ -194,8 +194,8 @@ th:hover .column-dropdown-toggle {
 }
 
 #miniStopButton .btn:hover::before {
-  width: 100px;
-  height: 100px;
+  width: 150px;
+  height: 150px;
 }
 
 #miniStopButton.has-stop-selection .btn {
