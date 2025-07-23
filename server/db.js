@@ -1114,6 +1114,42 @@ db.run(`CREATE TABLE IF NOT EXISTS bao_cao_in_dung_may (
 
 
 
+
+
+// Bảng danh sách chờ báo cáo In
+db.run(`CREATE TABLE IF NOT EXISTS bao_cao_in_cho (
+  id TEXT PRIMARY KEY,
+  may TEXT NOT NULL,
+  ws TEXT,
+  quan_doc TEXT,
+  ca TEXT,
+  gio_lam_viec TEXT,
+  ma_ca TEXT,
+  truong_may TEXT,
+  phu_may_1 TEXT,
+  phu_may_2 TEXT,
+  tuy_chon TEXT,
+  mau_3_tone TEXT,
+  so_kem INTEGER,
+  mat_sau TEXT,
+  phu_keo TEXT,
+  phun_bot INTEGER,
+  so_pass_in TEXT,
+  thoi_gian_bat_dau TEXT,
+  nguoi_thuc_hien TEXT,
+  user_id TEXT,
+  bao_cao_chinh_id TEXT, -- ID của báo cáo chính trong bao_cao_in
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`, (err) => {
+  if (err) {
+    console.error('Lỗi khởi tạo bảng bao_cao_in_cho:', err.message);
+  } else {
+    console.log('Bảng bao_cao_in_cho đã được tạo hoặc đã tồn tại');
+  }
+});
+
+
+
 // Bảng quản lý người dùng cho báo cáo sản xuất
 db.run(`CREATE TABLE IF NOT EXISTS production_users (
   id TEXT PRIMARY KEY,

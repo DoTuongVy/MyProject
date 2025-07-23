@@ -46,6 +46,9 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log('DOM đã tải hoàn tất, bắt đầu khởi tạo báo cáo In...');
 
     initializeInSystem();
+    setTimeout(() => {
+    checkWaitingReports();
+}, 1000);
     setupInEvents();
     loadUserOptions();
     restoreFormState();
@@ -79,6 +82,69 @@ function initializeInSystem() {
 
 
 }
+
+
+
+
+// Kiểm tra báo cáo chờ khi khởi tạo
+async function checkWaitingReports() {
+    const machineId = getCurrentMachineId();
+    if (!machineId) return;
+    
+    try {
+        const response = await fetch(`/api/bao-cao-in/cho/${machineId}`);
+        if (response.ok) {
+            const waitingReport = await response.json();
+            if (waitingReport) {
+                showWaitingReportModal(waitingReport);
+            } else {
+                loadWaitingListCard();
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi khi kiểm tra báo cáo chờ:', error);
+    }
+}
+
+// Hiển thị modal báo cáo chờ
+function showWaitingReportModal(waitingReport) {
+    document.getElementById('waitingMachineName').textContent = waitingReport.may;
+    document.getElementById('waitingWS').textContent = waitingReport.ws || 'Không có';
+    document.getElementById('waitingTuyChon').textContent = waitingReport.tuy_chon || '';
+    document.getElementById('waitingQuanDoc').textContent = waitingReport.quan_doc || '';
+    document.getElementById('waitingStartTime').textContent = formatDateTime(waitingReport.thoi_gian_bat_dau);
+    document.getElementById('waitingCa').textContent = waitingReport.ca || '';
+    
+    // Lưu dữ liệu để sử dụng sau
+    window.currentWaitingReport = waitingReport;
+    
+    const modal = new bootstrap.Modal(document.getElementById('waitingListModal'));
+    modal.show();
+}
+
+// Tiếp tục báo cáo chờ
+function continueWaitingReport() {
+    const waitingReport = window.currentWaitingReport;
+    if (!waitingReport) return;
+    
+    // Điền dữ liệu vào form
+    restoreWaitingReportToForm(waitingReport);
+    
+    // Đóng modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('waitingListModal'));
+    modal.hide();
+}
+
+// Bỏ qua báo cáo chờ
+function skipWaitingReport() {
+    // Đóng modal và hiển thị card danh sách chờ
+    const modal = bootstrap.Modal.getInstance(document.getElementById('waitingListModal'));
+    modal.hide();
+    
+    loadWaitingListCard();
+}
+
+
 
 // ====================================================================================================================================
 // THIẾT LẬP EVENTS
@@ -3020,6 +3086,120 @@ setTimeout(() => {
         console.error('Lỗi khi thực hiện khôi phục form:', error);
         delete window.pendingFormRestore;
     }
+}
+
+
+
+
+// Khôi phục báo cáo chờ về form
+function restoreWaitingReportToForm(waitingReport) {
+    try {
+        // Set các giá trị cơ bản
+        if (waitingReport.quan_doc) setSelectValueByText('quandoc', waitingReport.quan_doc);
+        if (waitingReport.ca) setInputValue('ca', waitingReport.ca);
+        if (waitingReport.gio_lam_viec) setSelectValueByText('gioLamViec', waitingReport.gio_lam_viec);
+        if (waitingReport.ma_ca) setInputValue('maCa', waitingReport.ma_ca);
+        if (waitingReport.truong_may) setInputValue('truongmay', waitingReport.truong_may);
+        if (waitingReport.phu_may_1) setSelectValueByText('phumay1', waitingReport.phu_may_1);
+        if (waitingReport.phu_may_2) setSelectValueByText('phumay2', waitingReport.phu_may_2);
+        
+        // Set dữ liệu WS và các trường liên quan
+        if (waitingReport.ws) setInputValue('ws', waitingReport.ws);
+        if (waitingReport.tuy_chon) setSelectValueByText('tuychon', waitingReport.tuy_chon);
+        if (waitingReport.so_kem) setInputValue('sokem', waitingReport.so_kem.toString());
+        if (waitingReport.mau_3_tone) setCheckboxValue('mau3tone', waitingReport.mau_3_tone === 'on');
+        if (waitingReport.mat_sau) setCheckboxValue('matsau', waitingReport.mat_sau === 'on');
+        if (waitingReport.phu_keo) setSelectValue('phukeo', waitingReport.phu_keo);
+        if (waitingReport.phun_bot) setInputValue('phunbot', waitingReport.phun_bot.toString());
+        if (waitingReport.so_pass_in) {
+            const passSelect = document.getElementById('pass');
+            if (passSelect) {
+                if (waitingReport.so_pass_in.includes('1 PASS')) {
+                    passSelect.value = '1';
+                } else if (waitingReport.so_pass_in.includes('2 PASS')) {
+                    passSelect.value = '2';
+                }
+            }
+        }
+        
+        // Set thời gian bắt đầu
+        if (waitingReport.thoi_gian_bat_dau) {
+            startTime = new Date(waitingReport.thoi_gian_bat_dau);
+            hasValidStartTime = true;
+            const startTimeElement = document.getElementById('startTime');
+            if (startTimeElement) {
+                startTimeElement.textContent = startTime.toLocaleString('vi-VN');
+            }
+        }
+        
+        // Set trạng thái đã bắt đầu
+        isStarted = true;
+        currentReportId = waitingReport.bao_cao_chinh_id;
+        
+        // Cập nhật UI
+        updateUIAfterStart();
+        
+        // Trigger WS change để load dữ liệu WS
+        if (waitingReport.ws) {
+            setTimeout(() => {
+                handleWSChange();
+            }, 500);
+        }
+        
+        console.log('Đã khôi phục báo cáo chờ vào form');
+        
+    } catch (error) {
+        console.error('Lỗi khi khôi phục báo cáo chờ:', error);
+    }
+}
+
+// Load card danh sách chờ
+async function loadWaitingListCard() {
+    const machineId = getCurrentMachineId();
+    if (!machineId) return;
+    
+    try {
+        const response = await fetch(`/api/bao-cao-in/cho/list/${machineId}`);
+        if (response.ok) {
+            const waitingList = await response.json();
+            if (waitingList && waitingList.length > 0) {
+                showWaitingListCard(waitingList);
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi khi load danh sách chờ:', error);
+    }
+}
+
+// Hiển thị card danh sách chờ
+function showWaitingListCard(waitingList) {
+    const card = document.getElementById('waitingListCard');
+    const content = document.getElementById('waitingListContent');
+    
+    let html = '';
+    waitingList.forEach(item => {
+        html += `
+            <div class="border rounded p-2 mb-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>WS: ${item.ws || 'Không có'}</strong><br>
+                        <small>${item.tuy_chon || ''} - ${formatDateTime(item.thoi_gian_bat_dau)}</small>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-primary me-1" onclick="loadWaitingReport('${item.id}')">
+                            Tiếp tục
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteWaitingReport('${item.id}')">
+                            Xóa
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
+    card.classList.remove('d-none');
 }
 
 
@@ -6194,6 +6374,52 @@ window.setModalCurrentTime = setModalCurrentTime;  // <-- THÊM DÒNG NÀY
 window.removeModalStopReasonBox = removeModalStopReasonBox;  // <-- VÀ DÒNG NÀY
 
 console.log('✅ Đã khởi tạo hoàn tất hệ thống báo cáo In Offset');
+
+
+// Load báo cáo chờ
+async function loadWaitingReport(waitingId) {
+    try {
+        const machineId = getCurrentMachineId();
+        const response = await fetch(`/api/bao-cao-in/cho/list/${machineId}`);
+        if (response.ok) {
+            const waitingList = await response.json();
+            const waitingReport = waitingList.find(item => item.id === waitingId);
+            if (waitingReport) {
+                restoreWaitingReportToForm(waitingReport);
+                document.getElementById('waitingListCard').classList.add('d-none');
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi khi load báo cáo chờ:', error);
+    }
+}
+
+// Xóa báo cáo chờ
+async function deleteWaitingReport(waitingId) {  
+    if (!confirm('Bạn có chắc muốn xóa báo cáo chờ này?')) return;
+    
+    try {
+        const response = await fetch(`/api/bao-cao-in/cho/${waitingId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showNotification('Đã xóa báo cáo chờ', 'success');
+            loadWaitingListCard();
+        }
+    } catch (error) {
+        console.error('Lỗi khi xóa báo cáo chờ:', error);
+        showNotification('Lỗi khi xóa báo cáo chờ', 'error');
+    }
+}
+
+// Expose global functions
+window.loadWaitingReport = loadWaitingReport; 
+window.deleteWaitingReport = deleteWaitingReport;
+window.continueWaitingReport = continueWaitingReport;
+window.skipWaitingReport = skipWaitingReport;
+
+
 
 // ====================================================================================================================================
 // KHỞI TẠO HỆ THỐNG KHI TRANG LOAD XONG

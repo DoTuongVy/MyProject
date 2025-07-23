@@ -810,6 +810,46 @@ const thanhPham = 0;
             });
         });
 
+
+
+        // Thêm vào danh sách chờ
+await new Promise((resolve, reject) => {
+    db.run(`INSERT INTO bao_cao_in_cho (
+        id, may, ws, quan_doc, ca, gio_lam_viec, ma_ca, truong_may,
+        phu_may_1, phu_may_2, tuy_chon, mau_3_tone, so_kem, mat_sau,
+        phu_keo, phun_bot, so_pass_in, thoi_gian_bat_dau, nguoi_thuc_hien,
+        user_id, bao_cao_chinh_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+        reportId + '_cho',
+        startData.may || '',
+        startData.ws || '',
+        startData.quanDoc || '',
+        startData.ca || '',
+        startData.gioLamViec || '',
+        startData.maCa || '',
+        startData.truongMay || '',
+        startData.phumay1 || '',
+        startData.phumay2 || '',
+        startData.tuychon || '',
+        startData.mau3tone || '',
+        parseInt(startData.sokem || '0'),
+        startData.matsau || '',
+        startData.phukeo || '',
+        parseInt(startData.phunbot || '0'),
+        startData.soPassIn || '',
+        startData.thoiGianBatDau || '',
+        startData.nguoiThucHien || '',
+        'user_id_placeholder',
+        reportId
+    ], (err) => {
+        if (err) reject(err);
+        else resolve();
+    });
+});
+
+
+
         res.json({
             success: true,
             id: reportId,
@@ -1103,6 +1143,20 @@ console.log(`🔍 [DEBUG] update-end gọi updateRelatedReportsThanhPham: WS=${c
 await updateRelatedReportsThanhPham(currentReport.ws, currentReport.tuy_chon, id);
 console.log(`🔍 [DEBUG] Đã hoàn thành gọi updateRelatedReportsThanhPham`);
 
+
+
+// Xóa khỏi danh sách chờ khi hoàn thành
+await new Promise((resolve, reject) => {
+    db.run(`DELETE FROM bao_cao_in_cho WHERE bao_cao_chinh_id = ?`, [id], (err) => {
+        if (err) {
+            console.warn('Không thể xóa khỏi danh sách chờ:', err.message);
+        }
+        resolve(); // Không reject để không ảnh hưởng luồng chính
+    });
+});
+
+
+
         res.json({
             success: true,
             id: id,
@@ -1381,6 +1435,58 @@ router.post('/dung-may/submit', (req, res) => {
 });
 
 
+
+
+
+// API kiểm tra báo cáo chờ theo máy
+router.get('/cho/:machineId', (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    const { machineId } = req.params;
+    
+    db.get(`SELECT * FROM bao_cao_in_cho WHERE may = ? ORDER BY created_at DESC LIMIT 1`, 
+        [machineId], (err, row) => {
+        if (err) {
+            console.error('Lỗi khi kiểm tra báo cáo chờ:', err.message);
+            return res.status(500).json({ error: 'Lỗi khi kiểm tra báo cáo chờ' });
+        }
+        
+        res.json(row || null);
+    });
+});
+
+// API lấy danh sách chờ theo máy
+router.get('/cho/list/:machineId', (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    const { machineId } = req.params;
+    
+    db.all(`SELECT * FROM bao_cao_in_cho WHERE may = ? ORDER BY created_at DESC`, 
+        [machineId], (err, rows) => {
+        if (err) {
+            console.error('Lỗi khi lấy danh sách chờ:', err.message);
+            return res.status(500).json({ error: 'Lỗi khi lấy danh sách chờ' });
+        }
+        
+        res.json(rows || []);
+    });
+});
+
+// API xóa báo cáo khỏi danh sách chờ
+router.delete('/cho/:id', (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    const { id } = req.params;
+    
+    db.run(`DELETE FROM bao_cao_in_cho WHERE id = ?`, [id], function(err) {
+        if (err) {
+            console.error('Lỗi khi xóa báo cáo chờ:', err.message);
+            return res.status(500).json({ error: 'Lỗi khi xóa báo cáo chờ' });
+        }
+        
+        res.json({ success: true, message: 'Đã xóa báo cáo chờ' });
+    });
+});
 
 
 

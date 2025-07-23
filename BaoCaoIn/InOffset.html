@@ -61,6 +61,19 @@ style="top: 200px; right: 20px; z-index: 100;">
             <!-- Content tab -->
         </nav>
 
+
+
+        <!-- Card danh sách chờ -->
+<div class="card mt-3 d-none" id="waitingListCard">
+    <div class="card-header">
+        <h6 class="mb-0">Danh sách chờ</h6>
+    </div>
+    <div class="card-body">
+        <div id="waitingListContent"></div>
+    </div>
+</div>
+
+
         <!-- Phần báo cáo -->
         <div class="tab-content" id="nav-tabContent">
             <div class="tab-pane fade show active" id="nav-baocaoinoffset"
@@ -1272,6 +1285,50 @@ style="top: 200px; right: 20px; z-index: 100;">
         </div>
     </div>
 </div>
+
+
+
+
+<!-- Modal danh sách chờ -->
+<div class="modal fade" id="waitingListModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Báo cáo đang chờ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <strong>Máy <span id="waitingMachineName"></span></strong> có báo cáo đang chờ hoàn thành:
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Số WS:</strong> <span id="waitingWS"></span></p>
+                                <p><strong>Tùy chọn:</strong> <span id="waitingTuyChon"></span></p>
+                                <p><strong>Quản đốc:</strong> <span id="waitingQuanDoc"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Thời gian bắt đầu:</strong> <span id="waitingStartTime"></span></p>
+                                <p><strong>Ca:</strong> <span id="waitingCa"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <p>Bạn có muốn tiếp tục với báo cáo này không?</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="skipWaitingReport()">Bỏ qua</button>
+                <button type="button" class="btn btn-primary" onclick="continueWaitingReport()">Đồng ý</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 
 
