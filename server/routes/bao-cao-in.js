@@ -117,95 +117,115 @@ async function calculateThanhPham(currentReportId, wsValue, tuychonText, tongSoL
 
 
 
-// Hàm cập nhật lại thành phẩm của các báo cáo liên quan khi có báo cáo mới
+// Hàm cập nhật lại thành phẩm của TẤT CẢ báo cáo production khi có thay đổi
 async function updateRelatedReportsThanhPham(wsValue, tuychonText, currentReportId) {
     try {
-        console.log(`🔄 Backend update related reports: WS=${wsValue}, Tùy chọn=${tuychonText}`);
+        console.log(`🔍 [DEBUG] updateRelatedReportsThanhPham được gọi: WS=${wsValue}, Tùy chọn=${tuychonText}`);
         
-        // Chỉ cập nhật khi là waste processes
-        const wasteProcesses = ['4. IN DẶM', '5. IN DẶM + CÁN BÓNG', '6. CÁN BÓNG LẠI', 
-                               '7. IN DẶM (GIA CÔNG)', '8. IN DẶM + CÁN BÓNG (GIA CÔNG)', '9. CÁN BÓNG LẠI (GIA CÔNG)'];
-        
-        if (!wasteProcesses.includes(tuychonText)) {
-            console.log('Không phải waste process, bỏ qua cập nhật');
+        if (!wsValue) {
+            console.log(`[DEBUG] Không có WS, bỏ qua`);
             return;
         }
         
-        // Map waste -> production để tìm báo cáo cần cập nhật
-        const wasteToProductionMap = {
-            '4. IN DẶM': '1. IN',
-            '5. IN DẶM + CÁN BÓNG': '2. In + CÁN BÓNG',
-            '6. CÁN BÓNG LẠI': '3. CÁN BÓNG',
-            '7. IN DẶM (GIA CÔNG)': '1. IN',
-            '8. IN DẶM + CÁN BÓNG (GIA CÔNG)': '2. IN + CÁN BÓNG', 
-            '9. CÁN BÓNG LẠI (GIA CÔNG)': '3. CÁN BÓNG'
-        };
+        // LUÔN LUÔN cập nhật các báo cáo production (1,2,3) bất kể tùy chọn hiện tại là gì
+        console.log(`[DEBUG] Tìm kiếm TẤT CẢ báo cáo production (1,2,3) cùng WS để cập nhật...`);
         
-        const targetProductionProcess = wasteToProductionMap[tuychonText];
-        if (!targetProductionProcess) {
-            console.log('Không tìm thấy production process tương ứng');
-            return;
-        }
-        
-        console.log(`Tìm kiếm báo cáo production: ${targetProductionProcess} để cập nhật`);
-        
-        // Tìm các báo cáo production cần cập nhật (cùng WS, cùng điều kiện)
+        // Tìm TẤT CẢ báo cáo production (1,2,3) cùng WS
         const productionReports = await new Promise((resolve, reject) => {
-            db.all(`SELECT id, thanh_pham_in, tong_so_luong, mat_sau, phu_keo, so_pass_in, may FROM bao_cao_in 
-                    WHERE ws = ? AND tuy_chon = ? 
-                    AND thanh_pham_in IS NOT NULL 
-                    AND thanh_pham_in != ''
-                    AND thanh_pham_in != '0'
+            db.all(`SELECT id, tong_so_luong, mat_sau, phu_keo, so_pass_in, may, tuy_chon, created_at 
+                    FROM bao_cao_in 
+                    WHERE ws = ? 
+                    AND tuy_chon IN ('1. IN', '2. IN + CÁN BÓNG', '3. CÁN BÓNG')
+                    AND tong_so_luong IS NOT NULL 
+                    AND tong_so_luong != ''
+                    AND tong_so_luong != '0'
                     ORDER BY created_at ASC`, 
-                [wsValue, targetProductionProcess], (err, rows) => {
+                [wsValue], (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows || []);
             });
         });
         
-        console.log(`Tìm thấy ${productionReports.length} báo cáo production cần cập nhật`);
+        console.log(`[DEBUG] Tìm thấy ${productionReports.length} báo cáo production:`, 
+                   productionReports.map(r => `ID:${r.id}-${r.tuy_chon}`));
         
-        if (productionReports.length === 0) return;
-        
-        // Lấy tổng phế liệu mới nhất từ waste process
-        const latestWasteTotal = await new Promise((resolve, reject) => {
-            db.get(`SELECT tong_phe_lieu, tong_phe_lieu_trang FROM bao_cao_in 
-                    WHERE ws = ? AND tuy_chon = ? 
-                    AND tong_phe_lieu IS NOT NULL 
-                    ORDER BY created_at DESC LIMIT 1`,
-                [wsValue, tuychonText], (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-        
-        const tongPheLieuMoiNhat = latestWasteTotal ? 
-            (parseFloat(latestWasteTotal.tong_phe_lieu) || 0) + (parseFloat(latestWasteTotal.tong_phe_lieu_trang) || 0) : 0;
-        
-        console.log(`Tổng phế liệu mới nhất từ ${tuychonText}: ${tongPheLieuMoiNhat}`);
-        
-        // Cập nhật thành phẩm cho báo cáo production cuối cùng (lần chạy cuối)
-        if (productionReports.length > 0) {
-            const lastReport = productionReports[productionReports.length - 1];
-            const tongSoLuong = parseFloat(lastReport.tong_so_luong) || 0;
-            const newThanhPham = Math.max(0, tongSoLuong - tongPheLieuMoiNhat);
-            
-            await new Promise((resolve, reject) => {
-                db.run(`UPDATE bao_cao_in SET thanh_pham = ? WHERE id = ?`,
-                    [newThanhPham.toString(), lastReport.id], (err) => {
-                    if (err) reject(err);
-                    else resolve();
-                });
-            });
-            
-            console.log(`✅ Đã cập nhật thành phẩm cho báo cáo ID ${lastReport.id}: ${newThanhPham}`);
+        if (productionReports.length === 0) {
+            console.log(`[DEBUG] Không có báo cáo production nào để cập nhật`);
+            return;
         }
         
+        // Cập nhật từng báo cáo production
+        for (const prodReport of productionReports) {
+            console.log(`[DEBUG] Xử lý báo cáo ID:${prodReport.id} - ${prodReport.tuy_chon}`);
+            
+            // 🔍 DEBUG: Trước tiên tìm TẤT CẢ waste reports cùng WS để xem có gì
+console.log(`[DEBUG] Tìm TẤT CẢ waste reports cùng WS ${wsValue}...`);
+const allWasteQuery = `SELECT id, phe_lieu, tuy_chon, mat_sau, phu_keo, so_pass_in FROM bao_cao_in 
+                       WHERE ws = ? 
+                       AND tuy_chon IN ('4. IN DẶM', '5. IN DẶM + CÁN BÓNG', '6. CÁN BÓNG LẠI')`;
+
+const allWasteReports = await new Promise((resolve, reject) => {
+    db.all(allWasteQuery, [wsValue], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+    });
+});
+
+console.log(`[DEBUG] TẤT CẢ waste reports cùng WS:`, allWasteReports.map(w => 
+    `ID:${w.id}-${w.tuy_chon}-PL:${w.phe_lieu}-MatSau:${w.mat_sau}-PhuKeo:${w.phu_keo}-Pass:${w.so_pass_in}`
+));
+
+console.log(`[DEBUG] Production report điều kiện:`, {
+    mat_sau: prodReport.mat_sau || 0,
+    phu_keo: prodReport.phu_keo || '',
+    so_pass_in: prodReport.so_pass_in || ''
+});
+
+const wasteReports = allWasteReports.filter(w => {
+    const matSauMatch = (w.mat_sau || 0) === (prodReport.mat_sau || 0);
+    const passInMatch = (w.so_pass_in || '') === (prodReport.so_pass_in || '');
+    const hasPheLieu = w.phe_lieu && w.phe_lieu !== '' && w.phe_lieu !== '0';
+    
+    // 🔧 LOẠI BỎ điều kiện phủ keo - waste processes có thể không có phủ keo
+    // const phuKeoMatch = (w.phu_keo || '') === (prodReport.phu_keo || '');
+    
+    console.log(`[DEBUG] Waste ID:${w.id} - MatSau:${matSauMatch} Pass:${passInMatch} HasPL:${hasPheLieu} (Bỏ qua PhuKeo)`);
+    
+    return matSauMatch && passInMatch && hasPheLieu;
+});
+            
+            console.log(`[DEBUG] Tìm thấy ${wasteReports.length} waste reports:`, 
+                       wasteReports.map(w => `ID:${w.id}-${w.tuy_chon}-PL:${w.phe_lieu}`));
+            
+            const totalWastePL = wasteReports.reduce((sum, w) => sum + (parseFloat(w.phe_lieu) || 0), 0);
+            console.log(`[DEBUG] Tổng phế liệu waste: ${totalWastePL}`);
+            
+            const tongSoLuong = parseFloat(prodReport.tong_so_luong) || 0;
+            const newThanhPham = Math.max(0, tongSoLuong - totalWastePL);
+            
+            console.log(`[DEBUG] Tính toán: ${tongSoLuong} - ${totalWastePL} = ${newThanhPham}`);
+            
+            // Cập nhật thành phẩm
+            const updateResult = await new Promise((resolve, reject) => {
+                db.run(`UPDATE bao_cao_in SET thanh_pham = ? WHERE id = ?`,
+                    [newThanhPham.toString(), prodReport.id], function(err) {
+                    if (err) {
+                        console.error(`[DEBUG] Lỗi update ID ${prodReport.id}:`, err);
+                        reject(err);
+                    } else {
+                        console.log(`[DEBUG] Update thành công ID ${prodReport.id}: ${this.changes} rows affected`);
+                        resolve(this.changes);
+                    }
+                });
+            });
+        }
+        
+        console.log(`✅ [DEBUG] Hoàn thành cập nhật ${productionReports.length} báo cáo production`);
+        
     } catch (error) {
-        console.error('Lỗi khi cập nhật báo cáo liên quan:', error);
+        console.error('❌ [DEBUG] Lỗi updateRelatedReportsThanhPham:', error);
     }
 }
-
 
 
 // // Tính thành phẩm cho một báo cáo cụ thể
@@ -1078,8 +1098,10 @@ parseFormattedNumber(ketThuc.slGiayTT3) || '',
             await Promise.all(insertPromises);
         }
 
-        // cập nhật báo cáo liên quan tự động
-        await updateRelatedReportsThanhPham(currentReport.ws, currentReport.tuy_chon, id);
+        // 🔍 DEBUG: Luôn gọi cập nhật cho TẤT CẢ báo cáo (không chỉ waste)
+console.log(`🔍 [DEBUG] update-end gọi updateRelatedReportsThanhPham: WS=${currentReport.ws}, Tùy chọn=${currentReport.tuy_chon}`);
+await updateRelatedReportsThanhPham(currentReport.ws, currentReport.tuy_chon, id);
+console.log(`🔍 [DEBUG] Đã hoàn thành gọi updateRelatedReportsThanhPham`);
 
         res.json({
             success: true,

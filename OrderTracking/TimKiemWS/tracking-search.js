@@ -536,6 +536,9 @@ function calculateInQuantitiesByPass(data) {
         // Chỉ có pass 2
         displayQuantity = pass2Total;
         quantities = [{ field: 'final_pass', label: 'SL', value: pass2Total }];
+    } else {
+        // Không có pass nào, trả về 0
+        quantities = [{ field: 'final_pass', label: 'SL', value: 0 }];
     }
     
     console.log('🔍 IN Tooltip Data:', tooltipData);

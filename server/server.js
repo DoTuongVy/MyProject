@@ -59,6 +59,13 @@ app.use('/api/ws-tong', wsTongRoutes);
 app.use('/api/production-users',quanLynguoiDungsanXuat);
 app.use('/api/bieu-do', bieuDoRoutes);
 
+
+app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
+
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'assets', 'favicon.ico'));
+});
+
 // Route mặc định - chuyển hướng tới trang đăng nhập
 app.get('/', (req, res) => {
   res.redirect('/login/login.html');

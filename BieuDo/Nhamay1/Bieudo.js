@@ -247,10 +247,21 @@ function setupStickyFilter() {
     const filterSection = document.getElementById('filterSection');
     if (!filterSection) return;
 
-    // Tạo bản sao sticky
-    const stickyFilter = filterSection.cloneNode(true);
-    stickyFilter.id = 'filterSectionSticky';
-    stickyFilter.className = 'filter-section-sticky';
+    // Tạo bản sao sticky chỉ lấy phần card-body
+const stickyFilter = document.createElement('div');
+stickyFilter.id = 'filterSectionSticky';
+stickyFilter.className = 'filter-section-sticky';
+
+// Chỉ copy phần card-body
+const originalCardBody = filterSection.querySelector('.card-body');
+const clonedCardBody = originalCardBody.cloneNode(true);
+
+// Tạo cấu trúc card đơn giản cho sticky
+stickyFilter.innerHTML = `
+    <div class="card card-custom border-left-main" style="border-left: 7px solid #d0bb2c; border-radius: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        ${clonedCardBody.outerHTML}
+    </div>
+`;
     
     // Tạo placeholder
     const placeholder = document.createElement('div');
@@ -285,9 +296,15 @@ window.addEventListener('scroll', function() {
         filterSection.classList.add('hide');
         placeholder.style.height = filterHeight + 'px';
         
+        // Bỏ background màu vàng khi sticky
+        const stickyFilterTitle = stickyFilter.querySelector('.label-title');
+        if (stickyFilterTitle) {
+            stickyFilterTitle.style.backgroundColor = 'white';
+            stickyFilterTitle.style.border = '1px solid #dee2e6';
+        }
+        
         // Đồng bộ giá trị hiện tại
         syncFilterValues(filterSection, stickyFilter);
-        
     } else if (shouldSticky && isScrollingUp && isSticky) {
         // Scroll lên khi đang sticky -> ẩn sticky để xem dữ liệu
         isSticky = false;
@@ -304,6 +321,13 @@ window.addEventListener('scroll', function() {
         stickyFilter.classList.remove('show');
         filterSection.classList.remove('hide');
         placeholder.style.height = '0px';
+        
+        // Khôi phục background màu vàng
+        const stickyFilterTitle = stickyFilter.querySelector('.label-title');
+        if (stickyFilterTitle) {
+            stickyFilterTitle.style.backgroundColor = 'rgb(242, 244, 211)';
+            stickyFilterTitle.style.border = '';
+        }
         
         // Đồng bộ giá trị về filter gốc
         syncFilterValues(stickyFilter, filterSection);
@@ -604,7 +628,7 @@ function displayYearlyMachineCharts(yearlyData, year) {
                 <div class="card card-custom-sub border-left-sub">
                     <div class="label-title-sub ">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div class="mb-0"><i class="fas fa-chart-bar me-2"></i>Sản xuất theo trưởng máy - Trái</div>
+                            <div class="mb-0"><i class="fas fa-chart-bar me-2"></i>Sản xuất theo trưởng máy - Bảng 1</div>
                             <select class="form-select form-select-sm" id="leaderSelectLeft" style="width: 200px;">
                                 <option value="">Chọn trưởng máy</option>
                             </select>
@@ -624,7 +648,7 @@ function displayYearlyMachineCharts(yearlyData, year) {
                 <div class="card card-custom-sub border-left-sub">
                     <div class="label-title-sub ">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div class="mb-0"><i class="fas fa-chart-bar me-2"></i>Sản xuất theo trưởng máy - Phải</div>
+                            <div class="mb-0"><i class="fas fa-chart-bar me-2"></i>Sản xuất theo trưởng máy - Bảng 2</div>
                             <select class="form-select form-select-sm" id="leaderSelectRight" style="width: 200px;">
                                 <option value="">Chọn trưởng máy</option>
                             </select>
@@ -699,7 +723,10 @@ function displayYearlyMachineCharts(yearlyData, year) {
         const paperDatasets = [];
         const wasteDatasets = [];
         const colors = [
-            '#e8b0c9', '#accae3', '#e8c3a7', '#a9dbca', '#a3add9', '#dbd89e'
+            '#F1948A', '#85C1E9', '#82E0AA', '#F8C471', '#D2B4DE', '#7FCDCD',
+            '#AEB6BF', '#F0B27A', '#BB8FCE', '#85C1E9', '#7DCEA0', '#F7DC6F',
+            '#EC7063', '#5DADE2', '#58D68D', '#F5B041', '#AF7AC5', '#48C9B0',
+            '#85929E', '#E67E22', '#A569BD', '#52D681', '#3498DB', '#F39C12'
         ];
 
         console.log('🔍 Bắt đầu tạo datasets...');
@@ -818,9 +845,9 @@ function displayYearlyMachineCharts(yearlyData, year) {
                                     if (originalColor.includes('rgb(')) {
                                         // Giảm độ sáng xuống 30%
                                         return originalColor.replace(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/, function (match, r, g, b) {
-                                            const newR = Math.max(0, Math.floor(r * 0.7));
-                                            const newG = Math.max(0, Math.floor(g * 0.7));
-                                            const newB = Math.max(0, Math.floor(b * 0.7));
+                                            const newR = Math.max(0, Math.floor(r * 0.2));
+                                            const newG = Math.max(0, Math.floor(g * 0.2));
+                                            const newB = Math.max(0, Math.floor(b * 0.2));
                                             return `rgb(${newR}, ${newG}, ${newB})`;
                                         });
                                     }
@@ -1245,6 +1272,10 @@ function setDefaultDates() {
 async function handleViewInReport() {
     try {
         showLoading(true);
+
+        // Reset về tab Tổng quan khi loading dữ liệu mới
+        currentTimeAnalysisMode = 'sanxuat';
+
         // Đảm bảo reportSection luôn có cấu trúc HTML đúng
         ensureReportSectionStructure();
         // Reset dữ liệu cũ và UI trước khi lọc mới
@@ -1490,6 +1521,8 @@ function displayInReport(data, filters) {
     console.log('📋 Số ca trong dữ liệu:', data.shiftData ? data.shiftData.length : 0);
     console.log('📋 Mã ca filter:', filters.maca);
 
+    currentTimeAnalysisMode = 'sanxuat';
+
 
     // Kiểm tra dữ liệu có hợp lệ không
     if (!data || ((!data.totalPaper || data.totalPaper === 0) &&
@@ -1508,6 +1541,33 @@ function displayInReport(data, filters) {
         // Reset tất cả displays về 0
         displaySummaryStats({ totalPaper: 0, totalWaste: 0 }, filters);
         displayProgressBar({ totalPaper: 0, totalWaste: 0 }, filters);
+        // Reset thống kê thời gian về 0
+displayTimeStats({ totalPaper: 0, totalWaste: 0, timeData: { totalTime: 0, setupTime: 0, otherTime: 0 }, stopReasons: [] }, filters);
+
+// Reset phân tích thời gian về 0  
+displayTimeAnalysis({ timeData: { otherTime: 0 }, stopReasons: [] }, filters);
+
+// Reset biểu đồ thời gian về trống
+displayTimeCharts({ totalPaper: 0, totalWaste: 0, timeData: { totalTime: 0, setupTime: 0, otherTime: 0 }, stopReasons: [] }, filters);
+
+// Reset trực tiếp các element phần sản xuất/chạy mẫu bên phải
+const productionTimeEl = document.getElementById('productionTime');
+const sampleTimeEl = document.getElementById('sampleTime');
+const setupTimeRightEl = document.getElementById('setupTimeRight');
+const stopTimeRightEl = document.getElementById('stopTimeRight');
+const sampleSetupTimeEl = document.getElementById('sampleSetupTime');
+const sampleStopTimeEl = document.getElementById('sampleStopTime');
+const totalTimeRightEl = document.getElementById('totalTimeRight');
+const totalSampleTimeEl = document.getElementById('totalSampleTime');
+
+if (productionTimeEl) productionTimeEl.textContent = '0 phút';
+if (sampleTimeEl) sampleTimeEl.textContent = '0 phút';
+if (setupTimeRightEl) setupTimeRightEl.textContent = '0 phút';
+if (stopTimeRightEl) stopTimeRightEl.textContent = '0 phút';
+if (sampleSetupTimeEl) sampleSetupTimeEl.textContent = '0 phút';
+if (sampleStopTimeEl) sampleStopTimeEl.textContent = '0 phút';
+if (totalTimeRightEl) totalTimeRightEl.textContent = '0 phút';
+if (totalSampleTimeEl) totalSampleTimeEl.textContent = '0 phút';
 
         // Hiển thị thông báo trong phần phân tích
         const analysisContainer = document.getElementById('quantityAnalysis');
@@ -1588,6 +1648,11 @@ function displayInReport(data, filters) {
 
     // Hiển thị bảng chi tiết
     displayDetailTable(data, filters);
+
+    // Đảm bảo tab Tổng quan được active
+setTimeout(() => {
+    resetTimeAnalysisButtonsToDefault();
+}, 100);
 
     // Lưu dữ liệu hiện tại
     currentChartData = data;
@@ -1797,11 +1862,11 @@ function displayTimeProgressBar(workTime, stopTime, totalTime) {
     }
 
     if (workPercentSpan) {
-        workPercentSpan.textContent = workPercent.toFixed(1) + '%';
+        workPercentSpan.textContent = workPercent.toFixed(2) + '%';
     }
 
     if (stopPercentSpan) {
-        stopPercentSpan.textContent = stopPercent.toFixed(1) + '%';
+        stopPercentSpan.textContent = stopPercent.toFixed(2) + '%';
     }
 }
 
@@ -1859,11 +1924,11 @@ function displayProgressBar(data, filters) {
     }
 
     if (paperPercentSpan) {
-        paperPercentSpan.textContent = paperPercent.toFixed(1) + '%';
+        paperPercentSpan.textContent = paperPercent.toFixed(2) + '%';
     }
 
     if (wastePercentSpan) {
-        wastePercentSpan.textContent = wastePercent.toFixed(1) + '%';
+        wastePercentSpan.textContent = wastePercent.toFixed(2) + '%';
     }
 }
 
@@ -1897,7 +1962,7 @@ function displayPieChart(data) {
                     callbacks: {
                         label: function (context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percent = ((context.parsed / total) * 100).toFixed(1);
+                            const percent = ((context.parsed / total) * 100).toFixed(2);
                             return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
                         }
                     }
@@ -2109,7 +2174,7 @@ function createTotalQuantityChartOnCanvas(canvas, data) {
                         callbacks: {
                             label: function (context) {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                                const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(2) : 0;
                                 return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
                             }
                         }
@@ -2123,7 +2188,7 @@ function createTotalQuantityChartOnCanvas(canvas, data) {
                         },
                         formatter: function (value, context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                             return percent + '%';
                         }
                     }
@@ -2235,7 +2300,7 @@ function createSingleShiftPieChart(canvas, shiftData) {
                 tooltip: {
                     callbacks: {
                         label: function (context) {
-                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(2) : 0;
                             return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
                         }
                     }
@@ -2249,7 +2314,7 @@ function createSingleShiftPieChart(canvas, shiftData) {
                     },
                     formatter: function (value, context) {
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                         return percent + '%';
                     }
                 }
@@ -2369,7 +2434,7 @@ function createShiftStackedChart(canvas, shiftData) {
 
                         if (total === 0) return '';
 
-                        const percent = ((value / total) * 100).toFixed(1);
+                        const percent = ((value / total) * 100).toFixed(2);
 
                         if (context.datasetIndex === 1) {
                             return `${formatNumber(value)}\n(${percent}%)`;
@@ -2440,7 +2505,7 @@ function createSingleShiftChartOnCanvas(canvas, data, shiftName) {
                     callbacks: {
                         label: function (context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(2) : 0;
                             return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
                         }
                     }
@@ -2454,7 +2519,7 @@ function createSingleShiftChartOnCanvas(canvas, data, shiftName) {
                     },
                     formatter: function (value, context) {
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                         return percent + '%';
                     }
                 }
@@ -2521,6 +2586,7 @@ function displayQuantityAnalysis(data, filters) {
                         <tr>
                             <th>Mã Ca</th>
                             <th>Máy</th>
+                            <th class="text-end">SL WS</th>
                             <th class="text-end">Tổng SL giấy</th>
                             <th class="text-end">Thành phẩm</th>
                             <th class="text-end">Phế liệu</th>
@@ -2531,17 +2597,35 @@ function displayQuantityAnalysis(data, filters) {
                     <tbody>
         `;
 
+
+        // Tính số lượng WS cho từng ca từ dữ liệu chi tiết
+const wsCountByShift = {};
+if (data.reports && data.reports.length > 0) {
+    data.reports.forEach(report => {
+        const shiftName = report.ma_ca || 'Unknown';
+        const ws = report.ws || 'Unknown';
+        
+        if (!wsCountByShift[shiftName]) {
+            wsCountByShift[shiftName] = new Set();
+        }
+        wsCountByShift[shiftName].add(ws);
+    });
+}
+
+
             displayData.forEach(shift => {
                 const paper = shift.paper || 0;
                 const waste = shift.waste || 0;
                 const total = paper + waste;
-                const paperRate = total > 0 ? ((paper / total) * 100).toFixed(1) : 0;
-                const wasteRate = total > 0 ? ((waste / total) * 100).toFixed(1) : 0;
+                const paperRate = total > 0 ? ((paper / total) * 100).toFixed(2) : 0;
+                const wasteRate = total > 0 ? ((waste / total) * 100).toFixed(2) : 0;
+                const wsCount = wsCountByShift[shift.shift] ? wsCountByShift[shift.shift].size : 0;
 
                 html += `
                 <tr>
                     <td><strong>Ca ${shift.shift}</strong></td>
                     <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${shift.may || 'Tất cả'}</span></td>
+                    <td class="text-end"><strong>${wsCount}</strong></td>
                     <td class="text-end"><strong>${formatNumber(total)}</strong></td>
                     <td class="text-end text-success"><strong>${formatNumber(paper)}</strong></td>
                     <td class="text-end text-danger"><strong>${formatNumber(waste)}</strong></td>
@@ -2568,13 +2652,22 @@ function displayQuantityAnalysis(data, filters) {
             // Thống kê chỉ cho dữ liệu được hiển thị
             const totalPaper = displayData.reduce((sum, shift) => sum + (shift.paper || 0), 0);
             const totalWaste = displayData.reduce((sum, shift) => sum + (shift.waste || 0), 0);
+            const totalWS = Object.values(wsCountByShift).reduce((sum, wsSet) => sum + wsSet.size, 0);
             const grandTotal = totalPaper + totalWaste;
-            const totalPaperRate = grandTotal > 0 ? ((totalPaper / grandTotal) * 100).toFixed(1) : 0;
-            const totalWasteRate = grandTotal > 0 ? ((totalWaste / grandTotal) * 100).toFixed(1) : 0;
+            const totalPaperRate = grandTotal > 0 ? ((totalPaper / grandTotal) * 100).toFixed(2) : 0;
+            const totalWasteRate = grandTotal > 0 ? ((totalWaste / grandTotal) * 100).toFixed(2) : 0;
 
             html += `
             <div class="row mt-3">
-                <div class="col-md-4">
+            <div class="col-md-3">
+    <div class="card bg-light">
+        <div class="card-body text-center">
+            <h6>Tổng số WS</h6>
+            <h4 class="text-info">${totalWS}</h4>
+        </div>
+    </div>
+</div>
+                <div class="col-md-3">
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h6>${filters && filters.maca ? `Số ca được lọc` : `Số ca sản xuất`}</h6>
@@ -2582,7 +2675,7 @@ function displayQuantityAnalysis(data, filters) {
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h6>Tỷ lệ thành phẩm</h6>
@@ -2590,7 +2683,7 @@ function displayQuantityAnalysis(data, filters) {
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h6>Tỷ lệ phế liệu</h6>
@@ -2647,6 +2740,12 @@ function displayQuantityAnalysis(data, filters) {
 // Thêm hàm hiển thị biểu đồ trống
 // Tạo biểu đồ trống
 function createEmptyChart(canvas, message) {
+    // Destroy chart cũ nếu có
+const existingChart = Chart.getChart(canvas);
+if (existingChart) {
+    existingChart.destroy();
+}
+
     return new Chart(canvas, {
         type: 'pie',
         data: {
@@ -2810,7 +2909,7 @@ function displayTimeCharts(data, filters) {
                     callbacks: {
                         label: function (context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(2) : 0;
                             return `${context.label}: ${formatDuration(context.parsed)} (${percent}%)`;
                         }
                     }
@@ -2824,7 +2923,7 @@ function displayTimeCharts(data, filters) {
                     },
                     formatter: function (value, context) {
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                         return percent + '%';
                     }
                 }
@@ -3024,7 +3123,7 @@ function displayStopReasonChart(data, filters) {
                     callbacks: {
                         label: function (context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(2) : 0;
                             return `${context.label}: ${formatDuration(context.parsed)} (${percent}%)`;
                         }
                     }
@@ -3042,7 +3141,7 @@ function displayStopReasonChart(data, filters) {
                     },
                     formatter: function (value, context) {
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                         return percent + '%';
                     },
                     anchor: 'center',
@@ -3190,6 +3289,7 @@ function updateTimeAnalysisInfo(timeData) {
 // Hiển thị phân tích thời gian
 function displayTimeAnalysis(data, filters) {
     const stopReasonsEl = document.getElementById('stopReasonsAnalysis');
+    if (stopReasonsEl) stopReasonsEl.innerHTML = '';
     if (!stopReasonsEl) return;
 
 
@@ -3355,7 +3455,7 @@ function displayTimeAnalysis(data, filters) {
 
         data.stopReasons.forEach(reason => {
             const duration = reason.duration || 0;
-            const percent = totalStopTime > 0 ? ((duration / totalStopTime) * 100).toFixed(1) : 0;
+            const percent = totalStopTime > 0 ? ((duration / totalStopTime) * 100).toFixed(2) : 0;
 
             html += `
                 <tr>
@@ -3508,7 +3608,7 @@ function createSampleProductTimeChart(productionTime, productionSetupTime, produ
                     callbacks: {
                         label: function (context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(2) : 0;
                             return `${context.label}: ${formatDuration(context.parsed)} (${percent}%)`;
                         }
                     }
@@ -3522,7 +3622,7 @@ function createSampleProductTimeChart(productionTime, productionSetupTime, produ
                     },
                     formatter: function (value, context) {
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                         return percent + '%';
                     }
                 }
@@ -3620,7 +3720,6 @@ function openFullscreen(canvasId, title) {
         fullscreenChart = null;
     }
 
-
     const originalChartContainer = originalCanvas.closest('.card');
     const controlsToMove = [];
 
@@ -3647,7 +3746,6 @@ function openFullscreen(canvasId, title) {
         });
     }
 
-
     if (canvasId === 'leaderShiftStackedChart') {
         // Tìm dropdown trong cùng container
         const leaderDropdown = originalChartContainer.querySelector('#leaderSelect');
@@ -3663,28 +3761,38 @@ function openFullscreen(canvasId, title) {
             controlsToMove.push(selectContainer);
         }
     } else if (canvasId === 'topSpeedLeftChart' || canvasId === 'topSpeedRightChart') {
-        // ĐÃ SỬA: Chỉ copy dropdown tương ứng với biểu đồ đang mở
+        // Chỉ copy dropdown, không copy title
         const side = canvasId === 'topSpeedLeftChart' ? 'Left' : 'Right';
         const speedDropdown = originalChartContainer.querySelector(`#speedMachineSelect${side}`);
-
+    
         if (speedDropdown) {
-            const controlGroup = speedDropdown.closest('.d-flex') || speedDropdown.parentElement;
-            if (controlGroup) {
-                const clonedControl = controlGroup.cloneNode(true);
-                const clonedSelect = clonedControl.querySelector('select');
-                if (clonedSelect) {
-                    clonedSelect.id = `speedMachineSelect${side}_fullscreen`;
-                    // XÓA LABEL TRÙNG LẶP
-                    const label = clonedControl.querySelector('h6');
-                    if (label) {
-                        label.remove();
-                    }
-                }
-                controlsToMove.push(clonedControl);
-            }
+            // CHỈ CLONE SELECT, KHÔNG CLONE CẢ CONTROL GROUP
+            const clonedSelect = speedDropdown.cloneNode(true);
+            clonedSelect.id = `speedMachineSelect${side}_fullscreen`;
+            
+            // TẠO CONTAINER MỚI CHỈ CHỨA SELECT
+            const selectContainer = document.createElement('div');
+            selectContainer.appendChild(clonedSelect);
+            
+            controlsToMove.push(selectContainer);
+        }
+    } else if (canvasId === 'yearlyLeaderChartLeft' || canvasId === 'yearlyLeaderChartRight') {
+        // THÊM XỬ LÝ CHO YEARLY LEADER CHARTS
+        const side = canvasId === 'yearlyLeaderChartLeft' ? 'Left' : 'Right';
+        const leaderDropdown = originalChartContainer.querySelector(`#leaderSelect${side}`);
+        
+        if (leaderDropdown) {
+            // CHỈ CLONE SELECT, KHÔNG CLONE CẢ CONTROL GROUP
+            const clonedSelect = leaderDropdown.cloneNode(true);
+            clonedSelect.id = `leaderSelect${side}_fullscreen`;
+            
+            // TẠO CONTAINER MỚI CHỈ CHỨA SELECT
+            const selectContainer = document.createElement('div');
+            selectContainer.appendChild(clonedSelect);
+            
+            controlsToMove.push(selectContainer);
         }
     }
-
 
     // Thêm controls vào modal title area
     const fullscreenTitle = document.getElementById('fullscreenTitle');
@@ -3692,20 +3800,23 @@ function openFullscreen(canvasId, title) {
         const controlsContainer = document.createElement('div');
         controlsContainer.className = 'd-flex justify-content-between align-items-center';
         controlsContainer.style.marginTop = '10px';
-
+    
         const titleDiv = document.createElement('div');
-        // ĐÃ SỬA: Xử lý title riêng cho biểu đồ tốc độ và trưởng máy
+        // SỬA: Hiển thị đúng title cho biểu đồ tốc độ và yearly leader
         if (canvasId === 'topSpeedLeftChart' || canvasId === 'topSpeedRightChart') {
-            const side = canvasId === 'topSpeedLeftChart' ? 'trái' : 'phải';
-            titleDiv.textContent = `Top 10 tốc độ - Máy ${side}`;
+            const side = canvasId === 'topSpeedLeftChart' ? '1' : '2';
+            titleDiv.textContent = `Top 10 tốc độ - Bảng ${side}`;
         } else if (canvasId === 'leaderShiftStackedChart') {
             titleDiv.textContent = 'Sản xuất theo ca - Trưởng máy';
+        } else if (canvasId === 'yearlyLeaderChartLeft' || canvasId === 'yearlyLeaderChartRight') {
+            const side = canvasId === 'yearlyLeaderChartLeft' ? '1' : '2';
+            titleDiv.textContent = `Sản xuất theo trưởng máy - Bảng ${side}`;
         } else {
             titleDiv.textContent = title;
         }
 
         titleDiv.style.fontWeight = 'bold';
-        titleDiv.style.fontSize = '18px';
+        titleDiv.style.fontSize = '23px';
 
         const controlsDiv = document.createElement('div');
         controlsDiv.className = 'd-flex gap-2';
@@ -3721,8 +3832,8 @@ function openFullscreen(canvasId, title) {
         fullscreenTitle.appendChild(controlsContainer);
     } else {
         fullscreenTitle.textContent = title;
+        fullscreenTitle.style.textAlign = 'left';
     }
-
 
     // Đợi modal hiển thị xong rồi mới tạo chart
     setTimeout(() => {
@@ -3776,7 +3887,7 @@ function openFullscreen(canvasId, title) {
                     },
                     plugins: {
                         title: {
-                            display: true,
+                            display: false,
                             text: title,
                             font: { size: 18, weight: 'bold' }
                         },
@@ -3820,7 +3931,7 @@ function openFullscreen(canvasId, title) {
 
                                 if (total === 0) return '';
 
-                                const percent = ((value / total) * 100).toFixed(1);
+                                const percent = ((value / total) * 100).toFixed(2);
                                 return `${formatNumber(value)}\n(${percent}%)`;
                             },
                             padding: 4,
@@ -3852,13 +3963,13 @@ function openFullscreen(canvasId, title) {
                         x: {
                             stacked: true,
                             title: {
-                                display: true,
+                                display: false,
                                 // text: 'Khách hàng'
                             },
                             ticks: {
                                 display: true,
                                 maxRotation: 45,
-                                minRotation: 30,
+                                minRotation: 0,
                                 font: {
                                     size: 12  // Font lớn hơn khi fullscreen
                                 },
@@ -3881,7 +3992,7 @@ function openFullscreen(canvasId, title) {
                     },
                     plugins: {
                         title: {
-                            display: true,
+                            display: false,
                             text: title,
                             font: { size: 18, weight: 'bold' }
                         },
@@ -3927,7 +4038,7 @@ function openFullscreen(canvasId, title) {
 
                                 if (total === 0) return '';
 
-                                const percent = ((value / total) * 100).toFixed(1);
+                                const percent = ((value / total) * 100).toFixed(2);
                                 return `${formatNumber(value)}\n(${percent}%)`;
                             },
                             padding: 4,
@@ -3987,7 +4098,7 @@ function openFullscreen(canvasId, title) {
                                 const wasteValue = datasets[1]?.data[dataIndex] || 0;
                                 const total = paperValue + wasteValue;
                                 if (total === 0) return '';
-                                const percent = ((value / total) * 100).toFixed(1);
+                                const percent = ((value / total) * 100).toFixed(2);
                                 if (context.datasetIndex === 1) {
                                     return `${formatNumber(value)}\n(${percent}%)`;
                                 }
@@ -4052,7 +4163,7 @@ function openFullscreen(canvasId, title) {
                                 const wasteValue = datasets[1]?.data[dataIndex] || 0;
                                 const total = paperValue + wasteValue;
                                 if (total === 0) return '';
-                                const percent = ((value / total) * 100).toFixed(1);
+                                const percent = ((value / total) * 100).toFixed(2);
                                 if (context.datasetIndex === 1) {
                                     return `${formatNumber(value)}\n(${percent}%)`;
                                 }
@@ -4117,7 +4228,7 @@ function openFullscreen(canvasId, title) {
                                 const wasteValue = datasets[1]?.data[dataIndex] || 0;
                                 const total = paperValue + wasteValue;
                                 if (total === 0) return '';
-                                const percent = ((value / total) * 100).toFixed(1);
+                                const percent = ((value / total) * 100).toFixed(2);
                                 if (context.datasetIndex === 1) {
                                     return `${formatNumber(value)}\n(${percent}%)`;
                                 }
@@ -4176,7 +4287,7 @@ function openFullscreen(canvasId, title) {
                                                 return sum + ds.data.reduce((dsSum, value) => dsSum + (value || 0), 0);
                                             }, 0);
                                             
-                                            const percent = grandTotal > 0 ? ((datasetTotal / grandTotal) * 100).toFixed(1) : 0;
+                                            const percent = grandTotal > 0 ? ((datasetTotal / grandTotal) * 100).toFixed(2) : 0;
                                             
                                             // Format thành giờ phút
                                             const hours = Math.floor(datasetTotal / 60);
@@ -4199,6 +4310,22 @@ function openFullscreen(canvasId, title) {
                                                 datasetIndex: datasetIndex
                                             };
                                         });
+                                    },
+                                    onClick: function(event, legendItem, legend) {
+                                        const chart = legend.chart;
+                                        const index = legendItem.datasetIndex;
+                                        
+                                        // Toggle visibility của dataset
+                                        if (chart.isDatasetVisible(index)) {
+                                            chart.hide(index);
+                                            legendItem.hidden = true;
+                                        } else {
+                                            chart.show(index);
+                                            legendItem.hidden = false;
+                                        }
+                                        
+                                        // Update chart
+                                        chart.update();
                                     }
                                 }
                             },
@@ -4229,7 +4356,7 @@ function openFullscreen(canvasId, title) {
                                         
                                         if (total === 0) return '';
                                         
-                                        const percent = ((value / total) * 100).toFixed(1);
+                                        const percent = ((value / total) * 100).toFixed(2);
                                         
                                         // Format thành giờ phút
                                         const hours = Math.floor(value / 60);
@@ -4278,7 +4405,7 @@ function openFullscreen(canvasId, title) {
                     interaction: { intersect: false, mode: 'index' },
                     plugins: {
                         title: {
-                            display: true,
+                            display: false,
                             text: title,
                             font: { size: 18, weight: 'bold' }
                         },
@@ -4329,6 +4456,252 @@ function openFullscreen(canvasId, title) {
                 },
                 plugins: [ChartDataLabels]
             };
+
+        } else if (canvasId === 'yearlyPaperLineChart' || canvasId === 'yearlyWasteLineChart') {
+            config = {
+                type: 'line',
+                data: {
+                    labels: [...originalChart.data.labels],
+                    datasets: originalChart.data.datasets.map(dataset => ({
+                        label: dataset.label,
+                        data: [...dataset.data],
+                        borderColor: dataset.borderColor,
+                        backgroundColor: dataset.backgroundColor,
+                        fill: dataset.fill,
+                        tension: dataset.tension,
+                        pointRadius: dataset.pointRadius,
+                        pointHoverRadius: dataset.pointHoverRadius,
+                        borderWidth: dataset.borderWidth,
+                        spanGaps: dataset.spanGaps
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 40 } },
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        title: {
+                            display: false,
+                            text: title,
+                            font: { size: 18, weight: 'bold' }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'line',
+                                pointStyleWidth: 20,
+                                font: { weight: 'bold', size: 12 },
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            display: true,
+                            anchor: 'end',
+                            align: function (context) {
+                                const datasetIndex = context.datasetIndex;
+                                const totalDatasets = context.chart.data.datasets.length;
+                                if (totalDatasets <= 3) {
+                                    return datasetIndex === 0 ? 'top' : (datasetIndex === 1 ? 'bottom' : 'right');
+                                } else {
+                                    const positions = ['top', 'bottom', 'right', 'left', 'center'];
+                                    return positions[datasetIndex % positions.length];
+                                }
+                            },
+                            color: function (context) {
+                                const originalColor = context.dataset.borderColor || context.dataset.backgroundColor;
+                                if (originalColor && originalColor.includes('rgb(')) {
+                                    return originalColor.replace(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/, function (match, r, g, b) {
+                                        const newR = Math.max(0, Math.floor(r * 0.7));
+                                        const newG = Math.max(0, Math.floor(g * 0.7));
+                                        const newB = Math.max(0, Math.floor(b * 0.7));
+                                        return `rgb(${newR}, ${newG}, ${newB})`;
+                                    });
+                                }
+                                return originalColor;
+                            },
+                            font: { size: 13, weight: 'bold' },
+                            formatter: function (value) {
+                                return value > 0 ? formatNumber(value) : '';
+                            },
+                            padding: 6,
+                            textAlign: 'center',
+                            textStrokeColor: 'white',
+                            textStrokeWidth: 1
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: canvasId === 'yearlyPaperLineChart' ? 'Số lượng thành phẩm' : 'Số lượng phế liệu',
+                                font: { color: 'black', weight: 'bold' }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Tháng',
+                                font: { color: 'black', weight: 'bold' }
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            };
+
+        } else if (canvasId === 'topCustomersChart' || canvasId === 'topProductsChart') {
+            // Cấu hình đặc biệt cho Top 10 charts
+            config = {
+                type: originalConfig.type,
+                data: {
+                    labels: [...originalChart.data.labels],
+                    datasets: originalChart.data.datasets.map(dataset => ({
+                        ...dataset,
+                        data: [...dataset.data]
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 40 }
+                    },
+                    plugins: {
+                        title: {
+                            display: false,
+                            text: title,
+                            font: { size: 20, weight: 'bold' }
+                        },
+                        legend: { display: false },
+                        tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+                        datalabels: {
+                            display: true,
+                            anchor: 'end',
+                            align: 'top',
+                            color: 'black',
+                            font: { size: 12, weight: 'bold' },
+                            formatter: function (value, context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+                                return `${formatNumber(value)}\n(${percent}%)`;
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: canvasId === 'topCustomersChart' ? 'Số lượng đơn hàng' : 'Số lượng đơn hàng',
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        x: {
+                            title: { display: false },
+                            ticks: {
+                                display: true,
+                                maxRotation: 45,
+                                minRotation: 0,
+                                font: { size: 13 },
+                                // color: 'black',
+                                callback: function (value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    if (canvasId === 'topProductsChart') {
+                                        const lines = label.split('\n');
+                                        if (lines.length > 1) {
+                                            return [lines[0], `● ${lines[1]}`];
+                                        }
+                                        return lines;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            };
+
+        } else if (canvasId === 'topSpeedLeftChart' || canvasId === 'topSpeedRightChart') {
+            // Cấu hình đặc biệt cho Top 10 tốc độ
+            config = {
+                type: originalConfig.type,
+                data: {
+                    labels: [...originalChart.data.labels],
+                    datasets: originalChart.data.datasets.map(dataset => ({
+                        ...dataset,
+                        data: [...dataset.data]
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 40 }
+                    },
+                    plugins: {
+                        title: {
+                            display: false  // Tắt title của chart để tránh trùng lặp
+                        },
+                        legend: { display: false },
+                        tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+                        datalabels: {
+                            display: true,
+                            anchor: 'end',
+                            align: 'top',
+                            color: 'black',
+                            font: { size: 12, weight: 'bold' },
+                            textAlign: 'center',
+                            formatter: function (value, context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+                                return `${formatNumber(value)}\n(${percent}%)`;
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Tốc độ (sheet/hour)',
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        x: {
+                            title: { display: false },
+                            ticks: {
+                                display: true,
+                                maxRotation: 45,
+                                minRotation: 30,
+                                font: { size: 13 },
+                                // color: 'black',
+                                callback: function (value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    const lines = label.split('\n');
+                                    if (lines.length > 1) {
+                                        return [lines[0], `● ${lines[1]}`];
+                                    }
+                                    return lines;
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            };
+
         } else {
             // Giữ nguyên code cũ cho các biểu đồ khác
             config = {
@@ -4366,7 +4739,7 @@ function openFullscreen(canvasId, title) {
                                         // Tạo mảng các items với index gốc
                                         const items = chart.data.labels.map((labelName, index) => {
                                             const value = chart.data.datasets[0].data[index] || 0;
-                                            const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                            const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                                             const displayValue = formatDuration(value);
                                             const color = chart.data.datasets[0].backgroundColor[index];
 
@@ -4493,7 +4866,7 @@ function openFullscreen(canvasId, title) {
                             formatter: function (value, context) {
                                 if (originalConfig.type === 'pie') {
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
 
                                     // Kiểm tra nếu là biểu đồ thời gian thì hiển thị theo format mới
                                     if (canvasId === 'timeChart' || canvasId === 'sampleProductTimeChart') {
@@ -4512,7 +4885,7 @@ function openFullscreen(canvasId, title) {
                                 // ĐÃ SỬA: Thêm % cho bar charts
                                 if (originalConfig.type === 'bar') {
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                                     return `${formatNumber(value)}\n(${percent}%)`;
                                 }
 
@@ -4532,7 +4905,6 @@ function openFullscreen(canvasId, title) {
         // Tạo chart fullscreen
         fullscreenChart = new Chart(fullscreenCanvas, config);
 
-
         // Gắn lại sự kiện cho các controls đã copy
         if (controlsToMove.length > 0) {
             // Xử lý select cho năm
@@ -4544,7 +4916,7 @@ function openFullscreen(canvasId, title) {
                 });
             }
 
-            // Xử lý select cho trưởng máy
+            // Xử lý select cho trưởng máy yearly charts
             const leaderSelectLeft = fullscreenTitle.querySelector('#leaderSelectLeft_fullscreen');
             const leaderSelectRight = fullscreenTitle.querySelector('#leaderSelectRight_fullscreen');
 
@@ -4570,9 +4942,6 @@ function openFullscreen(canvasId, title) {
                 });
             }
 
-
-
-
             // THÊM: Xử lý select cho leader shift chart
             const leaderSelect = fullscreenTitle.querySelector('#leaderSelect_fullscreen');
             if (leaderSelect) {
@@ -4596,8 +4965,6 @@ function openFullscreen(canvasId, title) {
                 });
             }
 
-
-
             // ĐÃ SỬA: Xử lý select cho tốc độ - chỉ xử lý dropdown tương ứng
             const speedSelect = fullscreenTitle.querySelector(`select[id*="speedMachineSelect"]`);
             if (speedSelect) {
@@ -4619,12 +4986,7 @@ function openFullscreen(canvasId, title) {
                     });
                 }
             }
-
-
         }
-
-
-
     }, 100);
 }
 
@@ -4656,6 +5018,11 @@ document.addEventListener('keydown', function (e) {
 // Hàm helper để destroy tất cả chart
 function destroyAllCharts() {
     console.log('🗑️ Destroy tất cả biểu đồ');
+
+
+    // Reset về chế độ tổng quan
+    currentTimeAnalysisMode = 'sanxuat';
+
 
     if (pieChart) {
         pieChart.destroy();
@@ -5045,8 +5412,8 @@ function renderDetailTable(container, data, filters) {
                     <option value="greaterEqual">≥</option>
                     <option value="lessEqual">≤</option>
                     <option value="equal">=</option>
-                    <option value="desc">↓ Giảm dần</option>
-                    <option value="asc"><img width="48" height="48" src="https://img.icons8.com/fluency-systems-filled/48/sort-amount-up.png" alt="sort-amount-up"/></option>
+                    <option value="desc">↓</option>
+                    <option value="asc">↑</option>
                 </select>
             </div>
             <div id="speedInputs">
@@ -5084,8 +5451,8 @@ function renderDetailTable(container, data, filters) {
                     <option value="greaterEqual">≥</option>
                     <option value="lessEqual">≤</option>
                     <option value="equal">=</option>
-                    <option value="desc">↓ Giảm dần</option>
-                    <option value="asc">↑ Tăng dần</option>
+                    <option value="desc">↓</option>
+                    <option value="asc">↑</option>
                 </select>
             </div>
             <div id="orderInputs">
@@ -5161,7 +5528,7 @@ if (!data || data.length === 0) {
         
         <div class="row mt-3">
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card bg-light h-100">
                     <div class="card-body text-center">
                         <h6>Tổng WS</h6>
                         <h4 class="text-primary">0</h4>
@@ -5169,7 +5536,7 @@ if (!data || data.length === 0) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card bg-light h-100">
                     <div class="card-body text-center">
                         <h6>Tổng thành phẩm</h6>
                         <h4 class="text-success">0</h4>
@@ -5177,7 +5544,7 @@ if (!data || data.length === 0) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card bg-light h-100">
                     <div class="card-body text-center">
                         <h6>Tổng phế liệu</h6>
                         <h4 class="text-danger">0</h4>
@@ -5185,7 +5552,7 @@ if (!data || data.length === 0) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card bg-light h-100">
                     <div class="card-body text-center">
                         <h6>Tổng TG chạy máy</h6>
                         <h4 class="text-success">0 phút</h4>
@@ -5193,7 +5560,7 @@ if (!data || data.length === 0) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card bg-light h-100">
                     <div class="card-body text-center">
                         <h6>Tổng TG canh máy</h6>
                         <h4 class="text-warning">0 phút</h4>
@@ -5201,7 +5568,7 @@ if (!data || data.length === 0) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card bg-light">
+                <div class="card bg-light h-100">
                     <div class="card-body text-center">
                         <h6>Tổng TG dừng máy</h6>
                         <h4 class="text-danger">0 phút</h4>
@@ -5265,18 +5632,17 @@ if (!data || data.length === 0) {
         const may = record.may || '-';
         const customer = record.khach_hang || '-';
         const product = record.ma_sp || '-';
-
+    
         // Lấy dữ liệu từ các cột báo cáo in
         const tongSL = formatNumber(record.tong_so_luong || 0);
         const thanhPhamRaw = record.thanh_pham || '0';
         const thanhPham = formatNumber(parseUSFormat(thanhPhamRaw));
-
+    
         // Format hiển thị các cột cũ
         const paper = formatNumber(record.thanh_pham_in || 0);
         const waste = formatNumber((parseFloat(record.phe_lieu) || 0) + (parseFloat(record.phe_lieu_trang) || 0));
         const timeRange = formatTimeRangeWithDuration(record.thoi_gian_bat_dau, record.thoi_gian_ket_thuc);
-        const setupTime = formatDuration(record.thoi_gian_canh_may || 0);
-
+    
         // Tính thời gian dừng máy cho record này từ dữ liệu stopReasons
         let stopTimeForRecord = record.stopTime || 0;
         if (currentChartData && currentChartData.reports) {
@@ -5285,26 +5651,40 @@ if (!data || data.length === 0) {
                 stopTimeForRecord = detailRecord.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0);
             }
         }
-        const stopTimeDisplay = formatDuration(stopTimeForRecord);
-
-        // Tính thời gian chạy máy = tổng thời gian - thời gian canh máy - thời gian dừng máy
+    
+        // Tính thời gian thực tế (kết thúc - bắt đầu)
+        let actualTotalMinutes = 0;
         let runTimeForRecord = 0;
+        let setupMinutes = parseFloat(record.thoi_gian_canh_may) || 0;
+    
         if (record.thoi_gian_bat_dau && record.thoi_gian_ket_thuc) {
             const start = new Date(record.thoi_gian_bat_dau);
             const end = new Date(record.thoi_gian_ket_thuc);
             let totalSeconds = (end - start) / 1000;
             if (totalSeconds < 0) totalSeconds += 24 * 60 * 60;
-            let totalMinutes = totalSeconds / 60;
-
-            const setupMinutes = record.thoi_gian_canh_may || 0;
-            const stopMinutes = stopTimeForRecord || 0;
-            runTimeForRecord = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+            actualTotalMinutes = totalSeconds / 60;
+            
+            // Tính thời gian chạy máy
+            runTimeForRecord = Math.max(0, actualTotalMinutes - setupMinutes - stopTimeForRecord);
         }
+    
+        // Kiểm tra lỗi thời gian
+        const calculatedTotalMinutes = runTimeForRecord + setupMinutes + stopTimeForRecord;
+        const isTimeError = calculatedTotalMinutes > (actualTotalMinutes + 1);
+        const rowClass = isTimeError ? ' style="background-color: #ffebee; border-left: 3px solid #f44336;"' : '';
+        const timeErrorIcon = isTimeError ? ' <i class="fas fa-exclamation-triangle text-danger ms-1" title="Lỗi thời gian"></i>' : '';
+    
+        // Format các display values
+        const setupTime = formatDuration(setupMinutes);
+        const stopTimeDisplay = formatDuration(stopTimeForRecord);
         const runTimeDisplay = formatDuration(runTimeForRecord);
 
+
+
+
         html += `
-    <tr>
-        <td><strong>${startIndex + index + 1}</strong></td>
+    <tr${rowClass}>
+        <td><strong>${record.stt || (startIndex + index + 1)}</strong>${timeErrorIcon}</td>
         <td><span class="badge bg-primary">${ws}</span></td>
         <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
         <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
@@ -5331,13 +5711,15 @@ if (!data || data.length === 0) {
 
 
 
-    // Phân trang
-    if (totalPages > 1) {
-        html += `
+    html += `
         </tbody>
             </table>
         </div>
+`;
 
+    // Phân trang
+    if (totalPages > 1) {
+        html += `
         <div class="row mt-4 d-flex justify-content-between">
 <div class="col-md-4">
                 <div class="d-flex align-items-center">
@@ -5430,11 +5812,38 @@ if (!data || data.length === 0) {
         currentChartData.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0) : 0;
 
 
+// Đếm số dòng lỗi thời gian và thu thập WS lỗi
+const errorRecords = data.filter(record => {
+    if (!record.thoi_gian_bat_dau || !record.thoi_gian_ket_thuc) return false;
+    
+    const start = new Date(record.thoi_gian_bat_dau);
+    const end = new Date(record.thoi_gian_ket_thuc);
+    let totalSeconds = (end - start) / 1000;
+    if (totalSeconds < 0) totalSeconds += 24 * 60 * 60;
+    const actualTotalMinutes = totalSeconds / 60;
+    
+    const setupMinutes = parseFloat(record.thoi_gian_canh_may) || 0;
+    let stopTimeForRecord = record.stopTime || 0;
+    if (currentChartData && currentChartData.reports) {
+        const detailRecord = currentChartData.reports.find(r => r.id === record.id);
+        if (detailRecord && detailRecord.stopReasons) {
+            stopTimeForRecord = detailRecord.stopReasons.reduce((sum, reason) => sum + (reason.duration || 0), 0);
+        }
+    }
+    
+    const runTimeForRecord = Math.max(0, actualTotalMinutes - setupMinutes - stopTimeForRecord);
+    const calculatedTotalMinutes = runTimeForRecord + setupMinutes + stopTimeForRecord;
+    
+    return calculatedTotalMinutes > (actualTotalMinutes + 1);
+});
+
+const errorCount = errorRecords.length;
+const errorWSList = errorRecords.map(record => record.ws).filter(ws => ws && ws !== '-');
 
     html += `
         <div class="row mt-3">
             <div class="col-md-2">
-                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
+                <div class="card h-100 card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng WS</h6>
                         <h4 class="text-primary">${uniqueWS}</h4>
@@ -5442,7 +5851,7 @@ if (!data || data.length === 0) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
+                <div class="card h-100 card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng thành phẩm</h6>
                         <h4 class="text-success">${formatNumber(totalPaper)}</h4>
@@ -5450,7 +5859,7 @@ if (!data || data.length === 0) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
+                <div class="card h-100 card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng phế liệu</h6>
                         <h4 class="text-danger">${formatNumber(totalWaste)}</h4>
@@ -5458,7 +5867,7 @@ if (!data || data.length === 0) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
+                <div class="card h-100 card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng TG chạy máy</h6>
                         <h4 class="text-success">${formatDuration(totalRunTime)}</h4>
@@ -5466,7 +5875,7 @@ if (!data || data.length === 0) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
+                <div class="card h-100 card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng TG canh máy</h6>
                         <h4 class="text-warning">${formatDuration(totalSetupTime)}</h4>
@@ -5474,13 +5883,43 @@ if (!data || data.length === 0) {
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card  card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
+                <div class="card h-100 card-custom-sub border-left-sub" style="border-left: 6px solid #A9C8C0;">
                     <div class="card-body text-center">
                         <h6>Tổng TG dừng máy</h6>
                         <h4 class="text-danger">${formatDuration(totalStopTime)}</h4>
                     </div>
                 </div>
             </div>
+
+
+            <div class="col-md-2" style="display:none">
+    <div class="card border-danger bg-light">
+        <div class="card-body text-center p-2">
+            <h6 style="font-size: 0.9rem;">Lỗi thời gian</h6>
+            <h4 class="text-danger mb-2">${errorCount}</h4>
+            ${errorCount > 0 ? `
+                <div class="dropdown">
+                    <button class="btn btn-outline-danger btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" style="font-size: 0.8rem;">
+                        Xem WS lỗi
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end" style="max-height: 200px; overflow-y: auto; min-width: 150px;">
+                        <div class="dropdown-header">WS bị lỗi thời gian:</div>
+                        ${errorWSList.map(ws => `
+                            <div class="dropdown-item-text px-3 py-1" style="font-size: 0.8rem;">
+                                <span class="badge bg-danger">${ws}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : `
+                <small class="text-muted" style="font-size: 0.7rem;">Không có lỗi</small>
+            `}
+        </div>
+    </div>
+</div>
+
+
+
         </div>
     `;
 
@@ -5757,8 +6196,18 @@ function changeTablePage(page) {
     if (currentTableMode === 'incomplete') {
         changeIncompleteTablePage(page);
     } else {
-        // Chỉ cập nhật nội dung bảng mà không tái tạo HTML
-        updateTableContentOnly();
+        // CHỈ CẬP NHẬT NỘI DUNG BẢNG MÀ KHÔNG TÁI TẠO HTML
+updateTableContentOnly();
+
+// Cập nhật phân tích thời gian nếu cần
+if (currentTimeAnalysisMode !== 'sanxuat') {
+    setTimeout(() => {
+        const twoColumnRow = document.querySelector('#timeAnalysis .row');
+        if (twoColumnRow) {
+            updateTimeAnalysisContent(currentTimeAnalysisMode);
+        }
+    }, 50);
+}
     }
 }
 
@@ -6144,7 +6593,7 @@ function displaySpeedChart(side, machine, topSpeedData) {
                         formatter: function (value, context) {
                             // ĐÃ SỬA: Thêm % cho speed chart
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                             return `${formatNumber(value)}\n(${percent}%)`;
                         }
                     }
@@ -6371,12 +6820,12 @@ function displayTopCustomersChart(data, filters) {
                 maintainAspectRatio: false,
                 layout: {
                     padding: {
-                        top: 30 // Để chỗ cho số liệu trên đầu
+                        top: 40 // Để chỗ cho số liệu trên đầu
                     }
                 },
                 plugins: {
                     title: {
-                        display: true,
+                        display: false,
                         text: 'Top 10 khách hàng theo số lượng đơn hàng',
                         font: {
                             size: 16,
@@ -6410,7 +6859,7 @@ function displayTopCustomersChart(data, filters) {
                         formatter: function (value, context) {
                             // ĐÃ SỬA: Thêm % cho top customers
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                             return `${formatNumber(value)}\n(${percent}%)`;
                         }
                     }
@@ -6536,12 +6985,12 @@ function displayTopProductsChart(data, filters) {
                 maintainAspectRatio: false,
                 layout: {
                     padding: {
-                        top: 30 // Để chỗ cho số liệu trên đầu
+                        top: 40 // Để chỗ cho số liệu trên đầu
                     }
                 },
                 plugins: {
                     title: {
-                        display: true,
+                        display: false,
                         text: 'Top 10 mã sản phẩm theo số lượng đơn hàng',
                         font: {
                             size: 16,
@@ -6575,7 +7024,7 @@ function displayTopProductsChart(data, filters) {
                         formatter: function (value, context) {
                             // ĐÃ SỬA: Thêm % cho top products
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                             return `${formatNumber(value)}\n(${percent}%)`;
                         }
                     }
@@ -6762,7 +7211,7 @@ function createMachineProductionChart(reportData) {
 
                             if (total === 0) return '';
 
-                            const percent = ((value / total) * 100).toFixed(1);
+                            const percent = ((value / total) * 100).toFixed(2);
 
                             // Với phế liệu (dataset 1), hiển thị cả số liệu + %
                             if (context.datasetIndex === 1) {
@@ -7009,8 +7458,26 @@ function autoApplyFilters() {
     // Reset về trang đầu
     currentPage = 1;
 
-    // CHỈ CẬP NHẬT NỘI DUNG BẢNG, KHÔNG TÁI TẠO HTML FILTER
-    updateTableContentOnly();
+// CHỈ CẬP NHẬT NỘI DUNG BẢNG, KHÔNG TÁI TẠO HTML FILTER
+updateTableContentOnly();
+
+// Cập nhật lại phân tích thời gian nếu cần
+if (currentTimeAnalysisMode !== 'sanxuat') {
+    // Reset về chế độ tổng quan khi filter
+    currentTimeAnalysisMode = 'sanxuat';
+    setTimeout(() => {
+        resetTimeAnalysisButtonsToDefault();
+    }, 50);
+} else {
+    setTimeout(() => {
+        const twoColumnRow = document.querySelector('#timeAnalysis .row');
+        if (twoColumnRow) {
+            updateTimeAnalysisContent(currentTimeAnalysisMode);
+        }
+    }, 50);
+}
+
+
 }
 
 
@@ -7114,7 +7581,7 @@ function updateTableContentOnly() {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><strong>${startIndex + index + 1}</strong></td>
+            <td><strong>${record.stt || (startIndex + index + 1)}</strong></td>
             <td><span class="badge bg-primary">${ws}</span></td>
             <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
             <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
@@ -7144,6 +7611,8 @@ function updateTableContentOnly() {
 
     // Cập nhật thống kê cuối trang
     updateTableStatistics();
+
+
 }
 
 
@@ -8099,7 +8568,7 @@ function renderIncompleteTable(container, data, filters) {
 
         html += `
     <tr>
-        <td><strong>${startIndex + index + 1}</strong></td>
+        <td><strong>${record.stt || (startIndex + index + 1)}</strong></td>
         <td><span class="badge bg-primary">${ws}</span></td>
         <td><span class="badge" style="background-color: rgb(128, 186, 151); color: white;">${maca}</span></td>
         <td><span class="badge" style="background-color: rgb(208, 160, 145); color: white;">${may}</span></td>
@@ -8378,8 +8847,8 @@ function renderShiftLeaderAnalysis(shiftLeaderData, filters) {
             // Render từng dòng chi tiết
             group.details.forEach((item, index) => {
                 const total = item.paper + item.waste;
-                const paperRate = total > 0 ? ((item.paper / total) * 100).toFixed(1) : 0;
-                const wasteRate = total > 0 ? ((item.waste / total) * 100).toFixed(1) : 0;
+                const paperRate = total > 0 ? ((item.paper / total) * 100).toFixed(2) : 0;
+                const wasteRate = total > 0 ? ((item.waste / total) * 100).toFixed(2) : 0;
 
                 html += `
             <tr>
@@ -8405,8 +8874,8 @@ function renderShiftLeaderAnalysis(shiftLeaderData, filters) {
 
             // Thêm hàng tổng cho trưởng máy này
             const groupTotal = group.totalPaper + group.totalWaste;
-            const groupPaperRate = groupTotal > 0 ? ((group.totalPaper / groupTotal) * 100).toFixed(1) : 0;
-            const groupWasteRate = groupTotal > 0 ? ((group.totalWaste / groupTotal) * 100).toFixed(1) : 0;
+            const groupPaperRate = groupTotal > 0 ? ((group.totalPaper / groupTotal) * 100).toFixed(2) : 0;
+            const groupWasteRate = groupTotal > 0 ? ((group.totalWaste / groupTotal) * 100).toFixed(2) : 0;
 
             html += `
         <tr style="background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
@@ -8443,8 +8912,8 @@ function renderShiftLeaderAnalysis(shiftLeaderData, filters) {
         const uniqueLeaders = Object.keys(leaderGroups).length;
         const totalPaper = shiftLeaderData.reduce((sum, item) => sum + item.paper, 0);
         const totalWaste = shiftLeaderData.reduce((sum, item) => sum + item.waste, 0);
-        const totalPaperRate = (totalPaper + totalWaste) > 0 ? ((totalPaper / (totalPaper + totalWaste)) * 100).toFixed(1) : 0;
-        const totalWasteRate = (totalPaper + totalWaste) > 0 ? ((totalWaste / (totalPaper + totalWaste)) * 100).toFixed(1) : 0;
+        const totalPaperRate = (totalPaper + totalWaste) > 0 ? ((totalPaper / (totalPaper + totalWaste)) * 100).toFixed(2) : 0;
+        const totalWasteRate = (totalPaper + totalWaste) > 0 ? ((totalWaste / (totalPaper + totalWaste)) * 100).toFixed(2) : 0;
 
         html += `
             <div class="row mt-3">
@@ -8721,7 +9190,7 @@ function createStackedChart(canvas, leaderData) {
 
                         if (total === 0) return '';
 
-                        const percent = ((value / total) * 100).toFixed(1);
+                        const percent = ((value / total) * 100).toFixed(2);
 
                         // Với phế liệu (dataset 1), hiển thị cả số liệu + %
                         if (context.datasetIndex === 1) {
@@ -8893,7 +9362,7 @@ function updateLeaderShiftChart(shiftLeaderData, selectedLeader) {
             },
             plugins: {
                 title: {
-                    display: true,
+                    display: false,
                     text: chartTitle,
                     font: {
                         size: 14,
@@ -8950,7 +9419,7 @@ function updateLeaderShiftChart(shiftLeaderData, selectedLeader) {
 
                         if (total === 0) return '';
 
-                        const percent = ((value / total) * 100).toFixed(1);
+                        const percent = ((value / total) * 100).toFixed(2);
 
                         if (context.datasetIndex === 1) {
                             return `${formatNumber(value)}\n(${percent}%)`;
@@ -9030,7 +9499,7 @@ function createShiftLeaderChart(canvas, leaderData) {
                 tooltip: {
                     callbacks: {
                         label: function (context) {
-                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(2) : 0;
                             return `${context.label}: ${formatNumber(context.parsed)} (${percent}%)`;
                         }
                     }
@@ -9043,7 +9512,7 @@ function createShiftLeaderChart(canvas, leaderData) {
                         weight: 'bold'
                     },
                     formatter: function (value, context) {
-                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                         return percent + '%';
                     }
                 }
@@ -9157,8 +9626,10 @@ async function loadYearlyLeaderData(currentYearlyData, year) {
 function createYearlyLeaderLineCharts() {
     const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
     const colors = [
-        '#e8b0c9', '#accae3', '#e8c3a7', '#a9dbca', '#a3add9', '#dbd89e',
-        '#ffb3ba', '#bae1ff', '#ffffba', '#ffdfba', '#c7ceea', '#ffd1dc'
+        '#F1948A', '#85C1E9', '#82E0AA', '#F8C471', '#D2B4DE', '#7FCDCD',
+        '#AEB6BF', '#F0B27A', '#BB8FCE', '#85C1E9', '#7DCEA0', '#F7DC6F',
+        '#EC7063', '#5DADE2', '#58D68D', '#F5B041', '#AF7AC5', '#48C9B0',
+        '#85929E', '#E67E22', '#A569BD', '#52D681', '#3498DB', '#F39C12'
     ];
 
     if (!yearlyLeaderData || Object.keys(yearlyLeaderData).length === 0) {
@@ -9685,7 +10156,7 @@ function updateYearlyLeaderChart(side, selectedLeader) {
                 },
                 plugins: {
                     title: {
-                        display: true,
+                        display: false,
                         text: `Sản xuất theo tháng - ${selectedLeader}`,
                         font: {
                             size: 14,
@@ -9746,7 +10217,7 @@ function updateYearlyLeaderChart(side, selectedLeader) {
 
                             if (total === 0) return '';
 
-                            const percent = ((value / total) * 100).toFixed(1);
+                            const percent = ((value / total) * 100).toFixed(2);
 
                             // Hiển thị số liệu + phần trăm
                             if (context.datasetIndex === 0) {
@@ -9974,6 +10445,32 @@ function switchTimeAnalysisMode(mode) {
 }
 
 
+// Hàm reset buttons về trạng thái mặc định (Tổng quan active)
+function resetTimeAnalysisButtonsToDefault() {
+    // Remove active từ tất cả buttons
+    document.querySelectorAll('#timeAnalysis .btn-group button').forEach(btn => {
+        btn.classList.remove('active', 'btn-success');
+        btn.classList.add('btn-outline-success');
+    });
+
+    // Set button Tổng quan thành active
+    const btnSanXuat = document.getElementById('btnSanXuat');
+    if (btnSanXuat) {
+        btnSanXuat.classList.remove('btn-outline-success');
+        btnSanXuat.classList.add('active', 'btn-success');
+    }
+
+    // Đảm bảo nội dung hiển thị đúng với chế độ tổng quan
+    const timeAnalysisEl = document.getElementById('timeAnalysis');
+    if (timeAnalysisEl) {
+        const twoColumnRow = timeAnalysisEl.querySelector('.row');
+        if (twoColumnRow) {
+            displayTwoColumnProductionContent(twoColumnRow);
+        }
+    }
+}
+
+
 
 // Hàm cập nhật nội dung phần dưới (cả 2 cột)
 function updateTimeAnalysisContent(mode) {
@@ -9990,15 +10487,18 @@ function updateTimeAnalysisContent(mode) {
             displayTwoColumnProductionContent(twoColumnRow);
             break;
         case 'maca':
-            // Thay thế bằng bảng mã ca (1 cột full width)
+            // Force clear content trước khi render bảng mã ca
+            twoColumnRow.innerHTML = '';
             displayTimeTableByShift(twoColumnRow);
             break;
         case 'truongmay':
-            // Thay thế bằng bảng trưởng máy (1 cột full width)
+            // Force clear content trước khi render bảng trưởng máy
+            twoColumnRow.innerHTML = '';
             displayTimeTableByLeader(twoColumnRow);
             break;
         case 'may':
-            // Thay thế bằng bảng máy (1 cột full width)
+            // Force clear content trước khi render bảng máy
+            twoColumnRow.innerHTML = '';
             displayTimeTableByMachine(twoColumnRow);
             break;
     }
@@ -10041,7 +10541,7 @@ function displayStopReasonsContent(container) {
 
         sortedStopReasons.forEach(reason => {
             const duration = reason.duration || 0;
-            const percent = totalStopTime > 0 ? ((duration / totalStopTime) * 100).toFixed(1) : 0;
+            const percent = totalStopTime > 0 ? ((duration / totalStopTime) * 100).toFixed(2) : 0;
             html += `
                 <tr>
                     <td>${reason.reason}</td>
@@ -10082,14 +10582,14 @@ function displayStopReasonsContent(container) {
 
 // Hàm hiển thị bảng thời gian theo mã ca
 function displayTimeTableByShift(container) {
-    if (!currentChartData || !currentChartData.reports) {
+    if (!filteredTableData || filteredTableData.length === 0) {
         container.innerHTML = '<div class="col-12 text-center text-muted p-4">Không có dữ liệu</div>';
         return;
     }
 
     const shiftGroups = {};
     const wsCountByShiftMachine = {};
-    currentChartData.reports.forEach(report => {
+    filteredTableData.forEach(report => {
         const shift = report.ma_ca || 'Unknown';
         const may = report.may || 'Unknown';
         const key = `${shift}_${may}`;
@@ -10258,14 +10758,14 @@ function displayTimeTableByShift(container) {
 
 // Hàm hiển thị bảng thời gian theo trưởng máy
 function displayTimeTableByLeader(container) {
-    if (!currentChartData || !currentChartData.reports) {
+    if (!filteredTableData || filteredTableData.length === 0) {
         container.innerHTML = '<div class="col-12 text-center text-muted p-4">Không có dữ liệu</div>';
         return;
     }
 
     const leaderGroups = {};
     const wsCountByLeaderShiftMachine = {};
-    currentChartData.reports.forEach(report => {
+    filteredTableData.forEach(report => {
         const leader = report.truong_may || `Trưởng máy ${report.may || 'Unknown'}`;
         const shift = report.ma_ca || 'Unknown';
         const may = report.may || 'Unknown';
@@ -10393,6 +10893,7 @@ function displayTimeTableByLeader(container) {
             <tr style="background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
                 <td class="text-center p-2"><strong style="color: #0066cc;">Tổng cộng</strong></td>
                 <td></td>
+                <td></td>
                 <td class="text-center p-2"><strong style="color: #0066cc;">${leaderItems.reduce((sum, item) => sum + (wsCountByLeaderShiftMachine[`${item.leader}_${item.shift}_${item.may}`]?.size || 0), 0)}</strong></td>
                 <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.runTime)}</strong></td>
                 <td class="text-center p-2"><strong style="color: #0066cc;">${formatDuration(total.setupTime)}</strong></td>
@@ -10440,7 +10941,7 @@ function displayTimeTableByLeader(container) {
 
 // Hàm hiển thị bảng thời gian theo máy
 function displayTimeTableByMachine(container) {
-    if (!currentChartData || !currentChartData.reports) {
+    if (!filteredTableData || filteredTableData.length === 0) {
         container.innerHTML = '<div class="col-12 text-center text-muted p-4">Không có dữ liệu</div>';
         return;
     }
@@ -10448,7 +10949,7 @@ function displayTimeTableByMachine(container) {
     const machineGroups = {};
     const wsCountByMachine = {};
 
-    currentChartData.reports.forEach(report => {
+    filteredTableData.forEach(report => {
         const may = report.may || 'Unknown';
         const ws = report.ws || 'Unknown';
 
@@ -10741,7 +11242,7 @@ function exportToExcel() {
             }
 
             return {
-                'STT': index + 1,
+                'STT': record.stt || (index + 1),
                 'WS': record.ws || '-',
                 'Mã Ca': record.ma_ca || '-',
                 'Máy': record.may || '-',
@@ -11014,7 +11515,7 @@ function createMachineTimeChart(reports) {
                             
                             if (total === 0) return '';
                             
-                            const percent = ((value / total) * 100).toFixed(1);
+                            const percent = ((value / total) * 100).toFixed(2);
                             
                             // Format thành giờ phút
                             const hours = Math.floor(value / 60);

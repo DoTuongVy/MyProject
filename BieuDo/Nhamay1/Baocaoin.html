@@ -30,6 +30,10 @@
     <link rel="stylesheet" href="Bieudo.css">
     <link rel="stylesheet" href="../../auth.css">
 
+
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    <link rel="icon" type="image/png" sizes="" href="/assets/LOGO.png">
+
     <style>
         .chart-expand-btn {
             position: absolute;
@@ -119,7 +123,7 @@
                             lọc
                         </div>
 
-                        <button id="toggleFilterBtn" class="btn btn-light btn-sm"><i class="fas fa-bars"></i></button>
+                        <!-- <button id="toggleFilterBtn" class="btn btn-light btn-sm"><i class="fas fa-bars"></i></button> -->
                     </div>
                     <div class="card-body" id="filterContent">
                         <div class="row g-3 d-flex justify-content-center align-items-center ">
@@ -688,7 +692,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <i class="fas fa-tachometer-alt me-2"></i>Top
-                            10 Tốc độ - Máy trái
+                            10 Tốc độ - Bảng 1
                             </div>
                             
                             <select class="form-select form-select-sm" id="speedMachineSelectLeft"
@@ -700,7 +704,7 @@
                     <div class="card-body">
                         <div class="chart-container" style="height: 400px;">
                             <button class="chart-expand-btn"
-                                onclick="openFullscreen('topSpeedLeftChart', 'Top 10 tốc độ máy trái')">
+                                onclick="openFullscreen('topSpeedLeftChart', 'Top 10 tốc độ máy - Bảng 1')">
                                 <i class="fas fa-expand"></i>
                             </button>
                             <canvas id="topSpeedLeftChart"></canvas>
@@ -715,7 +719,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                               <i class="fas fa-tachometer-alt me-2"></i>Top
-                            10 Tốc độ - Máy phải  
+                            10 Tốc độ - Bảng 2
                             </div>
                             
                             <select class="form-select form-select-sm" id="speedMachineSelectRight"
@@ -727,7 +731,7 @@
                     <div class="card-body">
                         <div class="chart-container" style="height: 400px;">
                             <button class="chart-expand-btn"
-                                onclick="openFullscreen('topSpeedRightChart', 'Top 10 tốc độ máy phải')">
+                                onclick="openFullscreen('topSpeedRightChart', 'Top 10 tốc độ máy - Bảng 2')">
                                 <i class="fas fa-expand"></i>
                             </button>
                             <canvas id="topSpeedRightChart"></canvas>
