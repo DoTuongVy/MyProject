@@ -1229,9 +1229,15 @@ async function handleConfirmReport() {
 
         const result = await response.json();
         // ✅ CẬP NHẬT CÁC BÁO CÁO LIÊN QUAN
-if (result.success) {
-    await updateRelatedReportsAfterSubmit();
-}
+        if (result.success) {
+            await updateRelatedReportsAfterSubmit();
+            
+            // Nếu là waste process (4,5,6), reload lại danh sách để thấy cập nhật thành phẩm
+            const tuychonValue = getSelectValue('tuychon');
+            if (['4', '5', '6'].includes(tuychonValue)) {
+                console.log('🔄 Đã submit waste process, các báo cáo production sẽ được cập nhật thành phẩm');
+            }
+        }
 
         updateInLoadingText('Hoàn tất!', 'Báo cáo đã được lưu');
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1337,19 +1343,19 @@ async function collectEndReportData() {
 
 
 
-// Hàm tính tổng với cộng dồn (frontend)
+// Hàm tính tổng với logic mới: cùng tùy chọn cộng dồn + trường hợp đặc biệt
 async function calculateTongWithSumComplete(fieldName) {
     try {
         const wsValue = getInputValue('ws');
-        const tuychonText = getSelectText('tuychon');
+        const currentTuyChonText = getSelectText('tuychon');
         const currentMatSau = getCheckboxValue('matsau');
         const currentPhuKeo = getSelectValue('phukeo');
         const currentSoPass = getSelectText('pass');
         const currentMay = getCurrentMachineId();
 
-        if (!wsValue || !tuychonText) return 0;
+        if (!wsValue || !currentTuyChonText) return 0;
 
-        console.log(`🔍 Frontend tính tổng CỘNG DỒN ${fieldName}: WS=${wsValue}, Tùy chọn=${tuychonText}`);
+        console.log(`🔍 Frontend tính tổng CỘNG DỒN ${fieldName}: WS=${wsValue}, Tùy chọn=${currentTuyChonText}`);
 
         // Gọi API lấy tất cả báo cáo
         const response = await fetch('/api/bao-cao-in/list?exclude_stop_only=true');
@@ -1357,48 +1363,85 @@ async function calculateTongWithSumComplete(fieldName) {
 
         const allReports = await response.json();
 
-        // Lọc báo cáo cùng điều kiện (BAO GỒM CẢ BÁO CÁO HIỆN TẠI)
-        const matchingReports = allReports.filter(report => {
-            // Điều kiện 1: Cùng WS
-            if (report.ws !== wsValue) return false;
-            
-            // Điều kiện 2: Cùng tùy chọn HOẶC cặp đặc biệt (như code Google Sheets)
-            const reportTuychon = report.tuy_chon;
-            const isSpecialPair = (reportTuychon === "3. CÁN BÓNG" && tuychonText === "5. IN DẶM + CÁN BÓNG") ||
-                                (reportTuychon === "5. IN DẶM + CÁN BÓNG" && tuychonText === "3. CÁN BÓNG");
-            
-            if (reportTuychon !== tuychonText && !isSpecialPair) return false;
-            
-            // Điều kiện 3: Cùng mặt sau
-            const reportMatSau = report.mat_sau ? true : false;
-            if (reportMatSau !== currentMatSau) return false;
-            
-            // Điều kiện 4: Cùng phủ keo (chỉ khi cả 2 đều là máy 2M)
-            const currentIs2M = currentMay === '2M';
-            const reportIs2M = report.may === '2M';
-            
-            if (currentIs2M && reportIs2M) {
-                if (report.phu_keo !== currentPhuKeo) return false;
-            } else if (currentIs2M !== reportIs2M) {
-                return false; // Một bên 2M, một bên không thì không match
-            }
-            
-            // Điều kiện 5: Cùng số pass in
-            if (report.so_pass_in !== currentSoPass) return false;
+        // Tìm tất cả báo cáo cùng WS và cùng điều kiện
+const sameWSReports = allReports.filter(report => {
+    if (report.ws !== wsValue) return false;
+    
+    // Cùng điều kiện: mặt sau, số pass in
+    const reportMatSau = report.mat_sau ? true : false;
+    if (reportMatSau !== currentMatSau) return false;
+    
+    if (report.so_pass_in !== currentSoPass) return false;
+    
+    // 🔧 CHỈ xét phủ keo cho tùy chọn 1,2,3 (KHÔNG xét cho 4,5,6)
+    const wasteOptions = ['4. IN DẶM', '5. IN DẶM + CÁN BÓNG', '6. CÁN BÓNG LẠI'];
+    const currentIsWaste = wasteOptions.includes(currentTuyChonText);
+    const reportIsWaste = wasteOptions.includes(report.tuy_chon);
+    
+    // Nếu cả 2 đều KHÔNG phải waste (tức là 1,2,3) thì mới xét phủ keo
+    if (!currentIsWaste && !reportIsWaste) {
+        const currentIs2M = currentMay === '2M';
+        const reportIs2M = report.may === '2M';
+        
+        if (currentIs2M && reportIs2M) {
+            if (report.phu_keo !== currentPhuKeo) return false;
+        } else if (currentIs2M !== reportIs2M) {
+            return false;
+        }
+    }
+    // Nếu có ít nhất 1 bên là waste (4,5,6) thì KHÔNG xét phủ keo
+    
+    // Loại trừ báo cáo hiện tại nếu đang cập nhật
+    if (currentReportId && report.id === currentReportId) return false;
 
-            // Chỉ tính báo cáo có dữ liệu
-            return report[fieldName] && parseFloat(report[fieldName]) > 0;
-        });
+    return report[fieldName] && parseFloat(report[fieldName]) > 0;
+});
 
-        // CỘNG DỒN TẤT CẢ (không loại trừ báo cáo hiện tại)
-        const total = matchingReports.filter(report => {
-            // Loại trừ báo cáo hiện tại nếu đang cập nhật
-            return !currentReportId || report.id !== currentReportId;
-        }).reduce((sum, report) => {
+        // Sắp xếp theo thời gian tạo
+        sameWSReports.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+        // A. CÙNG TÙY CHỌN - Cộng dồn
+        const sameOptionReports = sameWSReports.filter(report => report.tuy_chon === currentTuyChonText);
+        let tongCungTuyChon = sameOptionReports.reduce((sum, report) => {
             return sum + (parseFloat(report[fieldName]) || 0);
         }, 0);
 
-        console.log(`✅ Tổng ${fieldName} từ ${matchingReports.length} báo cáo: ${total}`);
+        // B. TRƯỜNG HỢP ĐẶC BIỆT - Kế thừa
+        let tongKeThua = 0;
+        
+        // Xác định trường để kế thừa (tổng_so_luong cho SL, tong_phe_lieu cho PL)
+        const inheritField = fieldName === 'thanh_pham_in' ? 'tong_so_luong' : 'tong_phe_lieu';
+        
+        // Kiểm tra các trường hợp đặc biệt
+        if (currentTuyChonText === '3. CÁN BÓNG') {
+            // CÁN BÓNG kế thừa từ IN cuối cùng
+            const inReports = sameWSReports.filter(report => report.tuy_chon === '1. IN');
+            if (inReports.length > 0) {
+                const lastInReport = inReports[inReports.length - 1];
+                tongKeThua = parseFloat(lastInReport[inheritField]) || 0;
+                console.log(`🔄 CÁN BÓNG kế thừa từ IN (${inheritField}): ${tongKeThua}`);
+                return tongKeThua; // CÁN BÓNG không cộng dồn, chỉ kế thừa
+            }
+        } else if (currentTuyChonText === '2. IN + CÁN BÓNG') {
+            // IN+CÁN BÓNG kế thừa từ IN hoặc CÁN BÓNG cuối cùng
+            const canBongReports = sameWSReports.filter(report => report.tuy_chon === '3. CÁN BÓNG');
+            const inReports = sameWSReports.filter(report => report.tuy_chon === '1. IN');
+            
+            if (canBongReports.length > 0) {
+                // Có CÁN BÓNG -> kế thừa từ CÁN BÓNG
+                const lastCanBongReport = canBongReports[canBongReports.length - 1];
+                tongKeThua = parseFloat(lastCanBongReport[inheritField]) || 0;
+                console.log(`🔄 IN+CÁN BÓNG kế thừa từ CÁN BÓNG (${inheritField}): ${tongKeThua}`);
+            } else if (inReports.length > 0) {
+                // Không có CÁN BÓNG -> kế thừa từ IN
+                const lastInReport = inReports[inReports.length - 1];
+                tongKeThua = parseFloat(lastInReport[inheritField]) || 0;
+                console.log(`🔄 IN+CÁN BÓNG kế thừa từ IN (${inheritField}): ${tongKeThua}`);
+            }
+        }
+
+        const total = tongCungTuyChon + tongKeThua;
+        console.log(`✅ Tổng ${fieldName}: Cùng tùy chọn=${tongCungTuyChon} + Kế thừa=${tongKeThua} = ${total}`);
         return total;
 
     } catch (error) {
@@ -1445,7 +1488,7 @@ async function calculateTongPheLieuTrangCorrect() {
 
 
 
-// Tính thành phẩm theo tư duy: CHỈ TRỪ PHẾ LIỆU Ở LẦN CUỐI CỦA CHU KỲ
+// Tính thành phẩm theo logic mới: Mặc định = Tổng SL, tùy chọn 1,2,3 trừ phế liệu của 4,5,6
 async function calculateThanhPhamCorrect() {
     try {
         const wsValue = getInputValue('ws');
@@ -1458,29 +1501,20 @@ async function calculateThanhPhamCorrect() {
 
         const tongSoLuong = await calculateTongSoLuongCorrect();
 
-        // Tùy chọn 4,5,6,7,8,9 (waste processes) = Tổng số lượng (luôn luôn)
+        // Tùy chọn 4,5,6 (waste) và 7,8,9 (gia công) = Tổng SL (không bị trừ)
         if (['4', '5', '6', '7', '8', '9'].includes(tuychonValue)) {
-            console.log(`✅ Tùy chọn waste ${tuychonText} -> Thành phẩm = Tổng SL = ${tongSoLuong}`);
+            console.log(`✅ Tùy chọn ${tuychonText} -> Thành phẩm = Tổng SL = ${tongSoLuong}`);
             return tongSoLuong;
         }
 
-        // Tùy chọn 1,2,3 (production processes)
+        // Tùy chọn 1,2,3 (production) - có thể bị trừ phế liệu của 4,5,6
         if (['1', '2', '3'].includes(tuychonValue)) {
-            // Kiểm tra xem có phải là lần cuối cùng của production process không
-            const isLastInCycle = await checkIfLastProductionInCycle(wsValue, tuychonText);
-
-            if (isLastInCycle) {
-                // LẦN CUỐI: Trừ phế liệu từ waste process tương ứng
-                const tongPheLieuFromWaste = await getTotalWasteFromMatchingProcesses();
-                const thanhPham = Math.max(0, tongSoLuong - tongPheLieuFromWaste);
-                
-                console.log(`✅ Lần cuối ${tuychonText}: ${tongSoLuong} - ${tongPheLieuFromWaste} = ${thanhPham}`);
-                return thanhPham;
-            } else {
-                // KHÔNG PHẢI LẦN CUỐI: Thành phẩm = Tổng số lượng
-                console.log(`✅ Không phải lần cuối ${tuychonText} -> Thành phẩm = Tổng SL = ${tongSoLuong}`);
-                return tongSoLuong;
-            }
+            // Lấy tổng phế liệu từ waste processes 4,5,6 (KHÔNG bao gồm 7,8,9)
+            const tongPheLieuWaste = await getTotalWastePheLieu(wsValue);
+            
+            const thanhPham = Math.max(0, tongSoLuong - tongPheLieuWaste);
+            console.log(`✅ ${tuychonText}: Tổng SL=${tongSoLuong} - Phế liệu waste(4,5,6)=${tongPheLieuWaste} = ${thanhPham}`);
+            return thanhPham;
         }
 
         // Fallback
@@ -1492,6 +1526,59 @@ async function calculateThanhPhamCorrect() {
     }
 }
 
+
+
+// Lấy tổng phế liệu từ waste processes (CHỈ tùy chọn 4,5,6 - KHÔNG bao gồm 7,8,9)
+async function getTotalWastePheLieu(wsValue) {
+    try {
+        const currentMatSau = getCheckboxValue('matsau');
+        const currentPhuKeo = getSelectValue('phukeo');
+        const currentSoPass = getSelectText('pass');
+        const currentMay = getCurrentMachineId();
+
+        // Gọi API lấy tất cả báo cáo
+        const response = await fetch('/api/bao-cao-in/list?exclude_stop_only=true');
+        if (!response.ok) return 0;
+
+        const allReports = await response.json();
+
+        // Lọc các báo cáo waste processes (CHỈ 4,5,6)
+const wasteReports = allReports.filter(report => {
+    // Cùng WS
+    if (report.ws !== wsValue) return false;
+    
+    // CHỈ là waste processes 4,5,6 (KHÔNG bao gồm 7,8,9)
+    const wasteOptions = ['4. IN DẶM', '5. IN DẶM + CÁN BÓNG', '6. CÁN BÓNG LẠI'];
+    if (!wasteOptions.includes(report.tuy_chon)) return false;
+    
+    // Cùng điều kiện: mặt sau, số pass in (KHÔNG xét phủ keo cho waste)
+    const reportMatSau = report.mat_sau ? true : false;
+    if (reportMatSau !== currentMatSau) return false;
+    
+    if (report.so_pass_in !== currentSoPass) return false;
+    
+    // 🔧 BỎ ĐIỀU KIỆN PHỦ KEO CHO WASTE PROCESSES
+
+    // Loại trừ báo cáo hiện tại
+    if (currentReportId && report.id === currentReportId) return false;
+
+    // Có dữ liệu phế liệu
+    return report.phe_lieu && parseFloat(report.phe_lieu) > 0;
+});
+
+        // Tính tổng phế liệu (chỉ cột "PL", không phải "Tổng phế liệu")
+        const tongPheLieu = wasteReports.reduce((total, report) => {
+            return total + (parseFloat(report.phe_lieu) || 0);
+        }, 0);
+
+        console.log(`✅ Tổng phế liệu từ ${wasteReports.length} waste processes (4,5,6): ${tongPheLieu}`);
+        return tongPheLieu;
+
+    } catch (error) {
+        console.error('Lỗi khi lấy tổng phế liệu waste:', error);
+        return 0;
+    }
+}
 
 
 // Kiểm tra xem có phải là lần cuối cùng của production process trong chu kỳ không
@@ -1637,13 +1724,10 @@ async function updateRelatedReportsAfterSubmit() {
         
         if (!wsValue || !tuychonValue) return;
         
-        // Chỉ cập nhật khi là waste processes (4,5,6,7,8,9)
-        if (!['4', '5', '6', '7', '8', '9'].includes(tuychonValue)) return;
+        console.log('🔄 Frontend gọi cập nhật báo cáo liên quan cho WS:', wsValue, 'Tùy chọn:', tuychonValue);
         
-        console.log('🔄 Cập nhật báo cáo liên quan cho WS:', wsValue, 'Tùy chọn waste:', tuychonValue);
-        
-        // Gọi API để cập nhật
-        await fetch('/api/bao-cao-in/update-related-reports', {
+        // Gọi API để cập nhật (backend sẽ xử lý logic)
+        const response = await fetch('/api/bao-cao-in/update-related-reports', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1654,12 +1738,18 @@ async function updateRelatedReportsAfterSubmit() {
             })
         });
         
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Đã gọi cập nhật báo cáo liên quan:', result.message);
+        } else {
+            console.warn('⚠️ Không thể cập nhật báo cáo liên quan');
+        }
+        
     } catch (error) {
         console.warn('Lỗi khi cập nhật báo cáo liên quan:', error);
         // Không throw error để không ảnh hưởng đến flow chính
     }
 }
-
 
 
 
