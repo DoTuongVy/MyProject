@@ -5892,7 +5892,7 @@ const errorWSList = errorRecords.map(record => record.ws).filter(ws => ws && ws 
             </div>
 
 
-            <div class="col-md-2" style="display:none">
+            <div class="col-md-2" style="">
     <div class="card border-danger bg-light">
         <div class="card-body text-center p-2">
             <h6 style="font-size: 0.9rem;">Lỗi thời gian</h6>
