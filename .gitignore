@@ -1,0 +1,19 @@
+# Database files - CHỈ ignore database dev, giữ lại database chính
+database/dev.db
+database/test.db
+database/*.sqlite
+database/*.sqlite3
+
+# KHÔNG ignore database chính
+!database/phieu.db
+
+# Node modules
+SERVER/node_modules/
+node_modules/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

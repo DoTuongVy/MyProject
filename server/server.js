@@ -5,7 +5,9 @@ const path = require('path');
 
 // Khởi tạo Express app
 const app = express();
-const PORT = process.env.PORT || 8686;
+// Import config môi trường
+const config = require('./config/database');
+const PORT = config.port;
 
 // Middleware
 app.use(cors({
@@ -110,6 +112,8 @@ app.get('/QLVT/phieucat.html', (req, res) => {
 
 // Khởi động server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server đang chạy tại http://localhost:${PORT}`);
-  console.log(`Server cũng có thể truy cập qua IP nội bộ:${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+  console.log(`📊 Database: ${config.database}`);
+  console.log(`🌐 Server cũng có thể truy cập qua IP nội bộ:${PORT}`);
 });

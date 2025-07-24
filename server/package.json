@@ -4,8 +4,8 @@
   "description": "Server cho hệ thống quản lý phiếu sang cắt cuộn",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "cross-env NODE_ENV=production node server.js",
+    "dev": "cross-env NODE_ENV=development nodemon server.js"
   },
   "keywords": [
     "phieu",
@@ -21,6 +21,7 @@
     "sqlite3": "^5.1.6"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "cross-env": "^7.0.3"
   }
 }

@@ -1,6 +1,8 @@
 const sqlite3 = require('sqlite3').verbose();
+const config = require('./config/database');
 const path = require('path');
 const fs = require('fs');
+
 
 
 // Support for pkg executable path resolution
@@ -40,12 +42,11 @@ const dbPath = path.join(dbDir, 'phieu.db');
 console.log(`Sử dụng database tại: ${dbPath}`);
 
 // Kết nối đến database
-const db = new sqlite3.Database(dbPath, (err) => {
+const db = new sqlite3.Database(config.database, (err) => {
   if (err) {
-    console.error('Không thể kết nối đến SQLite database:', err.message);
+      console.error('❌ Lỗi kết nối database:', err.message);
   } else {
-    console.log('Đã kết nối đến SQLite database tại:', dbPath);
-    initDatabase();
+      console.log(`✅ Đã kết nối database: ${config.database}`);
   }
 });
 
