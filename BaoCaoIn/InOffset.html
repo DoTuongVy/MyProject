@@ -24,6 +24,7 @@
     </head>
 
     <body class="bg-light p-4">
+        abc
 
                             <!-- Nút Thu nhỏ Dừng Máy - Thêm sau dòng 106 -->
 <div class="position-absolute" id="miniStopButton" 
@@ -1328,6 +1329,69 @@ style="top: 200px; right: 20px; z-index: 100;">
     </div>
 </div>
 
+
+
+
+
+
+<!-- Modal Kiểm tra thông tin trước khi gửi -->
+<div class="modal fade" id="confirmReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Kiểm tra thông tin báo cáo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3 h-100">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Thông tin sản xuất</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Số WS:</strong> <span id="modalWS"></span></p>
+                                <p><strong>Khách hàng:</strong> <span id="modalKhachHang"></span></p>
+                                <p><strong>Mã sản phẩm:</strong> <span id="modalMaSP"></span></p>
+                                <p><strong>Mã giấy:</strong> <span id="modalMaGiay"></span></p>
+                                <p><strong>Thành phẩm in:</strong> <span id="modalThanhPhamIn" class="text-success fw-bold"></span> tấm</p>
+                                <p><strong>Phế liệu:</strong> <span id="modalPheLieu" class="text-danger fw-bold"></span> tấm</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-3 h-100">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Thông tin thời gian</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>TG bắt đầu:</strong> <span id="modalTGBatDau"></span></p>
+                                <p><strong>TG kết thúc:</strong> <span id="modalTGKetThuc"></span></p>
+                                <p><strong>Canh máy:</strong> <span id="modalCanhMay"></span> phút</p>
+                                <p><strong>Dừng máy:</strong> <span id="modalDungMay"></span> phút</p>
+                                <p><strong>TG chạy máy:</strong> <span id="modalTGChayMay" class="text-primary fw-bold"></span> phút</p>
+                                <p><strong>Tổng thời gian:</strong> <span id="modalTongTG" class="text-info fw-bold"></span> phút</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Thông báo lỗi thời gian -->
+                <div id="timeErrorAlert" class="alert alert-danger d-none mt-2">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Thời gian không hợp lệ!</strong>
+                    <div id="timeErrorDetails"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success" id="finalConfirmButton">
+                    <i class="fas fa-check-circle me-2"></i>OK - Gửi báo cáo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 

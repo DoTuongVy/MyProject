@@ -163,6 +163,14 @@ function setupInEvents() {
         confirmButton.addEventListener('click', handleConfirmReport);
     }
 
+
+    // Event cho nút OK cuối cùng trong modal
+const finalConfirmButton = document.getElementById('finalConfirmButton');
+if (finalConfirmButton) {
+    finalConfirmButton.addEventListener('click', handleFinalConfirm);
+}
+
+
     // Event cho nút reset
     const resetButton = document.getElementById('btnResetForm');
     if (resetButton) {
@@ -1241,10 +1249,11 @@ async function restoreStartedReportData() {
 // XỬ LÝ XÁC NHẬN BÁO CÁO
 // ====================================================================================================================================
 
+
 // Xử lý khi bấm nút xác nhận
 async function handleConfirmReport() {
     try {
-        console.log('=== XÁC NHẬN BÁO CÁO IN ===');
+        console.log('=== KIỂM TRA THÔNG TIN BÁO CÁO IN ===');
 
         // Kiểm tra có báo cáo bắt đầu không
         if (!currentReportId) {
@@ -1252,75 +1261,23 @@ async function handleConfirmReport() {
             return;
         }
 
-        // Hiển thị loading
-        showInLoading('Đang xử lý báo cáo...', 'Chuẩn bị dữ liệu kết thúc');
-
         // Kiểm tra dữ liệu kết thúc
         if (!validateEndData()) {
-            hideInLoading();
             return;
         }
 
-        // Thu thập dữ liệu kết thúc
+        // Thu thập dữ liệu để kiểm tra
         const endData = await collectEndReportData();
         if (!endData) {
-            hideInLoading();
             return;
         }
 
-        const startButton = document.querySelector('.btn-success');
-        if (startButton) {
-            startButton.textContent = 'Bắt Đầu';
-            startButton.classList.remove('btn-warning');
-            startButton.classList.add('btn-success');
-            startButton.style.display = 'inline-block';
-        }
-
-
-        updateInLoadingText('Đang gửi báo cáo...', 'Cập nhật dữ liệu');
-
-        // Gửi dữ liệu cập nhật
-        const response = await fetch(`/api/bao-cao-in/update-end/${currentReportId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(endData),
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-
-        const result = await response.json();
-        // ✅ CẬP NHẬT CÁC BÁO CÁO LIÊN QUAN
-        if (result.success) {
-            await updateRelatedReportsAfterSubmit();
-            
-            // Nếu là waste process (4,5,6), reload lại danh sách để thấy cập nhật thành phẩm
-            const tuychonValue = getSelectValue('tuychon');
-            if (['4', '5', '6'].includes(tuychonValue)) {
-                console.log('🔄 Đã submit waste process, các báo cáo production sẽ được cập nhật thành phẩm');
-            }
-        }
-
-        updateInLoadingText('Hoàn tất!', 'Báo cáo đã được lưu');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        hideInLoading();
-        showNotification('Đã lưu báo cáo In thành công!', 'success');
-
-        // Reset form
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        resetFormButKeepUserFields();
-
-        console.log('✅ Đã xác nhận báo cáo In thành công');
+        // Hiển thị modal kiểm tra thông tin
+        showConfirmReportModal(endData);
 
     } catch (error) {
-        console.error('Lỗi khi xác nhận báo cáo In:', error);
-        hideInLoading();
-        showNotification('Lỗi khi lưu báo cáo: ' + error.message, 'error');
+        console.error('Lỗi khi kiểm tra báo cáo In:', error);
+        showNotification('Lỗi khi kiểm tra báo cáo: ' + error.message, 'error');
     }
 }
 
@@ -6354,6 +6311,435 @@ function calculateModalStopDuration(boxId) {
 }
 
 
+
+
+
+
+
+// ====================================================================================================================================
+// MODAL KIỂM TRA THÔNG TIN BÁO CÁO
+// ====================================================================================================================================
+
+// Hiển thị modal kiểm tra thông tin
+function showConfirmReportModal(endData) {
+    // Tính toán thời gian
+    const timeCalculation = calculateTimeDetails(endData);
+    
+    // THÊM: Kiểm tra nếu không tính được thời gian
+    if (!timeCalculation) {
+        showNotification('Lỗi: Không thể tính toán thời gian. Vui lòng kiểm tra thời gian bắt đầu.', 'error');
+        return;
+    }
+    
+    // Điền thông tin vào modal
+    populateConfirmModal(endData, timeCalculation);
+    
+    // Kiểm tra tính hợp lệ của thời gian
+    const isTimeValid = validateTimeCalculation(timeCalculation);
+    
+    // SỬA: Log để debug
+    console.log('Time calculation:', timeCalculation);
+    console.log('Is time valid:', isTimeValid);
+    
+    // Hiển thị hoặc ẩn thông báo lỗi
+    toggleTimeError(isTimeValid, timeCalculation);
+    
+    // Hiển thị hoặc ẩn nút OK
+    toggleFinalConfirmButton(isTimeValid);
+    
+    // Hiển thị modal
+    const modal = new bootstrap.Modal(document.getElementById('confirmReportModal'));
+    modal.show();
+}
+
+
+
+// Tính toán chi tiết thời gian
+function calculateTimeDetails(endData) {
+    const now = new Date();
+    
+    // Lấy thời gian bắt đầu từ biến toàn cục startTime
+    let startTimeValue = null;
+    
+    // Thử lấy từ biến toàn cục startTime
+    if (window.startTime && window.startTime instanceof Date) {
+        startTimeValue = window.startTime;
+    } else if (startTime && startTime instanceof Date) {
+        startTimeValue = startTime;
+    } else {
+        // Thử lấy từ element hiển thị
+        const startTimeElement = document.getElementById('startTime');
+        const startTimeText = startTimeElement ? startTimeElement.textContent.trim() : '';
+        
+        if (startTimeText && startTimeText !== '') {
+            // Parse từ format hiển thị "dd/mm/yyyy, hh:mm:ss"
+            startTimeValue = parseVietnameseDateTime(startTimeText);
+        }
+    }
+    
+    if (!startTimeValue || isNaN(startTimeValue.getTime())) {
+        console.error('Không có thời gian bắt đầu hợp lệ');
+        return null;
+    }
+    
+    // Thời gian kết thúc = thời điểm hiện tại (khi bấm xác nhận)
+    const endTime = now;
+    
+    // SỬA: Tổng thời gian từ bắt đầu đến kết thúc (tính cả giây)
+    const totalMilliseconds = endTime - startTimeValue;
+    const totalSeconds = Math.floor(totalMilliseconds / 1000);
+    const totalMinutesFromTime = Math.floor(totalSeconds / 60);
+    
+    // Canh máy (phút)
+    const canhMayMinutes = parseInt(getInputValue('canhmay')) || 0;
+    
+    // SỬA: Tính tổng thời gian dừng máy (tính cả giây)
+    const dungMayResult = calculateTotalStopTimeWithSeconds();
+    const dungMayMinutes = dungMayResult.minutes;
+    
+    // Thời gian chạy máy = Tổng thời gian - Canh máy - Dừng máy
+    const chayMayMinutes = totalMinutesFromTime - canhMayMinutes - dungMayMinutes;
+    
+    // Tổng thời gian tính toán = Chạy máy + Canh máy + Dừng máy
+    const tongTinhToan = chayMayMinutes + canhMayMinutes + dungMayMinutes;
+    
+    return {
+        startTime: startTimeValue,
+        endTime,
+        totalMilliseconds,
+        totalSeconds,
+        totalMinutesFromTime,
+        canhMayMinutes,
+        dungMayMinutes,
+        dungMaySeconds: dungMayResult.seconds, // Lưu thêm giây
+        chayMayMinutes,
+        tongTinhToan
+    };
+}
+
+
+
+// Parse thời gian từ format Việt Nam "dd/mm/yyyy, hh:mm:ss"
+function parseVietnameseDateTime(timeString) {
+    try {
+        // SỬA: Xử lý nhiều format khác nhau
+        let parts;
+        
+        // Format 1: "24/7/2025, 11:10:32"
+        if (timeString.includes(', ')) {
+            parts = timeString.split(', ');
+        }
+        // Format 2: "24/7/2025 11:10:32" 
+        else if (timeString.includes(' ') && !timeString.includes(',')) {
+            parts = timeString.split(' ');
+        } else {
+            return null;
+        }
+        
+        if (parts.length !== 2) return null;
+        
+        const datePart = parts[0]; // "24/7/2025"
+        const timePart = parts[1]; // "11:10:32"
+        
+        const dateComponents = datePart.split('/');
+        const timeComponents = timePart.split(':');
+        
+        if (dateComponents.length !== 3) return null;
+        if (timeComponents.length < 2 || timeComponents.length > 3) return null;
+        
+        const day = parseInt(dateComponents[0]);
+        const month = parseInt(dateComponents[1]) - 1; // Month is 0-indexed
+        const year = parseInt(dateComponents[2]);
+        
+        const hours = parseInt(timeComponents[0]);
+        const minutes = parseInt(timeComponents[1]);
+        const seconds = timeComponents.length === 3 ? parseInt(timeComponents[2]) : 0; // SỬA: Xử lý giây
+        
+        const date = new Date(year, month, day, hours, minutes, seconds);
+        
+        // Kiểm tra ngày tạo có hợp lệ
+        if (isNaN(date.getTime())) return null;
+        
+        console.log('Parsed time:', timeString, '->', date);
+        return date;
+        
+    } catch (error) {
+        console.error('Lỗi parse thời gian:', error);
+        return null;
+    }
+}
+
+
+// SỬA: Tính tổng thời gian dừng máy (bao gồm cả giây)
+function calculateTotalStopTimeWithSeconds() {
+    let totalMilliseconds = 0;
+    
+    const stopBoxes = document.querySelectorAll('.stop-reason-box');
+    stopBoxes.forEach(box => {
+        const stopTime = box.querySelector('.stop-time-input')?.value;
+        const resumeTime = box.querySelector('.resume-time-input')?.value;
+        
+        if (stopTime && resumeTime) {
+            const start = new Date(stopTime);
+            const end = new Date(resumeTime);
+            if (end > start) {
+                totalMilliseconds += (end - start);
+            }
+        }
+    });
+    
+    const totalSeconds = Math.floor(totalMilliseconds / 1000);
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    
+    return {
+        milliseconds: totalMilliseconds,
+        seconds: totalSeconds,
+        minutes: totalMinutes
+    };
+}
+
+// Giữ lại hàm cũ để tương thích
+function calculateTotalStopTime() {
+    return calculateTotalStopTimeWithSeconds().minutes;
+}
+
+// Điền thông tin vào modal
+function populateConfirmModal(endData, timeCalculation) {
+    // Thông tin sản xuất
+    document.getElementById('modalWS').textContent = getInputValue('ws') || 'Không có';
+    document.getElementById('modalKhachHang').textContent = getInputValue('khachhang') || 'Không có';
+    document.getElementById('modalMaSP').textContent = getInputValue('masp') || 'Không có';
+    document.getElementById('modalMaGiay').textContent = getInputValue('magiay') || 'Không có';
+    document.getElementById('modalThanhPhamIn').textContent = formatNumberUS(getInputValue('thanhphamin')) || '0';
+    document.getElementById('modalPheLieu').textContent = getInputValue('phelieu') || '0';
+    
+    // SỬA: Thông tin thời gian với format đẹp hơn
+    const startTimeText = timeCalculation.startTime ? timeCalculation.startTime.toLocaleString('vi-VN') : 'Không có';
+    const endTimeText = timeCalculation.endTime ? timeCalculation.endTime.toLocaleString('vi-VN') : 'Không có';
+    
+    // SỬA: Format thời gian với giờ:phút (nếu có giây thì làm tròn)
+    const formatMinutesToHourMinute = (totalMinutes) => {
+        if (isNaN(totalMinutes)) return '0';
+        
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        
+        if (hours > 0) {
+            return `${hours}h ${minutes}p`;
+        } else {
+            return `${minutes}p`;
+        }
+    };
+    
+    document.getElementById('modalTGBatDau').textContent = startTimeText;
+    document.getElementById('modalTGKetThuc').textContent = endTimeText;
+    document.getElementById('modalCanhMay').textContent = isNaN(timeCalculation.canhMayMinutes) ? '0' : timeCalculation.canhMayMinutes.toString();
+    
+    // SỬA: Hiển thị dừng máy với thông tin chi tiết
+    const dungMayText = isNaN(timeCalculation.dungMayMinutes) ? '0' : 
+        `${timeCalculation.dungMayMinutes}` + (timeCalculation.dungMaySeconds > timeCalculation.dungMayMinutes * 60 ? 
+        ` (${timeCalculation.dungMaySeconds}s)` : '');
+    
+    document.getElementById('modalDungMay').textContent = dungMayText;
+    document.getElementById('modalTGChayMay').textContent = isNaN(timeCalculation.chayMayMinutes) ? '0' : timeCalculation.chayMayMinutes.toString();
+    document.getElementById('modalTongTG').textContent = isNaN(timeCalculation.tongTinhToan) ? '0' : timeCalculation.tongTinhToan.toString();
+   
+}
+
+
+
+// Kiểm tra tính hợp lệ của thời gian 
+function validateTimeCalculation(timeCalculation) {
+    // Kiểm tra dữ liệu đầu vào
+    if (!timeCalculation) {
+        console.log('❌ Không có dữ liệu thời gian');
+        return false;
+    }
+    
+    // Kiểm tra các giá trị có phải số hợp lệ không
+    const values = [
+        timeCalculation.totalMinutesFromTime,
+        timeCalculation.canhMayMinutes,
+        timeCalculation.dungMayMinutes,
+        timeCalculation.chayMayMinutes,
+        timeCalculation.tongTinhToan
+    ];
+    
+    for (let value of values) {
+        if (isNaN(value) || value === null || value === undefined) {
+            console.log('❌ Có giá trị thời gian không hợp lệ:', value);
+            return false;
+        }
+    }
+    
+    // 1. Kiểm tra thời gian chạy máy không được âm
+    if (timeCalculation.chayMayMinutes < 0) {
+        console.log('❌ Thời gian chạy máy âm:', timeCalculation.chayMayMinutes);
+        return false;
+    }
+    
+    // SỬA: 2. Kiểm tra tổng thời gian với độ chính xác giây (cho phép sai lệch 1 phút)
+    const difference = Math.abs(timeCalculation.tongTinhToan - timeCalculation.totalMinutesFromTime);
+    if (difference > 1) { // Cho phép sai lệch tối đa 1 phút do làm tròn giây
+        console.log('❌ Tổng thời gian không khớp (sai lệch >1 phút):', timeCalculation.tongTinhToan, '!=', timeCalculation.totalMinutesFromTime, 'Chênh:', difference);
+        return false;
+    }
+    
+    // 3. Kiểm tra các thời gian không được âm
+    if (timeCalculation.canhMayMinutes < 0 || timeCalculation.dungMayMinutes < 0) {
+        console.log('❌ Thời gian canh máy hoặc dừng máy âm');
+        return false;
+    }
+    
+    console.log('✅ Thời gian hợp lệ (sai lệch:', difference, 'phút)');
+    return true;
+}
+
+
+
+// Hiển thị/ẩn thông báo lỗi thời gian
+function toggleTimeError(isValid, timeCalculation) {
+    const errorAlert = document.getElementById('timeErrorAlert');
+    const errorDetails = document.getElementById('timeErrorDetails');
+    
+    if (!isValid) {
+        let errorMessages = [];
+        
+        // SỬA: Kiểm tra NaN values
+        if (!timeCalculation || isNaN(timeCalculation.totalMinutesFromTime)) {
+            errorMessages.push('Lỗi tính toán thời gian cơ bản');
+            errorMessages.push('Vui lòng kiểm tra thời gian bắt đầu');
+        } else {
+            // Kiểm tra thời gian chạy máy âm
+            if (timeCalculation.chayMayMinutes < 0) {
+                errorMessages.push(`Thời gian chạy máy lệch: <strong>${timeCalculation.chayMayMinutes} phút</strong>`);
+                // errorMessages.push('Cần giảm thời gian canh máy hoặc thời gian dừng máy');
+            }
+            
+            // Kiểm tra tổng thời gian không khớp
+            if (timeCalculation.tongTinhToan !== timeCalculation.totalMinutesFromTime) {
+                const difference = timeCalculation.tongTinhToan - timeCalculation.totalMinutesFromTime;
+                const diffText = difference > 0 ? `nhiều hơn ${Math.abs(difference)} phút` : `ít hơn ${Math.abs(difference)} phút`;
+                
+                errorMessages.push(`Tổng thời gian tính toán ${diffText} so với thời gian thực tế`);
+            }
+        }
+        
+        const totalTime = isNaN(timeCalculation.totalMinutesFromTime) ? 'N/A' : timeCalculation.totalMinutesFromTime;
+        const calculatedTime = isNaN(timeCalculation.tongTinhToan) ? 'N/A' : timeCalculation.tongTinhToan;
+        
+        errorDetails.innerHTML = `
+            <div class="mt-2">
+                <div>Thời gian thực tế: <strong>${totalTime} phút</strong></div>
+                <div>Tổng thời gian tính toán: <strong>${calculatedTime} phút</strong></div>
+                <div class="mt-2 text-danger">
+                    ${errorMessages.map(msg => `<div>• ${msg}</div>`).join('')}
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">Vui lòng đóng modal và kiểm tra lại thông tin.</small>
+                </div>
+            </div>
+        `;
+        
+        errorAlert.classList.remove('d-none');
+    } else {
+        errorAlert.classList.add('d-none');
+    }
+}
+
+
+
+
+// Hiển thị/ẩn nút OK cuối cùng
+function toggleFinalConfirmButton(isValid) {
+    const button = document.getElementById('finalConfirmButton');
+    
+    if (isValid) {
+        button.style.display = 'inline-block';
+        button.disabled = false;
+        console.log('✅ Hiển thị nút OK - thời gian hợp lệ');
+    } else {
+        button.style.display = 'none';
+        button.disabled = true;
+        console.log('❌ Ẩn nút OK - thời gian không hợp lệ');
+    }
+}
+
+
+// Xử lý khi bấm OK cuối cùng
+async function handleFinalConfirm() {
+    try {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmReportModal'));
+        modal.hide();
+        
+        // Thực hiện gửi báo cáo như code cũ
+        await executeReportSubmission();
+        
+    } catch (error) {
+        console.error('Lỗi khi gửi báo cáo cuối cùng:', error);
+        showNotification('Lỗi khi gửi báo cáo: ' + error.message, 'error');
+    }
+}
+
+// Thực hiện gửi báo cáo (code từ hàm handleConfirmReport cũ)
+async function executeReportSubmission() {
+    showInLoading('Đang xử lý báo cáo...', 'Cập nhật dữ liệu');
+
+    // Thu thập dữ liệu kết thúc
+    const endData = await collectEndReportData();
+    if (!endData) {
+        hideInLoading();
+        return;
+    }
+
+    const startButton = document.querySelector('.btn-success');
+    if (startButton) {
+        startButton.textContent = 'Bắt Đầu';
+        startButton.classList.remove('btn-warning');
+        startButton.classList.add('btn-success');
+        startButton.style.display = 'inline-block';
+    }
+
+    updateInLoadingText('Đang gửi báo cáo...', 'Cập nhật dữ liệu');
+
+    // Gửi dữ liệu cập nhật
+    const response = await fetch(`/api/bao-cao-in/update-end/${currentReportId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(endData),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json();
+    
+    // Cập nhật các báo cáo liên quan
+    if (result.success) {
+        await updateRelatedReportsAfterSubmit();
+        
+        const tuychonValue = getSelectValue('tuychon');
+        if (['4', '5', '6'].includes(tuychonValue)) {
+            console.log('🔄 Đã submit waste process, các báo cáo production sẽ được cập nhật thành phẩm');
+        }
+    }
+
+    updateInLoadingText('Hoàn tất!', 'Báo cáo đã được lưu');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    hideInLoading();
+    showNotification('Đã lưu báo cáo In thành công!', 'success');
+
+    // Reset form
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    resetFormButKeepUserFields();
+
+    console.log('✅ Đã xác nhận báo cáo In thành công');
+}
 
 
 
