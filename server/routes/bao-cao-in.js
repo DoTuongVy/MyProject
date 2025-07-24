@@ -120,15 +120,15 @@ async function calculateThanhPham(currentReportId, wsValue, tuychonText, tongSoL
 // Hàm cập nhật lại thành phẩm của TẤT CẢ báo cáo production khi có thay đổi
 async function updateRelatedReportsThanhPham(wsValue, tuychonText, currentReportId) {
     try {
-        console.log(`🔍 [DEBUG] updateRelatedReportsThanhPham được gọi: WS=${wsValue}, Tùy chọn=${tuychonText}`);
+        // console.log(`🔍 [DEBUG] updateRelatedReportsThanhPham được gọi: WS=${wsValue}, Tùy chọn=${tuychonText}`);
         
         if (!wsValue) {
-            console.log(`[DEBUG] Không có WS, bỏ qua`);
+            // console.log(`[DEBUG] Không có WS, bỏ qua`);
             return;
         }
         
         // LUÔN LUÔN cập nhật các báo cáo production (1,2,3) bất kể tùy chọn hiện tại là gì
-        console.log(`[DEBUG] Tìm kiếm TẤT CẢ báo cáo production (1,2,3) cùng WS để cập nhật...`);
+        // console.log(`[DEBUG] Tìm kiếm TẤT CẢ báo cáo production (1,2,3) cùng WS để cập nhật...`);
         
         // Tìm TẤT CẢ báo cáo production (1,2,3) cùng WS
         const productionReports = await new Promise((resolve, reject) => {
@@ -146,23 +146,23 @@ async function updateRelatedReportsThanhPham(wsValue, tuychonText, currentReport
             });
         });
         
-        console.log(`[DEBUG] Tìm thấy ${productionReports.length} báo cáo production:`, 
-                   productionReports.map(r => `ID:${r.id}-${r.tuy_chon}`));
+        // console.log(`[DEBUG] Tìm thấy ${productionReports.length} báo cáo production:`, 
+        //            productionReports.map(r => `ID:${r.id}-${r.tuy_chon}`));
         
         if (productionReports.length === 0) {
-            console.log(`[DEBUG] Không có báo cáo production nào để cập nhật`);
+            // console.log(`[DEBUG] Không có báo cáo production nào để cập nhật`);
             return;
         }
         
         // Cập nhật từng báo cáo production
         for (const prodReport of productionReports) {
-            console.log(`[DEBUG] Xử lý báo cáo ID:${prodReport.id} - ${prodReport.tuy_chon}`);
+            // console.log(`[DEBUG] Xử lý báo cáo ID:${prodReport.id} - ${prodReport.tuy_chon}`);
             
             // 🔍 DEBUG: Trước tiên tìm TẤT CẢ waste reports cùng WS để xem có gì
-console.log(`[DEBUG] Tìm TẤT CẢ waste reports cùng WS ${wsValue}...`);
-const allWasteQuery = `SELECT id, phe_lieu, tuy_chon, mat_sau, phu_keo, so_pass_in FROM bao_cao_in 
-                       WHERE ws = ? 
-                       AND tuy_chon IN ('4. IN DẶM', '5. IN DẶM + CÁN BÓNG', '6. CÁN BÓNG LẠI')`;
+// console.log(`[DEBUG] Tìm TẤT CẢ waste reports cùng WS ${wsValue}...`);
+// const allWasteQuery = `SELECT id, phe_lieu, tuy_chon, mat_sau, phu_keo, so_pass_in FROM bao_cao_in 
+//                        WHERE ws = ? 
+//                        AND tuy_chon IN ('4. IN DẶM', '5. IN DẶM + CÁN BÓNG', '6. CÁN BÓNG LẠI')`;
 
 const allWasteReports = await new Promise((resolve, reject) => {
     db.all(allWasteQuery, [wsValue], (err, rows) => {
@@ -171,15 +171,15 @@ const allWasteReports = await new Promise((resolve, reject) => {
     });
 });
 
-console.log(`[DEBUG] TẤT CẢ waste reports cùng WS:`, allWasteReports.map(w => 
-    `ID:${w.id}-${w.tuy_chon}-PL:${w.phe_lieu}-MatSau:${w.mat_sau}-PhuKeo:${w.phu_keo}-Pass:${w.so_pass_in}`
-));
+// console.log(`[DEBUG] TẤT CẢ waste reports cùng WS:`, allWasteReports.map(w => 
+//     `ID:${w.id}-${w.tuy_chon}-PL:${w.phe_lieu}-MatSau:${w.mat_sau}-PhuKeo:${w.phu_keo}-Pass:${w.so_pass_in}`
+// ));
 
-console.log(`[DEBUG] Production report điều kiện:`, {
-    mat_sau: prodReport.mat_sau || 0,
-    phu_keo: prodReport.phu_keo || '',
-    so_pass_in: prodReport.so_pass_in || ''
-});
+// console.log(`[DEBUG] Production report điều kiện:`, {
+//     mat_sau: prodReport.mat_sau || 0,
+//     phu_keo: prodReport.phu_keo || '',
+//     so_pass_in: prodReport.so_pass_in || ''
+// });
 
 const wasteReports = allWasteReports.filter(w => {
     const matSauMatch = (w.mat_sau || 0) === (prodReport.mat_sau || 0);
@@ -189,38 +189,38 @@ const wasteReports = allWasteReports.filter(w => {
     // 🔧 LOẠI BỎ điều kiện phủ keo - waste processes có thể không có phủ keo
     // const phuKeoMatch = (w.phu_keo || '') === (prodReport.phu_keo || '');
     
-    console.log(`[DEBUG] Waste ID:${w.id} - MatSau:${matSauMatch} Pass:${passInMatch} HasPL:${hasPheLieu} (Bỏ qua PhuKeo)`);
+    // console.log(`[DEBUG] Waste ID:${w.id} - MatSau:${matSauMatch} Pass:${passInMatch} HasPL:${hasPheLieu} (Bỏ qua PhuKeo)`);
     
     return matSauMatch && passInMatch && hasPheLieu;
 });
             
-            console.log(`[DEBUG] Tìm thấy ${wasteReports.length} waste reports:`, 
-                       wasteReports.map(w => `ID:${w.id}-${w.tuy_chon}-PL:${w.phe_lieu}`));
+            // console.log(`[DEBUG] Tìm thấy ${wasteReports.length} waste reports:`, 
+            //            wasteReports.map(w => `ID:${w.id}-${w.tuy_chon}-PL:${w.phe_lieu}`));
             
             const totalWastePL = wasteReports.reduce((sum, w) => sum + (parseFloat(w.phe_lieu) || 0), 0);
-            console.log(`[DEBUG] Tổng phế liệu waste: ${totalWastePL}`);
+            // console.log(`[DEBUG] Tổng phế liệu waste: ${totalWastePL}`);
             
             const tongSoLuong = parseFloat(prodReport.tong_so_luong) || 0;
             const newThanhPham = Math.max(0, tongSoLuong - totalWastePL);
             
-            console.log(`[DEBUG] Tính toán: ${tongSoLuong} - ${totalWastePL} = ${newThanhPham}`);
+            // console.log(`[DEBUG] Tính toán: ${tongSoLuong} - ${totalWastePL} = ${newThanhPham}`);
             
             // Cập nhật thành phẩm
             const updateResult = await new Promise((resolve, reject) => {
                 db.run(`UPDATE bao_cao_in SET thanh_pham = ? WHERE id = ?`,
                     [newThanhPham.toString(), prodReport.id], function(err) {
                     if (err) {
-                        console.error(`[DEBUG] Lỗi update ID ${prodReport.id}:`, err);
+                        // console.error(`[DEBUG] Lỗi update ID ${prodReport.id}:`, err);
                         reject(err);
                     } else {
-                        console.log(`[DEBUG] Update thành công ID ${prodReport.id}: ${this.changes} rows affected`);
+                        // console.log(`[DEBUG] Update thành công ID ${prodReport.id}: ${this.changes} rows affected`);
                         resolve(this.changes);
                     }
                 });
             });
         }
         
-        console.log(`✅ [DEBUG] Hoàn thành cập nhật ${productionReports.length} báo cáo production`);
+        // console.log(`✅ [DEBUG] Hoàn thành cập nhật ${productionReports.length} báo cáo production`);
         
     } catch (error) {
         console.error('❌ [DEBUG] Lỗi updateRelatedReportsThanhPham:', error);
