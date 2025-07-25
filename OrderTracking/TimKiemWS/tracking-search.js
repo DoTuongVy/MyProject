@@ -473,7 +473,7 @@ function calculateInQuantitiesByPass(data) {
     }
     
     // Chỉ lấy dữ liệu có tùy chọn 1, 2, 3 để tính tổng SL
-    const allowedOptions = ['1. In', '2. In + Cán bóng', '3. Cán bóng'];
+    const allowedOptions = ['1. IN', '2. IN + CÁN BÓNG', '3. CÁN BÓNG'];
     const filteredData = data.filter(record => 
         allowedOptions.includes(record.tuy_chon)
     );
