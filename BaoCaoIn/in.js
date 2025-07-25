@@ -1883,6 +1883,18 @@ function setupMachineStopHandling() {
             }, 100);
         });
     }
+
+
+
+    // Sync với mini button
+const miniBtn = document.getElementById('miniStopButton');
+const miniText = document.getElementById('miniStopText');
+if (miniBtn && miniText) {
+    miniBtn.classList.remove('has-stop-selection');
+    miniBtn.classList.add('has-no-stop-selection');
+    miniText.innerHTML = 'KHÔNG DỪNG';
+}
+
     
 
     if (newBtnYes) {
@@ -1918,30 +1930,41 @@ function setupMachineStopHandling() {
     }
 
 
-// Thay thế phần sync cũ trong setupMachineStopHandling()
-if (newBtnYes) {
-    newBtnYes.addEventListener('click', function() {
-        const miniBtn = document.getElementById('miniStopButton');
-        const miniText = document.getElementById('miniStopText');
-        if (miniBtn && miniText) {
-            miniBtn.classList.remove('has-no-stop-selection');
-            miniBtn.classList.add('has-stop-selection');
-            miniText.innerHTML = 'DỪNG MÁY';
-        }
-    });
+
+    // Sync với mini button
+// const miniBtn = document.getElementById('miniStopButton');
+// const miniText = document.getElementById('miniStopText');
+if (miniBtn && miniText) {
+    miniBtn.classList.remove('has-no-stop-selection');
+    miniBtn.classList.add('has-stop-selection');
+    miniText.innerHTML = 'DỪNG MÁY';
 }
 
-if (newBtnNo) {
-    newBtnNo.addEventListener('click', function() {
-        const miniBtn = document.getElementById('miniStopButton');
-        const miniText = document.getElementById('miniStopText');
-        if (miniBtn && miniText) {
-            miniBtn.classList.remove('has-stop-selection');
-            miniBtn.classList.add('has-no-stop-selection');
-            miniText.innerHTML = 'KHÔNG DỪNG';
-        }
-    });
-}
+
+// Thay thế phần sync cũ trong setupMachineStopHandling()
+// if (newBtnYes) {
+//     newBtnYes.addEventListener('click', function() {
+//         const miniBtn = document.getElementById('miniStopButton');
+//         const miniText = document.getElementById('miniStopText');
+//         if (miniBtn && miniText) {
+//             miniBtn.classList.remove('has-no-stop-selection');
+//             miniBtn.classList.add('has-stop-selection');
+//             miniText.innerHTML = 'DỪNG MÁY';
+//         }
+//     });
+// }
+
+// if (newBtnNo) {
+//     newBtnNo.addEventListener('click', function() {
+//         const miniBtn = document.getElementById('miniStopButton');
+//         const miniText = document.getElementById('miniStopText');
+//         if (miniBtn && miniText) {
+//             miniBtn.classList.remove('has-stop-selection');
+//             miniBtn.classList.add('has-no-stop-selection');
+//             miniText.innerHTML = 'KHÔNG DỪNG';
+//         }
+//     });
+// }
 
 
 }
@@ -2413,10 +2436,12 @@ function calculateInEndProgress() {
     const btnNo = document.getElementById('btnNo');
     const btnYes = document.getElementById('btnYes');
 
-    if ((btnNo && btnNo.style.backgroundColor === 'rgb(74, 144, 226)') ||
-        (btnYes && btnYes.style.backgroundColor === 'rgb(208, 0, 0)')) {
-        filledFields++;
-    }
+    const hasStopSelection = (btnNo && btnNo.style.backgroundColor === 'rgb(74, 144, 226)') ||
+                        (btnYes && btnYes.style.backgroundColor === 'rgb(208, 0, 0)');
+
+if (hasStopSelection) {
+    filledFields++;
+}
 
     return Math.round((filledFields / totalFields) * 100);
 }
