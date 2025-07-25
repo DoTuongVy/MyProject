@@ -6199,6 +6199,10 @@ function changeTablePage(page) {
         // CHỈ CẬP NHẬT NỘI DUNG BẢNG MÀ KHÔNG TÁI TẠO HTML
 updateTableContentOnly();
 
+// THÊM: Cập nhật thống kê khi chuyển trang
+updateTableStatistics();
+
+
 // Cập nhật phân tích thời gian nếu cần
 if (currentTimeAnalysisMode !== 'sanxuat') {
     setTimeout(() => {
@@ -7461,6 +7465,11 @@ function autoApplyFilters() {
 // CHỈ CẬP NHẬT NỘI DUNG BẢNG, KHÔNG TÁI TẠO HTML FILTER
 updateTableContentOnly();
 
+
+// THÊM: Cập nhật thống kê sau khi filter
+updateTableStatistics();
+
+
 // Cập nhật lại phân tích thời gian nếu cần
 if (currentTimeAnalysisMode !== 'sanxuat') {
     // Reset về chế độ tổng quan khi filter
@@ -7683,7 +7692,7 @@ function createPaginationButtons(totalPages) {
 
 // Thêm hàm cập nhật thống kê cuối bảng
 function updateTableStatistics() {
-    const data = filteredTableData;
+    const data = filteredTableData; 
 
     // Tính thống kê tổng từ dữ liệu đã lọc
     const totalPaper = data.reduce((sum, record) => sum + (parseFloat(record.thanh_pham_in) || 0), 0);
@@ -7708,6 +7717,8 @@ function updateTableStatistics() {
 
     const uniqueWS = new Set(data.map(record => record.ws).filter(ws => ws && ws !== '-')).size;
 
+    console.log('📊 Cập nhật thống kê từ dữ liệu đã lọc:', data.length, 'records');
+
     // Tính tổng thời gian dừng máy từ dữ liệu đã lọc
     const totalStopTime = data.reduce((sum, record) => sum + (record.stopTime || 0), 0);
 
@@ -7720,42 +7731,43 @@ function updateTableStatistics() {
         uniqueWS
     });
 
-    // Tìm và cập nhật từng card thống kê cụ thể
-    const detailContainer = document.getElementById('detailTableContainer');
-    if (detailContainer) {
-        // Tìm tất cả các card thống kê (có class bg-light)
-        const statsCards = detailContainer.querySelectorAll('.card.bg-light .card-body');
+    // Tìm và cập nhật từng card thống kê cụ thể  
+const detailContainer = document.getElementById('detailTableContainer');
+if (detailContainer) {
+    // Tìm tất cả các card thống kê với class cụ thể hơn
+    const statsCards = detailContainer.querySelectorAll('.card.card-custom-sub .card-body');
 
         // Cập nhật từng card dựa trên text content của h6
-        statsCards.forEach(cardBody => {
-            const title = cardBody.querySelector('h6');
-            const value = cardBody.querySelector('h4');
+statsCards.forEach(cardBody => {
+    const title = cardBody.querySelector('h6');
+    const value = cardBody.querySelector('h4');
 
-            if (title && value) {
-                const titleText = title.textContent.trim();
+    if (title && value) {
+        const titleText = title.textContent.trim();
+        console.log('🔍 Tìm thấy card:', titleText);
 
-                switch (titleText) {
-                    case 'Tổng WS':
-                        value.textContent = uniqueWS;
-                        break;
-                    case 'Tổng thành phẩm':
-                        value.textContent = formatNumber(totalPaper);
-                        break;
-                    case 'Tổng phế liệu':
-                        value.textContent = formatNumber(totalWaste);
-                        break;
-                    case 'Tổng TG chạy máy':
-                        value.textContent = formatDuration(totalRunTime);
-                        break;
-                    case 'Tổng TG canh máy':
-                        value.textContent = formatDuration(totalSetupTime);
-                        break;
-                    case 'Tổng TG dừng máy':
-                        value.textContent = formatDuration(totalStopTime);
-                        break;
-                }
-            }
-        });
+        if (titleText.includes('Tổng WS')) {
+            value.textContent = uniqueWS;
+            console.log('✅ Cập nhật Tổng WS:', uniqueWS);
+        } else if (titleText.includes('Tổng thành phẩm')) {
+            value.textContent = formatNumber(totalPaper);
+            console.log('✅ Cập nhật Tổng thành phẩm:', formatNumber(totalPaper));
+        } else if (titleText.includes('Tổng phế liệu')) {
+            value.textContent = formatNumber(totalWaste);
+            console.log('✅ Cập nhật Tổng phế liệu:', formatNumber(totalWaste));
+        } else if (titleText.includes('Tổng TG chạy máy')) {
+            value.textContent = formatDuration(totalRunTime);
+            console.log('✅ Cập nhật TG chạy máy:', formatDuration(totalRunTime));
+        } else if (titleText.includes('Tổng TG canh máy')) {
+            value.textContent = formatDuration(totalSetupTime);
+            console.log('✅ Cập nhật TG canh máy:', formatDuration(totalSetupTime));
+        } else if (titleText.includes('Tổng TG dừng máy')) {
+            value.textContent = formatDuration(totalStopTime);
+            console.log('✅ Cập nhật TG dừng máy:', formatDuration(totalStopTime));
+        }
+    }
+});
+
     }
 }
 
@@ -8287,6 +8299,12 @@ function resetDetailFilters() {
 
     // Render lại bảng
     updateTableContentOnly();
+
+
+    // THÊM: Cập nhật lại thống kê sau khi reset
+    updateTableStatistics();
+
+
 }
 
 

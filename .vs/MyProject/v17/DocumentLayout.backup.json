@@ -58,7 +58,8 @@
               "RelativeToolTip": "OrderTracking\\TimKiemWS\\tracking-search.js",
               "ViewState": "AgIAAEwCAAAAAAAAAIAzwFQCAABFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-27T02:55:19.753Z"
+              "WhenOpened": "2025-06-27T02:55:19.753Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -68,7 +69,7 @@
               "RelativeDocumentMoniker": "OrderTracking\\TimKiemWS\\styles.css",
               "ToolTip": "D:\\Code\\GIT\\MyProject\\OrderTracking\\TimKiemWS\\styles.css",
               "RelativeToolTip": "OrderTracking\\TimKiemWS\\styles.css",
-              "ViewState": "AgIAAHMCAAAAAAAAAAAswH4CAAAUAAAAAAAAAA==",
+              "ViewState": "AgIAAHMCAAAAAAAAAAAswH4CAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
               "WhenOpened": "2025-06-27T02:55:19.162Z",
               "EditorCaption": ""
@@ -83,7 +84,8 @@
               "RelativeToolTip": "OrderTracking\\TimKiemWS\\index.html",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAABVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2025-06-27T02:55:18.415Z"
+              "WhenOpened": "2025-06-27T02:55:18.415Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -95,7 +97,8 @@
               "RelativeToolTip": "OrderTracking\\production-process.js",
               "ViewState": "AgIAAPAAAAAAAAAAAAAzwPsAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-27T02:55:17.152Z"
+              "WhenOpened": "2025-06-27T02:55:17.152Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -107,7 +110,8 @@
               "RelativeToolTip": "BaoCaoIn\\InOffset.html",
               "ViewState": "AgIAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2025-06-27T02:55:05.857Z"
+              "WhenOpened": "2025-06-27T02:55:05.857Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -119,7 +123,8 @@
               "RelativeToolTip": "BaoCaoIn\\in.js",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-27T02:55:05.194Z"
+              "WhenOpened": "2025-06-27T02:55:05.194Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -131,7 +136,8 @@
               "RelativeToolTip": "BaoCaoIn\\in.css",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
-              "WhenOpened": "2025-06-27T02:55:04.68Z"
+              "WhenOpened": "2025-06-27T02:55:04.68Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -143,7 +149,8 @@
               "RelativeToolTip": "server\\routes\\bao-cao-in.js",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-27T02:55:01.325Z"
+              "WhenOpened": "2025-06-27T02:55:01.325Z",
+              "EditorCaption": ""
             }
           ]
         }
