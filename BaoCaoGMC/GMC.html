@@ -19,7 +19,7 @@
 
 
       <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
-      <link rel="icon" type="image/png" sizes="50x50" href="/assets/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="" href="/assets/LOGO.png">
 
     <style>
       /* THAY ĐỔI CSS - Chỉ ẩn ban đầu, không dùng !important */
@@ -147,20 +147,25 @@
               </div>
             </div> -->
 
-            <div class="col-md-4">
+            <div class="col-md-2">
               <!-- Ca + Người -->
               <div class="d-flex gap-2 mb-3">
-                <div class="form-floating" style="flex: 1 0 0%;">
-                  <select class="form-select" id="ca" required
-                    style="border: 1px solid blue; font-weight: bold;">
-                    <option value selected>-- Chọn ca --</option>
-                    <option value="0">Ca A</option>
-                    <option value="1">Ca B</option>
-                    <option value="2">Ca HC</option>
-                  </select>
-                  <label for="ca">Ca</label>
+                <div class="form-floating"
+                    style="flex: 1 0 0%;">
+                    <input type="text" class="form-control"
+                        id="ca" disabled
+                        style="border: 1px solid blue; font-weight: bold;">
+                    <label for="ca">Ca</label>
                 </div>
-              </div>
+            </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating flex-grow-1 disabled ">
+                <input type="text" class="form-control " style="border: 1px solid blue; font-weight: bold;"
+                    id="truongmay"
+                    disabled style=" font-weight: bold;" >
+                <label for="truongmay">Trưởng máy</label>
+            </div>
             </div>
 
             <div class="col-md-4">
@@ -186,7 +191,7 @@
               </div>
             </div>
 
-            <div class="col-md-4">
+            <div class="col-md-2">
               <div class="form-floating flex-grow-1 disabled ">
                 <input type="text" class="form-control " id="maCa"
                   disabled style="border: 1px solid blue; font-weight: bold;">
@@ -194,6 +199,56 @@
               </div>
             </div>
 
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="d-flex gap-2 mb-3">
+                <div class="form-floating"
+                    style="flex: 1 0 0%;">
+                    <select class="form-select" id="quandoc"
+                        required
+                        style="border: 1px solid blue; font-weight: bold;">
+                        <option value selected>-- Chọn quản đốc
+                            --</option>
+                        <!-- Option tên quản đốc dựa vào quản lí admin -->
+                    </select>
+                    <label for="quandoc">Quản đốc</label>
+                </div>
+            </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex gap-2 mb-3">
+                <div class="form-floating"
+                    style="flex: 1 0 0%;">
+                    <select class="form-select" id="phumay1"
+                        required
+                        style=" font-weight: bold;">
+                        <option value selected>-- Chọn tên
+                            --</option>
+                        <!-- Option tên phụ máy 1 dựa vào quản lí admin -->
+
+                    </select>
+                    <label for="phumay1">Phụ máy 1</label>
+                </div>
+            </div>
+            </div>
+            <div class="col-md-4"> 
+              <div class="d-flex gap-2 mb-3">
+                <div class="form-floating"
+                    style="flex: 1 0 0%;">
+                    <select class="form-select" id="phumay2"
+                        required
+                        style=" font-weight: bold;">
+                        <option value selected>-- Chọn tên
+                            --</option>
+                        <!-- Option tên phụ máy 2 dựa vào quản lí admin -->
+
+                    </select>
+                    <label for="phumay2">Phụ máy 2</label>
+                </div>
+            </div>
+            </div>
           </div>
 
           <div class="row g-4">

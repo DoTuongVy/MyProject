@@ -4952,6 +4952,8 @@ if (typeof window !== 'undefined') {
 
 //TODO Cập nhật hàm createAdminModuleCard để thêm modal chọn máy========================================================================
 function createAdminModuleCard(module) {
+    console.log('Module ID:', module.id, 'Name:', module.name);
+
     const modulesList = document.getElementById('admin-modules-list');
     if (!modulesList) return;
 
@@ -4960,34 +4962,34 @@ function createAdminModuleCard(module) {
     card.style.cursor = 'pointer';
 
     card.innerHTML = `
-    <div class="module-icon">
-        ${module.icon ? (module.icon.startsWith('http') ? 
+        <div class="module-icon">
+            ${module.icon ? (module.icon.startsWith('http') ? 
 `<img src="${module.icon}" alt="Icon" style="width: 100px; height: 100px;">` : 
 `<i class="${module.icon}"></i>`) : 
 '<i class="fas fa-cube"></i>'}
-    </div>
-    <div class="module-name">${module.name || 'Module không tên'}</div>
-    <div class="module-description" style="font-size: 12px; color: #666; margin-top: 5px;">${module.description || ''}</div>
-    <div style="color: #28a745; margin-top: 5px; font-size: 12px;">
-        <i class="fas fa-crown"></i> Admin Access
-    </div>
-    <div style="margin-top: 10px; display: flex; gap: 5px; justify-content: center;">
-        <button class="btn-manage-machines" onclick="openAdminMachineManagementModal('${module.id}', '${module.system_id}'); event.stopPropagation();" 
-                style="padding: 4px 8px; font-size: 11px; background: #17a2b8; color: white; border: none; border-radius: 3px;">
-            <i class="fas fa-cogs"></i> Quản lý máy
-        </button>
-        ${module.id === 'innm1' ? `
-        <button class="btn-manage-production-users" onclick="openProductionUserManagementModal('${module.id}'); event.stopPropagation();" 
-                style="padding: 4px 8px; font-size: 11px; background: #28a745; color: white; border: none; border-radius: 3px;">
-            <i class="fas fa-users"></i> Quản lý người dùng
-        </button>
-        ` : ''}
-    </div>
-`;
+        </div>
+        <div class="module-name">${module.name || 'Module không tên'}</div>
+        <div class="module-description" style="font-size: 12px; color: #666; margin-top: 5px;">${module.description || ''}</div>
+        <div style="color: #28a745; margin-top: 5px; font-size: 12px;">
+            <i class="fas fa-crown"></i> Admin Access
+        </div>
+        <div style="margin-top: auto; display: flex; gap: 5px; justify-content: center;">
+            <button class="btn-manage-machines" onclick="openAdminMachineManagementModal('${module.id}', '${module.system_id}'); event.stopPropagation();" 
+                    style="padding: 4px 8px; font-size: 11px; background: #17a2b8; color: white; border: none; border-radius: 3px;">
+                <i class="fas fa-cogs"></i> Quản lý máy
+            </button>
+            ${(module.id === 'innm1' || module.id === 'gmcnm1') ? `
+            <button class="btn-manage-production-users" onclick="openProductionUserManagementModal('${module.id}'); event.stopPropagation();" 
+                    style="padding: 4px 8px; font-size: 11px; background: #28a745; color: white; border: none; border-radius: 3px;">
+                <i class="fas fa-users"></i> Quản lý người dùng
+            </button>
+            ` : ''}
+        </div>
+    `;
 
     card.addEventListener('click', function() {
         if (module.path) {
-            // Thay vì mở trực tiếp, hiển thị modal chọn máy
+            // Hiển thị modal chọn máy thay vì mở trực tiếp
             openAdminMachineSelectionModal(module);
         } else {
             showToast(`Module "${module.name}" không có đường dẫn!`, 'error');
@@ -4996,7 +4998,6 @@ function createAdminModuleCard(module) {
 
     modulesList.appendChild(card);
 }
-
 //TODO Mở modal chọn máy cho admin========================================================================
 async function openAdminMachineSelectionModal(module) {
     try {
@@ -5797,26 +5798,32 @@ if (adminAddMachineBtn) {
 
 
 
-    // Sự kiện đóng modal quản lý người dùng sản xuất
+// Sự kiện đóng modal quản lý người dùng sản xuất - với kiểm tra tồn tại
 const closeProductionUserModal = document.getElementById('close-production-user-modal');
 const closeProductionUserBtn = document.getElementById('close-production-user-btn');
 
-if (closeProductionUserModal) {
+if (closeProductionUserModal && typeof closeProductionUserModal.addEventListener === 'function') {
     closeProductionUserModal.addEventListener('click', function() {
-        document.getElementById('production-user-modal').style.display = 'none';
+        const modal = document.getElementById('production-user-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
     });
 }
 
-if (closeProductionUserBtn) {
+if (closeProductionUserBtn && typeof closeProductionUserBtn.addEventListener === 'function') {
     closeProductionUserBtn.addEventListener('click', function() {
-        document.getElementById('production-user-modal').style.display = 'none';
+        const modal = document.getElementById('production-user-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
     });
 }
 
 // Đóng modal khi click outside
 window.addEventListener('click', function(event) {
     const productionUserModal = document.getElementById('production-user-modal');
-    if (event.target === productionUserModal) {
+    if (productionUserModal && event.target === productionUserModal) {
         productionUserModal.style.display = 'none';
     }
 });

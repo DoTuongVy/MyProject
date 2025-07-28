@@ -856,8 +856,8 @@ function createModuleCard(module, hasAccess) {
   <div class="module-name">${module.name || 'Module không tên'}</div>
   <div class="module-description" style="font-size: 12px; color: #666; margin-top: 5px;">${module.description || ''}</div>
   ${!hasAccess ? '<div style="color: #e74c3c; margin-top: 5px; font-size: 12px;"><i class="fas fa-lock"></i> Không có quyền</div>' : ''}
-  ${hasAccess && getCurrentUser()?.role === 'admin' && module.id === 'innm1' ? `
-  <div style="margin-top: 10px; display: flex; gap: 5px; justify-content: center;">
+  ${hasAccess && getCurrentUser()?.role === 'admin' && (module.id === 'innm1' || module.id === 'gmcnm1') ? `
+  <div style="margin-top: auto; display: flex; gap: 5px; justify-content: center;">
       <button class="btn-manage-production-users" onclick="openProductionUserManagementModal('${module.id}'); event.stopPropagation();" 
               style="padding: 4px 8px; font-size: 11px; background: #28a745; color: white; border: none; border-radius: 3px;">
           <i class="fas fa-users"></i> Quản lý người dùng

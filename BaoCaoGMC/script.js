@@ -54,6 +54,11 @@ function saveFormDataByMachine() {
         chuyenXen: document.getElementById('chuyenXen')?.checked || false,
         giayQuanLot: document.getElementById('giayQuanLot')?.checked || false,
         startTime: document.body.getAttribute('data-start-time') || '',
+        // Thông tin người dùng sản xuất
+quandoc: document.getElementById('quandoc')?.value || '',
+phumay1: document.getElementById('phumay1')?.value || '',
+phumay2: document.getElementById('phumay2')?.value || '',
+truongmay: document.getElementById('truongmay')?.value || '',
 
 
 
@@ -185,6 +190,11 @@ function restoreFormDataByMachine() {
         if (formData.daiCatSai) document.getElementById('daiCatSai').value = formData.daiCatSai;
         if (formData.soTamCatSai) document.getElementById('soTamCatSai').value = formData.soTamCatSai;
         if (formData.ghiChu) document.getElementById('ghiChu').value = formData.ghiChu;
+        // Khôi phục thông tin người dùng sản xuất
+if (formData.quandoc) document.getElementById('quandoc').value = formData.quandoc;
+if (formData.phumay1) document.getElementById('phumay1').value = formData.phumay1;
+if (formData.phumay2) document.getElementById('phumay2').value = formData.phumay2;
+if (formData.truongmay) document.getElementById('truongmay').value = formData.truongmay;
 
         // THÊM: Khôi phục trạng thái dừng máy
         if (formData.machineStopStatus) {
@@ -634,6 +644,9 @@ function initializeForm() {
     // THÊM: Tự động điền thông tin người dùng
     loadUserInfo();
 
+    // Tải danh sách người dùng sản xuất
+loadUserOptions();
+
     // Thiết lập sự kiện cho select xả đôi
     setupXaDoiSelect();
 
@@ -672,7 +685,7 @@ function setupAutoSaveFormData() {
     const fieldsToWatch = [
         'ca', 'gioLamViec', 'soPhieu', 'thuTu', 'ws', 'maVatTu',
         'khachhang', 'kho', 'dai', 'soto', 'tln', 'xadoiSelect',
-        'maSoCuonSelect', 'maSoCuon', 'inputSoID',
+        'maSoCuonSelect', 'maSoCuon', 'inputSoID','quandoc', 'phumay1', 'phumay2',
         // Form kết thúc
         'tongSoPallet', 'soTamCatDuoc', 'loi', 'dauCuon', 'rachMop',
         'pheLieuSanXuat', 'tlTra', 'suDungGiayTon', 'chieuCaoPallet',
@@ -927,6 +940,92 @@ document.addEventListener('DOMContentLoaded', function () {
 
     console.log('Đã reset trạng thái gửi báo cáo');
 });
+
+
+
+
+
+//todo Tải danh sách người dùng sản xuất cho các dropdown========================================
+async function loadUserOptions() {
+    try {
+        const moduleId = 'gmc'; // Module ID cho GMC
+
+        // Lấy danh sách người dùng sản xuất theo chức vụ
+        const [quanDocResponse, phuMay1Response, phuMay2Response] = await Promise.all([
+            fetch(`/api/production-users/by-position/${moduleId}/quan-doc`),
+            fetch(`/api/production-users/by-position/${moduleId}/phu-may-1`),
+            fetch(`/api/production-users/by-position/${moduleId}/phu-may-2`)
+        ]);
+
+        if (!quanDocResponse.ok || !phuMay1Response.ok || !phuMay2Response.ok) {
+            throw new Error('Không thể tải danh sách người dùng sản xuất');
+        }
+
+        const quanDoc = await quanDocResponse.json();
+        const phuMay1 = await phuMay1Response.json();
+        const phuMay2 = await phuMay2Response.json();
+
+        // Điền vào các dropdown
+        populateProductionUserSelect('quandoc', quanDoc);
+        populateProductionUserSelect('phumay1', phuMay1);
+        populateProductionUserSelect('phumay2', phuMay2);
+
+        // Tự động điền trưởng máy từ user đăng nhập
+        setTruongMayFromCurrentUser();
+
+        // Thực hiện khôi phục dữ liệu sau khi load xong options
+        setTimeout(() => {
+            restoreFormDataByMachine();
+        }, 200);
+
+    } catch (error) {
+        console.error('Lỗi khi tải danh sách người dùng sản xuất:', error);
+        showNotification('Không thể tải danh sách người dùng sản xuất', 'error');
+    }
+}
+
+function populateProductionUserSelect(selectId, users) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+
+    // Xóa các option cũ (trừ option đầu tiên)
+    while (select.children.length > 1) {
+        select.removeChild(select.lastChild);
+    }
+
+    // Thêm các option mới từ production users
+    users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user.id;
+        option.textContent = `[${user.user_employee_id || 'N/A'}] ${user.user_fullname || 'N/A'}`;
+        select.appendChild(option);
+    });
+}
+
+// Tự động điền trưởng máy từ user đăng nhập
+function setTruongMayFromCurrentUser() {
+    const currentUser = getCurrentUser();
+    const truongMayInput = document.getElementById('truongmay');
+    const caInput = document.getElementById('ca');
+
+    if (currentUser && truongMayInput) {
+        let displayName = '';
+        if (currentUser.fullname && currentUser.employee_id) {
+            displayName = `[${currentUser.employee_id}] ${currentUser.fullname}`;
+        } else if (currentUser.fullname) {
+            displayName = currentUser.fullname;
+        } else {
+            displayName = currentUser.username || 'Unknown User';
+        }
+
+        truongMayInput.value = displayName;
+    }
+
+    // Tự động điền ca từ user đăng nhập
+    if (currentUser && caInput) {
+        caInput.value = currentUser.ca || 'A';
+    }
+}
 
 
 //todo Hàm reset form=======================================================================================
@@ -5889,6 +5988,9 @@ async function collectReportData() {
 
     const doDay = parseFloat(maVatTuElement?.getAttribute('data-do-day') || '0');
 
+
+    
+
     if (chieuCaoPallet && doDay && doDay > 0) {
         const soTamThamChieuRaw = (chieuCaoPallet * 10) / doDay;
         const soTamThamChieuRounded = customRound(soTamThamChieuRaw);
@@ -5941,7 +6043,12 @@ async function collectReportData() {
         soID: document.getElementById('nhapSoID')?.checked ? document.getElementById('inputSoID')?.value : null,
         trongLuongNhan: document.getElementById('tln')?.value || '',
         thoiGianBatDau: document.body.getAttribute('data-start-time') || '',
-        doDay: doDay.toString() || ''
+        doDay: doDay.toString() || '',
+        // Thông tin người dùng sản xuất
+quandoc: document.getElementById('quandoc')?.value || '',
+phumay1: document.getElementById('phumay1')?.value || '',
+phumay2: document.getElementById('phumay2')?.value || '',
+truongmay: document.getElementById('truongmay')?.value || '',
     };
 
     // Thu thập dữ liệu phần kết thúc báo cáo

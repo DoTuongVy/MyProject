@@ -843,6 +843,7 @@ db.run(`CREATE TABLE IF NOT EXISTS bao_cao_gmc (
   id TEXT PRIMARY KEY,
   stt INTEGER,  -- STT giảm dần, báo cáo mới nhất ở trên
   ngay TEXT,  -- Ngày tạo báo cáo
+  quan_doc TEXT,
   ca TEXT,  -- Ca làm việc
   gio_lam_viec TEXT,  -- THÊM MỚI: Giờ làm việc
   ma_ca TEXT,  -- THÊM MỚI: Mã ca tự động
@@ -890,7 +891,9 @@ db.run(`CREATE TABLE IF NOT EXISTS bao_cao_gmc (
   thoi_gian_chuyen_doi_pallet TEXT, -- Thời gian chuyển đổi pallet
   thoi_gian_khac TEXT, -- Thời gian khác
   dung_may INTEGER DEFAULT 0, -- Dừng máy (0: Không, 1: Có)
-  nguoi_thuc_hien TEXT, -- Người thực hiện
+  truong_may TEXT, -- Người thực hiện
+  phu_may_1 TEXT, -- THÊM MỚI: Phụ máy 1 (từ production_users)
+  phu_may_2 TEXT, -- THÊM MỚI: Phụ máy 2 (từ production_users)
   user_id TEXT, -- ID người dùng
   is_started_only INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -910,7 +913,7 @@ db.run(`CREATE TABLE IF NOT EXISTS bao_cao_gmc_dung_may (
   ca TEXT,
   gio_lam_viec TEXT,  -- THÊM MỚI
   ma_ca TEXT,         -- THÊM MỚI
-  nguoi_thuc_hien TEXT,
+  truong_may TEXT,
   may TEXT,
   so_phieu_cat_giay TEXT,
   ly_do TEXT,
