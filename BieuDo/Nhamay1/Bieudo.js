@@ -361,24 +361,28 @@ function syncFilterEvents(originalFilter, stickyFilter) {
         }
     });
     
-    // Đồng bộ select
-    const selects = ['caSelect', 'maySelect'];
-    selects.forEach(selectId => {
-        const originalSelect = originalFilter.querySelector(`#${selectId}`);
-        const stickySelect = stickyFilter.querySelector(`#${selectId}`);
+// Đồng bộ select
+const selects = ['caSelect', 'maySelect'];
+selects.forEach(selectId => {
+    const originalSelect = originalFilter.querySelector(`#${selectId}`);
+    const stickySelect = stickyFilter.querySelector(`#${selectId}`);
+    
+    if (originalSelect && stickySelect) {
+        stickySelect.id = selectId + 'Sticky';
         
-        if (originalSelect && stickySelect) {
-            stickySelect.id = selectId + 'Sticky';
-            
-            originalSelect.addEventListener('change', function() {
-                stickySelect.value = this.value;
-            });
-            
-            stickySelect.addEventListener('change', function() {
-                originalSelect.value = this.value;
-            });
-        }
-    });
+        // Copy options từ original sang sticky
+        stickySelect.innerHTML = originalSelect.innerHTML;
+        stickySelect.value = originalSelect.value;
+        
+        originalSelect.addEventListener('change', function() {
+            stickySelect.value = this.value;
+        });
+        
+        stickySelect.addEventListener('change', function() {
+            originalSelect.value = this.value;
+        });
+    }
+});
     
     // Đồng bộ button events
     const originalViewBtn = originalFilter.querySelector('#btnViewReport');
@@ -459,6 +463,14 @@ async function loadMachineList() {
                 });
             }
         }
+
+        // Đồng bộ với sticky filter nếu đã tồn tại
+        const stickyMaySelect = document.getElementById('maySelectSticky');
+        if (stickyMaySelect && maySelect) {
+            stickyMaySelect.innerHTML = maySelect.innerHTML;
+            stickyMaySelect.value = maySelect.value;
+        }
+        
     } catch (error) {
         console.error('Lỗi khi tải danh sách máy:', error);
     }
@@ -502,6 +514,36 @@ async function loadYearlyCharts(year) {
     try {
         showLoading(true);
 
+
+        // THÊM: Hiển thị loading cho các biểu đồ chính
+        const timeCanvas = document.getElementById('yearlyTimeLineChart');
+        const paperCanvas = document.getElementById('yearlyPaperLineChart');
+        const wasteCanvas = document.getElementById('yearlyWasteLineChart');
+        const leaderLeftCanvas = document.getElementById('yearlyLeaderChartLeft');
+        const leaderRightCanvas = document.getElementById('yearlyLeaderChartRight');
+        const leaderPaperCanvas = document.getElementById('yearlyLeaderPaperLineChart');
+        const leaderWasteCanvas = document.getElementById('yearlyLeaderWasteLineChart');
+        const allProductCanvas = document.getElementById('allMachineProductChart');
+        const timeRatioLeftCanvas = document.getElementById('timeRatioChartLeft');
+        const timeRatioRightCanvas = document.getElementById('timeRatioChartRight');
+        const productLeftCanvas = document.getElementById('productChartLeft');
+        const productRightCanvas = document.getElementById('productChartRight');
+
+        // Hiển thị loading cho tất cả biểu đồ
+        if (timeCanvas) displayLoadingChart(timeCanvas, 'Đang tải biểu đồ thời gian...');
+        if (paperCanvas) displayLoadingChart(paperCanvas, 'Đang tải biểu đồ thành phẩm...');
+        if (wasteCanvas) displayLoadingChart(wasteCanvas, 'Đang tải biểu đồ phế liệu...');
+        if (leaderLeftCanvas) displayLoadingChart(leaderLeftCanvas, 'Đang tải biểu đồ trưởng máy...');
+        if (leaderRightCanvas) displayLoadingChart(leaderRightCanvas, 'Đang tải biểu đồ trưởng máy...');
+        if (leaderPaperCanvas) displayLoadingChart(leaderPaperCanvas, 'Đang tải biểu đồ trưởng máy...');
+        if (leaderWasteCanvas) displayLoadingChart(leaderWasteCanvas, 'Đang tải biểu đồ trưởng máy...');
+        if (allProductCanvas) displayLoadingChart(allProductCanvas, 'Đang tải biểu đồ thành phẩm...');
+        if (timeRatioLeftCanvas) displayLoadingChart(timeRatioLeftCanvas, 'Đang tải biểu đồ tỷ lệ máy...');
+        if (timeRatioRightCanvas) displayLoadingChart(timeRatioRightCanvas, 'Đang tải biểu đồ tỷ lệ máy...');
+        if (productLeftCanvas) displayLoadingChart(productLeftCanvas, 'Đang tải biểu đồ thành phẩm...');
+        if (productRightCanvas) displayLoadingChart(productRightCanvas, 'Đang tải biểu đồ thành phẩm...');
+
+
         // Destroy các biểu đồ năm cũ
         if (window.yearlyCharts) {
             window.yearlyCharts.forEach(chart => {
@@ -509,6 +551,19 @@ async function loadYearlyCharts(year) {
             });
             window.yearlyCharts = [];
         }
+
+
+
+        // Destroy biểu đồ thời gian cũ
+        // const timeCanvas = document.getElementById('yearlyTimeLineChart');
+        if (timeCanvas) {
+            const timeChart = Chart.getChart(timeCanvas);
+            if (timeChart) {
+                timeChart.destroy();
+            }
+        }
+
+
 
         // Destroy biểu đồ trưởng máy theo năm
         ['yearlyLeaderChartLeft', 'yearlyLeaderChartRight', 'yearlyLeaderPaperLineChart', 'yearlyLeaderWasteLineChart'].forEach(canvasId => {
@@ -531,6 +586,14 @@ async function loadYearlyCharts(year) {
         setTimeout(() => {
             loadYearlyLeaderData(yearlyData, year);
         }, 300);
+
+
+        // Tạo biểu đồ thời gian cho năm này
+        setTimeout(() => {
+            createYearlyTimeChart(year);
+        }, 500);
+
+
 
         showLoading(false);
     } catch (error) {
@@ -588,7 +651,135 @@ function displayYearlyMachineCharts(yearlyData, year) {
 
     // Tạo HTML cho 2 biểu đồ line
     let html = `
-        <div class="row">
+    <div class="col-md-12 mt-1">
+        <div class="card card-custom-sub border-left-sub">
+            <div class="label-title-sub">
+                <i class="fas fa-chart-line me-2"></i>Biểu đồ tỷ lệ máy hoạt động theo ngày
+            </div>
+            <div class="card-body">
+                <div style="height: 400px; position: relative;">
+                    <button class="chart-expand-btn" onclick="openFullscreen('yearlyTimeLineChart', 'Biểu đồ thành tỉ lệ máy hoạt động theo ngày')">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <canvas id="yearlyTimeLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+    <div class="col-md-6">
+        <div class="card card-custom-sub border-left-sub">
+            <div class="label-title-sub">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="mb-0"><i class="fas fa-chart-line me-2"></i>Tỷ lệ máy hoạt động theo ngày - Bảng 1</div>
+                    <select class="form-select form-select-sm" id="timeRatioSelectLeft" style="width: 120px;">
+                        <option value="">Chọn máy</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="height: 400px; position: relative;">
+                    <button class="chart-expand-btn" onclick="openFullscreen('timeRatioChartLeft', '')">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <canvas id="timeRatioChartLeft"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-custom-sub border-left-sub">
+            <div class="label-title-sub">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="mb-0"><i class="fas fa-chart-line me-2"></i>Tỷ lệ máy hoạt động theo ngày - Bảng 2</div>
+                    <select class="form-select form-select-sm" id="timeRatioSelectRight" style="width: 120px;">
+                        <option value="">Chọn máy</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="height: 400px; position: relative;">
+                    <button class="chart-expand-btn" onclick="openFullscreen('timeRatioChartRight', '')">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <canvas id="timeRatioChartRight"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <hr>
+
+
+<div class="col-md-12 mt-5">
+    <div class="card card-custom-sub border-left-sub">
+        <div class="label-title-sub">
+            <i class="fas fa-chart-line me-2"></i>Biểu đồ thành phẩm theo ngày - Tất cả máy
+        </div>
+        <div class="card-body">
+            <div style="height: 400px; position: relative;">
+                <button class="chart-expand-btn" onclick="openFullscreen('allMachineProductChart', 'Biểu đồ thành phẩm theo ngày - Tất cả máy')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <canvas id="allMachineProductChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="row mt-2">
+    <div class="col-md-6">
+        <div class="card card-custom-sub border-left-sub">
+            <div class="label-title-sub">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="mb-0"><i class="fas fa-chart-line me-2"></i>Thành phẩm theo ngày - Bảng 1</div>
+                    <select class="form-select form-select-sm" id="productSelectLeft" style="width: 120px;">
+                        <option value="">Chọn máy</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="height: 400px; position: relative;">
+                    <button class="chart-expand-btn" onclick="openFullscreen('productChartLeft', '')">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <canvas id="productChartLeft"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-custom-sub border-left-sub">
+            <div class="label-title-sub">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="mb-0"><i class="fas fa-chart-line me-2"></i>Thành phẩm theo ngày - Bảng 2</div>
+                    <select class="form-select form-select-sm" id="productSelectRight" style="width: 120px;">
+                        <option value="">Chọn máy</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="height: 400px; position: relative;">
+                    <button class="chart-expand-btn" onclick="openFullscreen('productChartRight', '')">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <canvas id="productChartRight"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<hr>
+
+        <div class="row mt-5">
             <div class="col-md-6">
                 <div class="card card-custom-sub border-left-sub">
                     <div class="label-title-sub" >
@@ -623,7 +814,7 @@ function displayYearlyMachineCharts(yearlyData, year) {
 
         <hr>
         
-        <div class="row mt-4">
+        <div class="row mt-5">
             <div class="col-md-6">
                 <div class="card card-custom-sub border-left-sub">
                     <div class="label-title-sub ">
@@ -671,7 +862,7 @@ function displayYearlyMachineCharts(yearlyData, year) {
 
 
 
-        <div class="row mt-4">
+        <div class="row mt-5">
     <div class="col-md-6">
         <div class="card card-custom-sub border-left-sub">
             <div class="label-title-sub">
@@ -715,6 +906,29 @@ function displayYearlyMachineCharts(yearlyData, year) {
     setTimeout(() => {
         loadYearlyLeaderData(yearlyData, year);
     }, 200);
+
+
+    // Tạo biểu đồ thời gian theo ngày
+    setTimeout(() => {
+        createYearlyTimeChart(year);
+    }, 400);
+
+
+
+// Tạo biểu đồ tỷ lệ máy hoạt động có option chọn
+setTimeout(() => {
+    createTimeRatioSelectCharts(year);
+}, 600);
+
+// Tạo biểu đồ thành phẩm tất cả máy
+setTimeout(() => {
+    createAllMachineProductChart(year);
+}, 800);
+
+// Tạo biểu đồ thành phẩm có option chọn máy
+setTimeout(() => {
+    createProductSelectCharts(year);
+}, 1000);
 
 
     // THÊM TIMEOUT ĐỂ ĐỢI DOM RENDER
@@ -1251,6 +1465,592 @@ function displayYearlyMachineCharts(yearlyData, year) {
     });
 }
 
+
+
+
+
+// Tạo biểu đồ thời gian theo máy theo ngày
+async function createYearlyTimeChart(year) {
+    try {
+        console.log('📊 Tạo biểu đồ thời gian theo máy cho năm:', year);
+        
+        // Gọi API lấy dữ liệu thời gian theo máy theo ngày
+        const response = await fetch(`/api/bieu-do/in/yearly-time-data?year=${year}`);
+        if (!response.ok) {
+            throw new Error('Không thể tải dữ liệu thời gian theo máy theo ngày');
+        }
+        
+        const machineTimeData = await response.json();
+        console.log('📊 Machine time data received:', machineTimeData);
+        
+        const machines = Object.keys(machineTimeData);
+        if (!machines || machines.length === 0) {
+            console.log('📊 Không có dữ liệu thời gian máy, hiển thị biểu đồ trống');
+            displayEmptyTimeChart();
+            return;
+        }
+        
+        // Tạo tập hợp tất cả ngày từ tất cả máy
+        const allDates = new Set();
+        machines.forEach(machine => {
+            machineTimeData[machine].forEach(item => {
+                allDates.add(item.date);
+            });
+        });
+        
+        // Chuyển thành mảng và sắp xếp theo ngày
+        const sortedDates = Array.from(allDates).sort((a, b) => new Date(a) - new Date(b));
+        
+        // Tạo labels cho trục X (dd/mm/yyyy)
+const labels = sortedDates.map(date => {
+    const d = new Date(date);
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+});
+        
+        // Màu sắc cho từng máy
+        const colors = [
+            '#FF7F7F', // Đỏ nhạt
+            '#87CEEB', // Xanh dương nhạt
+            '#90EE90', // Xanh lá nhạt
+            '#FFA07A', // Cam hồng nhạt
+            '#DDA0DD', // Tím nhạt
+            '#D2B48C', // Nâu nhạt
+            '#66CDAA', // Xanh ngọc nhạt
+            '#FFB366', // Cam nhạt
+            '#BA55D3', // Tím orchid
+            '#20B2AA', // Xanh ngọc đậm nhẹ
+            '#708090', // Xám xanh nhẹ
+            '#A9A9A9', // Xám nhạt
+            '#F0E68C', // Vàng nhạt
+            '#FFB6C1', // Hồng nhạt
+            '#FF8C69', // Đỏ cam nhạt
+            '#B0C4DE', // Xanh steel nhạt
+            '#48D1CC', // Turquoise nhạt
+            '#FFCC99', // Peach nhạt
+            '#C8A2C8', // Tím lilac
+            '#98FB98', // Xanh mint nhạt
+            '#F5DEB3', // Wheat nhạt
+            '#FFE4B5', // Moccasin
+            '#FFDAB9', // Peach puff
+            '#E6E6FA'  // Lavender
+        ];
+        
+        // Tạo datasets cho từng máy
+        const datasets = machines.map((machine, index) => {
+            // Tạo map dữ liệu theo ngày cho máy này
+            const machineDataMap = {};
+            machineTimeData[machine].forEach(item => {
+                machineDataMap[item.date] = item.timeRatio;
+            });
+            
+            // Tạo data array theo thứ tự ngày
+            const data = sortedDates.map(date => {
+                return machineDataMap[date] !== undefined ? machineDataMap[date] : null;
+            });
+            
+            return {
+                label: `Máy ${machine}`,
+                data: data,
+                borderColor: colors[index % colors.length],
+                backgroundColor: colors[index % colors.length] + '20',
+                fill: false,
+                tension: 0.1,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                borderWidth: 2,
+                spanGaps: false // Không nối những điểm null
+            };
+        });
+        
+        const canvas = document.getElementById('yearlyTimeLineChart');
+        if (!canvas) {
+            console.error('❌ Không tìm thấy canvas yearlyTimeLineChart');
+            return;
+        }
+        
+        // Destroy chart cũ nếu có
+        const existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+        
+        // Tạo biểu đồ line
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: { 
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'line',
+                            pointStyleWidth: 20,
+                            font: { weight: 'bold', size: 11 },
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                const index = context[0].dataIndex;
+                                const date = sortedDates[index];
+                                const d = new Date(date);
+                                const day = d.getDate().toString().padStart(2, '0');
+                                const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                                const year = d.getFullYear();
+                                return `Ngày: ${day}/${month}/${year}`;
+                            },
+                            label: function(context) {
+                                const machine = context.dataset.label;
+                                const value = context.parsed.y;
+                                return value !== null ? `${machine}: ${value}%` : `${machine}: Không có dữ liệu`;
+                            }
+                        }
+                    },
+                    datalabels: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 200,
+                        title: {
+                            display: true,
+                            text: 'Tỷ lệ thời gian (%)',
+                            font: { color: 'black', weight: 'bold' }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Ngày trong năm',
+                            font: { color: 'black', weight: 'bold' }
+                        },
+                        ticks: {
+                            display: false, // Ẩn nhãn ngày để tránh chồng chéo
+                        }
+                    }
+                }
+            }
+        });
+        
+
+
+
+        
+        console.log('✅ Biểu đồ thời gian theo máy đã tạo thành công');
+        
+    } catch (error) {
+        console.error('❌ Lỗi khi tạo biểu đồ thời gian theo máy:', error);
+        displayEmptyTimeChart();
+    }
+}
+
+
+
+
+// Tạo 4 biểu đồ thành phẩm theo ngày
+async function createDailyProductCharts(year) {
+    try {
+        console.log('📊 Tạo biểu đồ thành phẩm theo ngày cho năm:', year);
+        
+        // Gọi API lấy dữ liệu thành phẩm theo ngày
+        const response = await fetch(`/api/bieu-do/in/daily-product-data?year=${year}`);
+        if (!response.ok) {
+            throw new Error('Không thể tải dữ liệu thành phẩm theo ngày');
+        }
+        
+        const dailyProductData = await response.json();
+        console.log('📊 Daily product data received:', dailyProductData);
+        
+        // Lấy danh sách tất cả máy từ dữ liệu
+        const allMachines = Object.keys(dailyProductData).sort();
+        
+        // Tạo options cho các dropdown
+        populateMachineDropdowns(allMachines);
+        
+        // Tạo 4 biểu đồ mặc định
+        const defaultMachines = ['6K1', '6M5', '6M1', '6K2'];
+        for (let i = 0; i < 4; i++) {
+            const canvasId = `dailyProductChart${i + 1}`;
+            const machine = defaultMachines[i];
+            createSingleDailyProductChart(canvasId, machine, dailyProductData, year);
+        }
+
+
+        // Cập nhật tên máy trong tiêu đề ban đầu
+// for (let i = 0; i < 4; i++) {
+//     updateMachineTitle(i + 1, defaultMachines[i]);
+// }
+
+        
+        console.log('✅ Đã tạo 4 biểu đồ thành phẩm theo ngày');
+        
+    } catch (error) {
+        console.error('❌ Lỗi khi tạo biểu đồ thành phẩm theo ngày:', error);
+    }
+}
+
+// Điền options cho các dropdown máy
+function populateMachineDropdowns(allMachines) {
+    // Lấy danh sách máy từ API thay vì từ dữ liệu báo cáo
+    fetch('/api/machines/list?module_id=innm1')
+        .then(response => response.json())
+        .then(machines => {
+            const machineNames = machines.map(machine => machine.name).sort();
+            const defaultMachines = ['6K1', '6M5', '6M1', '6K2'];
+            
+            for (let i = 1; i <= 4; i++) {
+                const select = document.getElementById(`machineSelect${i}`);
+                if (select) {
+                    // Xóa options cũ
+                    select.innerHTML = '';
+                    
+                    // Thêm tất cả máy vào dropdown
+                    machineNames.forEach(machine => {
+                        const option = document.createElement('option');
+                        option.value = machine;
+                        option.textContent = machine;
+                        if (machine === defaultMachines[i - 1]) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                    
+                    // Gắn sự kiện thay đổi
+                    select.addEventListener('change', function() {
+                        const canvasId = `dailyProductChart${i}`;
+                        const selectedMachine = this.value;
+                        
+                        // Cập nhật tên máy trong tiêu đề
+                        updateMachineTitle(i, selectedMachine);
+                        
+                        // Cập nhật trạng thái disabled cho tất cả dropdown
+                        updateMachineDropdownStates();
+
+
+                        
+                        // Lấy lại dữ liệu và tạo biểu đồ mới
+                        const year = document.getElementById('yearSelectChart').value || new Date().getFullYear();
+                        fetch(`/api/bieu-do/in/daily-product-data?year=${year}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                createSingleDailyProductChart(canvasId, selectedMachine, data, year);
+                            })
+                            .catch(error => console.error('Lỗi khi cập nhật biểu đồ:', error));
+                    });
+                }
+            }
+            
+            // Cập nhật trạng thái disabled ban đầu
+            updateMachineDropdownStates();
+
+
+            // Cập nhật tên máy trong tiêu đề ban đầu để đồng bộ với dropdown
+for (let i = 0; i < 4; i++) {
+    if (defaultMachines[i]) {
+        updateMachineTitle(i + 1, defaultMachines[i]);
+    }
+}
+
+        })
+        .catch(error => {
+            console.error('Lỗi khi lấy danh sách máy từ API:', error);
+            // Fallback về logic cũ nếu API lỗi
+            const fallbackMachines = allMachines && allMachines.length > 0 ? allMachines : ['6K1', '6M5', '6M1', '6K2'];
+            const defaultMachines = ['6K1', '6M5', '6M1', '6K2'];
+            
+            for (let i = 1; i <= 4; i++) {
+                const select = document.getElementById(`machineSelect${i}`);
+                if (select) {
+                    select.innerHTML = '';
+                    
+                    fallbackMachines.forEach(machine => {
+                        const option = document.createElement('option');
+                        option.value = machine;
+                        option.textContent = machine;
+                        if (machine === defaultMachines[i - 1]) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                    
+                    select.addEventListener('change', function() {
+                        const canvasId = `dailyProductChart${i}`;
+                        const selectedMachine = this.value;
+                        updateMachineTitle(i, selectedMachine);
+                        updateMachineDropdownStates();
+                        
+                        const year = document.getElementById('yearSelectChart').value || new Date().getFullYear();
+                        fetch(`/api/bieu-do/in/daily-product-data?year=${year}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                createSingleDailyProductChart(canvasId, selectedMachine, data, year);
+                            })
+                            .catch(error => console.error('Lỗi khi cập nhật biểu đồ:', error));
+                    });
+                }
+            }
+            
+            updateMachineDropdownStates();
+
+
+            // Cập nhật tên máy trong tiêu đề ban đầu để đồng bộ với dropdown
+for (let i = 0; i < 4; i++) {
+    if (defaultMachines[i]) {
+        updateMachineTitle(i + 1, defaultMachines[i]);
+    }
+}
+
+        });
+}
+
+// Cập nhật tên máy trong tiêu đề
+function updateMachineTitle(chartIndex, machineName) {
+    const titleElement = document.querySelector(`#machineSelect${chartIndex}`).closest('.d-flex').querySelector('div');
+    if (titleElement) {
+        titleElement.textContent = `Máy ${machineName}`;
+    }
+}
+
+// Cập nhật trạng thái disabled cho các dropdown
+function updateMachineDropdownStates() {
+    const selectedMachines = [];
+    
+    // Lấy tất cả máy đã chọn
+    for (let i = 1; i <= 4; i++) {
+        const select = document.getElementById(`machineSelect${i}`);
+        if (select && select.value) {
+            selectedMachines.push(select.value);
+        }
+    }
+    
+    // Cập nhật trạng thái disabled cho tất cả dropdown
+    for (let i = 1; i <= 4; i++) {
+        const select = document.getElementById(`machineSelect${i}`);
+        if (select) {
+            const currentValue = select.value;
+            
+            Array.from(select.options).forEach(option => {
+                // Disable nếu máy này đã được chọn ở dropdown khác
+                if (selectedMachines.includes(option.value) && option.value !== currentValue) {
+                    option.disabled = true;
+                } else {
+                    option.disabled = false;
+                }
+            });
+        }
+    }
+}
+
+// Tạo một biểu đồ thành phẩm theo ngày cho một máy
+function createSingleDailyProductChart(canvasId, machine, dailyProductData, year) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error('❌ Không tìm thấy canvas:', canvasId);
+        return;
+    }
+    
+    // Destroy chart cũ nếu có
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+    
+    const machineData = dailyProductData[machine];
+    if (!machineData || machineData.length === 0) {
+        // Tạo biểu đồ trống nhưng vẫn giữ cấu trúc canvas
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: `Máy ${machine}`,
+                    data: [],
+                    borderColor: '#cccccc',
+                    backgroundColor: 'rgba(204, 204, 204, 0.1)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false },
+                    datalabels: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Thành phẩm in',
+                            font: { color: 'black', weight: 'bold' }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: `Không có dữ liệu cho máy ${machine}`,
+                            font: { color: '#999', weight: 'bold' }
+                        }
+                    }
+                }
+            }
+        });
+        return;
+    }
+    
+    // Tạo labels (ngày) và data (thành phẩm)
+    const sortedData = machineData.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    const labels = sortedData.map(item => {
+        const date = new Date(item.date);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        return `${day}/${month}`;
+    });
+    
+    const productData = sortedData.map(item => item.totalPaper > 0 ? item.totalPaper : null);
+    
+    // Tạo biểu đồ line
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: `Máy ${machine}`,
+                data: productData,
+                borderColor: '#4CAF50',
+                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                fill: true,
+                tension: 0.2,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                borderWidth: 2,
+                spanGaps: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            const index = context[0].dataIndex;
+                            const date = sortedData[index].date;
+                            const d = new Date(date);
+                            const day = d.getDate().toString().padStart(2, '0');
+                            const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                            const year = d.getFullYear();
+                            return `Ngày: ${day}/${month}/${year}`;
+                        },
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            return value !== null ? `Thành phẩm: ${formatNumber(value)}` : 'Không có dữ liệu';
+                        }
+                    }
+                },
+                datalabels: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Thành phẩm in',
+                        font: { color: 'black', weight: 'bold' }
+                    }
+                },
+                x: {
+                    title: {
+                        display: false,
+                        text: 'Ngày trong năm',
+                        font: { color: 'black', weight: 'bold' }
+                    },
+                    ticks: {
+                        maxTicksLimit: 20
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+
+// Hiển thị biểu đồ thời gian trống khi không có dữ liệu
+function displayEmptyTimeChart() {
+    const canvas = document.getElementById('yearlyTimeLineChart');
+    if (!canvas) return;
+    
+    // Destroy chart cũ nếu có
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+    
+    const container = canvas.parentElement;
+    container.innerHTML = `
+        <div class="text-center text-muted p-4">
+            <i class="fas fa-chart-line fa-3x mb-3"></i>
+            <h6>Không có dữ liệu thời gian cho năm này</h6>
+        </div>
+    `;
+}
+
+
+// Hiển thị loading cho biểu đồ
+function displayLoadingChart(canvas, message = 'Đang tải dữ liệu...') {
+    if (!canvas) return;
+    
+    // Destroy chart cũ nếu có
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+    
+    const container = canvas.parentElement;
+    container.innerHTML = `
+        <div class="text-center text-muted p-4">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h6>${message}</h6>
+        </div>
+    `;
+}
+
+
+
+
 // Thiết lập ngày mặc định
 function setDefaultDates() {
     const today = new Date();
@@ -1345,7 +2145,20 @@ function collectFilters() {
 
             return '';
         })(),
-        may: document.getElementById('maySelect')?.value || '',
+        may: (() => {
+            const maySelect = document.getElementById('maySelect');
+            if (!maySelect) return '';
+        
+            const selectedValue = maySelect.value;
+            console.log('🔍 Giá trị máy từ select:', selectedValue);
+        
+            // Chỉ return giá trị nếu thực sự được chọn (không phải "Tất cả máy")
+            if (selectedValue && selectedValue !== '') {
+                return selectedValue;
+            }
+        
+            return '';
+        })(),
         tuan: document.getElementById('tuanSelect')?.value || '',
         fromDate: document.getElementById('fromDate')?.value || '',
         toDate: document.getElementById('toDate')?.value || ''
@@ -3273,6 +4086,24 @@ function updateTimeAnalysisInfo(timeData) {
 
         console.log(`📊 TỔNG THỜI GIAN LÀM VIỆC THEO CA: ${totalWorkHoursByDay} giờ`);
     }
+//     let totalWorkHoursByDay = 0;
+
+// if (currentChartData && currentChartData.reports && currentChartData.reports.length > 0) {
+//     // Định nghĩa thời gian chuẩn cho từng mã ca (tính bằng giờ)
+//     const shiftHours = {
+//         'A': 8, 'B': 8, 'C': 8, 'D': 12, 'A1': 12, 'B1': 12,
+//         'AB': 9, 'AB-': 8, 'AB+': 10, 'HC': 9
+//     };
+
+//     // Đếm tổng số ca từ các báo cáo
+//     currentChartData.reports.forEach(report => {
+//         const maCa = report.ma_ca || 'Unknown';
+//         const caHours = shiftHours[maCa]; // Mặc định 8 giờ
+//         totalWorkHoursByDay += caHours;
+//     });
+
+//     console.log(`📊 TỔNG THỜI GIAN LÀM VIỆC (đơn giản): ${totalWorkHoursByDay} giờ từ ${currentChartData.reports.length} báo cáo`);
+// }
 
     // Cập nhật tổng thời gian làm việc theo ca
     if (totalWorkHoursEl) {
@@ -3371,6 +4202,24 @@ function displayTimeAnalysis(data, filters) {
 
         console.log(`📊 TỔNG THỜI GIAN LÀM VIỆC THEO CA: ${totalWorkHoursByDay} giờ`);
     }
+//     let totalWorkHoursByDay = 0;
+
+// if (data && data.reports && data.reports.length > 0) {
+//     // Định nghĩa thời gian chuẩn cho từng mã ca (tính bằng giờ)
+//     const shiftHours = {
+//         'A': 8, 'B': 8, 'C': 8, 'D': 12, 'A1': 12, 'B1': 12,
+//         'AB': 9, 'AB-': 8, 'AB+': 10, 'HC': 9
+//     };
+
+//     // Đếm tổng số ca từ các báo cáo
+//     data.reports.forEach(report => {
+//         const maCa = report.ma_ca || 'Unknown';
+//         const caHours = shiftHours[maCa]; // Mặc định 8 giờ
+//         totalWorkHoursByDay += caHours;
+//     });
+
+//     console.log(`📊 TỔNG THỜI GIAN LÀM VIỆC (đơn giản): ${totalWorkHoursByDay} giờ từ ${data.reports.length} báo cáo`);
+// }
 
     // Cập nhật hiển thị (chuyển giờ thành phút để dùng formatDuration)
     const totalWorkHoursEl = document.getElementById('totalWorkHours');
@@ -4559,6 +5408,230 @@ function openFullscreen(canvasId, title) {
                 },
                 plugins: [ChartDataLabels]
             };
+
+
+        } else if (canvasId === 'yearlyTimeLineChart') {
+            config = {
+                type: 'line',
+                data: {
+                    labels: [...originalChart.data.labels],
+                    datasets: originalChart.data.datasets.map(dataset => ({
+                        ...dataset,
+                        data: [...dataset.data]
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { display: false }, // Vẫn ẩn legend trong fullscreen
+                        tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+                        datalabels: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 200,
+                            title: {
+                                display: true,
+                                text: 'Tỷ lệ thời gian (%)',
+                                font: { color: 'black', weight: 'bold' }
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Ngày trong năm',
+                                font: { color: 'black', weight: 'bold' }
+                            },
+                            ticks: {
+                                maxTicksLimit: 50
+                            }
+                        }
+                    }
+                }
+            };
+
+        } else if (canvasId === 'timeRatioChartLeft' || canvasId === 'timeRatioChartRight') {
+            // Xử lý giống như yearlyTimeLineChart
+            config = {
+                type: 'line',
+                data: {
+                    labels: [...originalChart.data.labels],
+                    datasets: originalChart.data.datasets.map(dataset => ({
+                        ...dataset,
+                        data: [...dataset.data]
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+                        datalabels: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 200,
+                            title: {
+                                display: true,
+                                text: 'Tỷ lệ thời gian (%)',
+                                font: { color: 'black', weight: 'bold' }
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Ngày trong năm',
+                                font: { color: 'black', weight: 'bold' }
+                            },
+                            ticks: {
+                                maxTicksLimit: 50
+                            }
+                        }
+                    }
+                }
+            };
+
+        } else if (canvasId.startsWith('dailyProductChart')) {
+            // Cấu hình cho biểu đồ thành phẩm theo ngày
+            config = {
+                type: 'line',
+                data: {
+                    labels: [...originalChart.data.labels],
+                    datasets: originalChart.data.datasets.map(dataset => ({
+                        ...dataset,
+                        data: [...dataset.data]
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+                        datalabels: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Thành phẩm in',
+                                font: { color: 'black', weight: 'bold', size: 16 }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Ngày trong năm',
+                                font: { color: 'black', weight: 'bold', size: 16 }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+// Trong phần xử lý các loại biểu đồ, thêm:
+// Trong phần xử lý các loại biểu đồ, thêm:
+else if (canvasId === 'timeRatioChartLeft' || canvasId === 'timeRatioChartRight' ||
+    canvasId === 'allMachineProductChart') {
+config = {
+   type: originalConfig.type,
+   data: {
+       labels: [...originalChart.data.labels],
+       datasets: originalChart.data.datasets.map(dataset => ({
+           ...dataset,
+           data: [...dataset.data]
+       }))
+   },
+   options: {
+       responsive: true,
+       maintainAspectRatio: false,
+       plugins: {
+        legend: { display: false },
+        tooltip: originalConfig.options.plugins?.tooltip || { enabled: true },
+        datalabels: { display: false }
+    },
+       scales: originalConfig.options.scales || {}
+   }
+};
+} else if (canvasId === 'productChartLeft' || canvasId === 'productChartRight') {
+config = {
+   type: originalConfig.type,
+   data: {
+       labels: [...originalChart.data.labels],
+       datasets: originalChart.data.datasets.map(dataset => ({
+           ...dataset,
+           data: [...dataset.data]
+       }))
+   },
+   options: {
+       responsive: true,
+       maintainAspectRatio: false,
+       interaction: {
+           intersect: false,
+           mode: 'index'
+       },
+       plugins: {
+        legend: { display: false },
+        tooltip: {
+            callbacks: {
+                title: function(context) {
+                    const index = context[0].dataIndex;
+                    // Lấy data từ chart gốc để format tooltip
+                    const originalData = originalChart.data.labels[index];
+                    return `Ngày: ${originalData}`;
+                },
+                label: function(context) {
+                    const value = context.parsed.y;
+                    return value !== null ? `Thành phẩm: ${formatNumber(value)}` : 'Không có dữ liệu';
+                }
+            }
+        },
+        datalabels: { display: false }
+    },
+       scales: {
+           y: {
+               beginAtZero: true,
+               title: {
+                   display: true,
+                   text: 'Thành phẩm in',
+                   font: { color: 'black', weight: 'bold', size: 16 }
+               }
+           },
+           x: {
+               title: {
+                   display: true,
+                   text: 'Ngày trong năm',
+                   font: { color: 'black', weight: 'bold', size: 16 }
+               },
+               ticks: {
+                   maxTicksLimit: 20
+               }
+           }
+       }
+   }
+};
+
+
+
+
 
         } else if (canvasId === 'topCustomersChart' || canvasId === 'topProductsChart') {
             // Cấu hình đặc biệt cho Top 10 charts
@@ -6414,59 +7487,115 @@ function calculateTopSpeedFromTable(reports) {
 
 // Hiển thị biểu đồ tốc độ
 function displayTopSpeedCharts(topSpeedData, filters) {
-    // Tạo dropdown options cho máy
-    const machines = Object.keys(topSpeedData).sort();
-    const leftSelect = document.getElementById('speedMachineSelectLeft');
-    const rightSelect = document.getElementById('speedMachineSelectRight');
+    // Lấy danh sách máy từ API thay vì từ topSpeedData
+    fetch('/api/machines/list?module_id=innm1')
+        .then(response => response.json())
+        .then(machines => {
+            const machineNames = machines.map(machine => machine.name).sort();
+            const leftSelect = document.getElementById('speedMachineSelectLeft');
+            const rightSelect = document.getElementById('speedMachineSelectRight');
 
-    if (leftSelect && rightSelect) {
-        // Xóa options cũ
-        leftSelect.innerHTML = '<option value="">Chọn máy</option>';
-        rightSelect.innerHTML = '<option value="">Chọn máy</option>';
+            if (leftSelect && rightSelect) {
+                // Xóa options cũ
+                leftSelect.innerHTML = '<option value="">Chọn máy</option>';
+                rightSelect.innerHTML = '<option value="">Chọn máy</option>';
 
-        // Thêm options mới
-        machines.forEach(machine => {
-            const optionLeft = document.createElement('option');
-            optionLeft.value = machine;
-            optionLeft.textContent = machine;
-            leftSelect.appendChild(optionLeft);
+                // Thêm options mới từ API
+                machineNames.forEach(machine => {
+                    const optionLeft = document.createElement('option');
+                    optionLeft.value = machine;
+                    optionLeft.textContent = machine;
+                    leftSelect.appendChild(optionLeft);
 
-            const optionRight = document.createElement('option');
-            optionRight.value = machine;
-            optionRight.textContent = machine;
-            rightSelect.appendChild(optionRight);
+                    const optionRight = document.createElement('option');
+                    optionRight.value = machine;
+                    optionRight.textContent = machine;
+                    rightSelect.appendChild(optionRight);
+                });
+
+                // Gắn sự kiện thay đổi
+                leftSelect.addEventListener('change', function () {
+                    currentSpeedSelections.left = this.value;
+                    updateSpeedMachineOptions();
+                    displaySpeedChart('left', this.value, topSpeedData);
+                });
+
+                rightSelect.addEventListener('change', function () {
+                    currentSpeedSelections.right = this.value;
+                    updateSpeedMachineOptions();
+                    displaySpeedChart('right', this.value, topSpeedData);
+                });
+
+                // Chọn sẵn 2 máy đầu tiên
+                if (machineNames.length >= 2) {
+                    leftSelect.value = machineNames[0];
+                    rightSelect.value = machineNames[1];
+                    currentSpeedSelections.left = machineNames[0];
+                    currentSpeedSelections.right = machineNames[1];
+
+                    updateSpeedMachineOptions();
+                    displaySpeedChart('left', machineNames[0], topSpeedData);
+                    displaySpeedChart('right', machineNames[1], topSpeedData);
+                } else if (machineNames.length === 1) {
+                    leftSelect.value = machineNames[0];
+                    currentSpeedSelections.left = machineNames[0];
+                    displaySpeedChart('left', machineNames[0], topSpeedData);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi khi lấy danh sách máy từ API:', error);
+            // Fallback về logic cũ nếu API lỗi
+            const machines = Object.keys(topSpeedData).sort();
+            const leftSelect = document.getElementById('speedMachineSelectLeft');
+            const rightSelect = document.getElementById('speedMachineSelectRight');
+
+            if (leftSelect && rightSelect) {
+                leftSelect.innerHTML = '<option value="">Chọn máy</option>';
+                rightSelect.innerHTML = '<option value="">Chọn máy</option>';
+
+                machines.forEach(machine => {
+                    const optionLeft = document.createElement('option');
+                    optionLeft.value = machine;
+                    optionLeft.textContent = machine;
+                    leftSelect.appendChild(optionLeft);
+
+                    const optionRight = document.createElement('option');
+                    optionRight.value = machine;
+                    optionRight.textContent = machine;
+                    rightSelect.appendChild(optionRight);
+                });
+
+                leftSelect.addEventListener('change', function () {
+                    currentSpeedSelections.left = this.value;
+                    updateSpeedMachineOptions();
+                    displaySpeedChart('left', this.value, topSpeedData);
+                });
+
+                rightSelect.addEventListener('change', function () {
+                    currentSpeedSelections.right = this.value;
+                    updateSpeedMachineOptions();
+                    displaySpeedChart('right', this.value, topSpeedData);
+                });
+
+                if (machines.length >= 2) {
+                    leftSelect.value = machines[0];
+                    rightSelect.value = machines[1];
+                    currentSpeedSelections.left = machines[0];
+                    currentSpeedSelections.right = machines[1];
+
+                    updateSpeedMachineOptions();
+                    displaySpeedChart('left', machines[0], topSpeedData);
+                    displaySpeedChart('right', machines[1], topSpeedData);
+                } else if (machines.length === 1) {
+                    leftSelect.value = machines[0];
+                    currentSpeedSelections.left = machines[0];
+                    displaySpeedChart('left', machines[0], topSpeedData);
+                }
+            }
         });
-
-        // Gắn sự kiện thay đổi
-        leftSelect.addEventListener('change', function () {
-            currentSpeedSelections.left = this.value;
-            updateSpeedMachineOptions();
-            displaySpeedChart('left', this.value, topSpeedData);
-        });
-
-        rightSelect.addEventListener('change', function () {
-            currentSpeedSelections.right = this.value;
-            updateSpeedMachineOptions();
-            displaySpeedChart('right', this.value, topSpeedData);
-        });
-
-        // Chọn sẵn 2 máy đầu tiên
-        if (machines.length >= 2) {
-            leftSelect.value = machines[0];
-            rightSelect.value = machines[1];
-            currentSpeedSelections.left = machines[0];
-            currentSpeedSelections.right = machines[1];
-
-            updateSpeedMachineOptions();
-            displaySpeedChart('left', machines[0], topSpeedData);
-            displaySpeedChart('right', machines[1], topSpeedData);
-        } else if (machines.length === 1) {
-            leftSelect.value = machines[0];
-            currentSpeedSelections.left = machines[0];
-            displaySpeedChart('left', machines[0], topSpeedData);
-        }
-    }
 }
+
 
 // Cập nhật options để tránh chọn trùng máy
 function updateSpeedMachineOptions() {
@@ -11560,6 +12689,670 @@ function createMachineTimeChart(reports) {
     });
 }
 
+
+
+
+
+
+
+
+// Tạo biểu đồ tỷ lệ máy hoạt động với option chọn máy
+async function createTimeRatioSelectCharts(year) {
+    try {
+        const response = await fetch(`/api/bieu-do/in/yearly-time-data?year=${year}`);
+        const timeData = await response.json();
+        
+        // Lấy danh sách máy từ API thay vì từ timeData
+        const machinesResponse = await fetch('/api/machines/list?module_id=innm1');
+        const machines = await machinesResponse.json();
+        const machineNames = machines.map(machine => machine.name).sort();
+        
+        // Populate dropdown options
+        const leftSelect = document.getElementById('timeRatioSelectLeft');
+        const rightSelect = document.getElementById('timeRatioSelectRight');
+        
+        if (leftSelect && rightSelect) {
+            // Xóa options cũ
+            leftSelect.innerHTML = '<option value="">Chọn máy</option>';
+            rightSelect.innerHTML = '<option value="">Chọn máy</option>';
+            
+            machineNames.forEach(machine => {
+                const optionLeft = document.createElement('option');
+                optionLeft.value = machine;
+                optionLeft.textContent = machine;
+                leftSelect.appendChild(optionLeft);
+                
+                const optionRight = document.createElement('option');
+                optionRight.value = machine;
+                optionRight.textContent = machine;
+                rightSelect.appendChild(optionRight);
+            });
+            
+            // Chọn sẵn 2 máy đầu tiên
+            if (machineNames.length >= 2) {
+                leftSelect.value = machineNames[0];
+                rightSelect.value = machineNames[1];
+                createSingleTimeRatioChart('timeRatioChartLeft', machineNames[0], timeData[machineNames[0]]);
+                createSingleTimeRatioChart('timeRatioChartRight', machineNames[1], timeData[machineNames[1]]);
+            }
+            
+            
+            // Hàm cập nhật trạng thái disabled cho options
+function updateTimeRatioOptions() {
+    const leftValue = leftSelect.value;
+    const rightValue = rightSelect.value;
+
+    // Disable options đã chọn ở bên kia
+    Array.from(leftSelect.options).forEach(option => {
+        if (option.value === rightValue && option.value !== '') {
+            option.disabled = true;
+        } else {
+            option.disabled = false;
+        }
+    });
+
+    Array.from(rightSelect.options).forEach(option => {
+        if (option.value === leftValue && option.value !== '') {
+            option.disabled = true;
+        } else {
+            option.disabled = false;
+        }
+    });
+}
+
+// Gắn sự kiện
+leftSelect.addEventListener('change', function() {
+    updateTimeRatioOptions();
+    createSingleTimeRatioChart('timeRatioChartLeft', this.value, timeData[this.value]);
+});
+
+rightSelect.addEventListener('change', function() {
+    updateTimeRatioOptions();
+    createSingleTimeRatioChart('timeRatioChartRight', this.value, timeData[this.value]);
+});
+
+// Cập nhật trạng thái ban đầu
+updateTimeRatioOptions();
+
+
+        }
+    } catch (error) {
+        console.error('Lỗi tạo biểu đồ tỷ lệ máy hoạt động:', error);
+    }
+}
+
+
+
+// Tạo biểu đồ tỷ lệ cho một máy
+function createSingleTimeRatioChart(canvasId, machine, data) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !data) {
+        if (canvas) {
+            const existingChart = Chart.getChart(canvas);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: `Máy ${machine || 'không xác định'}`,
+                        data: [],
+                        borderColor: '#cccccc',
+                        backgroundColor: '#f0f0f0'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: { display: false }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            max: 200,
+                            title: { 
+                                display: true, 
+                                text: 'Tỷ lệ thời gian (%)',
+                                font: { color: 'black', weight: 'bold' }
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: { 
+                            title: { 
+                                display: true, 
+                                text: 'Ngày trong năm',
+                                font: { color: 'black', weight: 'bold' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        return;
+    }
+    
+    // Destroy chart cũ
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+    
+    // Sắp xếp dữ liệu theo ngày
+    const sortedData = data.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    const labels = sortedData.map(item => {
+        const date = new Date(item.date);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        return `${day}/${month}`;
+    });
+    
+    const ratioData = sortedData.map(item => item.timeRatio !== undefined ? item.timeRatio : null);
+    
+    // Dùng cùng 1 màu cho tất cả biểu đồ tỷ lệ máy hoạt động
+    const timeRatioColor = '#FF7F7F';
+    
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: `Máy ${machine}`,
+                data: ratioData,
+                borderColor: timeRatioColor,
+                backgroundColor: timeRatioColor + '20',
+                fill: false,
+                tension: 0.1,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                borderWidth: 2,
+                spanGaps: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            const index = context[0].dataIndex;
+                            const date = sortedData[index].date;
+                            const d = new Date(date);
+                            const day = d.getDate().toString().padStart(2, '0');
+                            const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                            const year = d.getFullYear();
+                            return `Ngày: ${day}/${month}/${year}`;
+                        },
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            return value !== null ? `Máy ${machine}: ${value}%` : `Máy ${machine}: Không có dữ liệu`;
+                        }
+                    }
+                },
+                datalabels: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 200,
+                    title: {
+                        display: true,
+                        text: 'Tỷ lệ thời gian (%)',
+                        font: { color: 'black', weight: 'bold' }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Ngày trong năm',
+                        font: { color: 'black', weight: 'bold' }
+                    },
+                    ticks: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Tách phần tạo biểu đồ thực tế ra hàm riêng
+// function createTimeRatioChartActual(canvasId, machine, data) {
+//     const canvas = document.getElementById(canvasId);
+//     if (!canvas || !data) {
+//         if (canvas) {
+//             const existingChart = Chart.getChart(canvas);
+//             if (existingChart) {
+//                 existingChart.destroy();
+//             }
+            
+//             new Chart(canvas, {
+//                 type: 'line',
+//                 data: {
+//                     labels: [],
+//                     datasets: [{
+//                         label: `Máy ${machine || 'không xác định'}`,
+//                         data: [],
+//                         borderColor: '#cccccc',
+//                         backgroundColor: '#f0f0f0'
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     maintainAspectRatio: false,
+//                     plugins: {
+//                         legend: { display: false },
+//                         datalabels: { display: false }
+//                     },
+//                     scales: {
+//                         y: { 
+//                             beginAtZero: true, 
+//                             max: 200,
+//                             title: { 
+//                                 display: true, 
+//                                 text: 'Tỷ lệ thời gian (%)',
+//                                 font: { color: 'black', weight: 'bold' }
+//                             },
+//                             ticks: {
+//                                 callback: function(value) {
+//                                     return value + '%';
+//                                 }
+//                             }
+//                         },
+//                         x: { 
+//                             title: { 
+//                                 display: true, 
+//                                 text: 'Ngày trong năm',
+//                                 font: { color: 'black', weight: 'bold' }
+//                             }
+//                         }
+//                     }
+//                 }
+//             });
+//         }
+//         return;
+//     }
+    
+//     // Destroy chart cũ
+//     const existingChart = Chart.getChart(canvas);
+//     if (existingChart) {
+//         existingChart.destroy();
+//     }
+    
+//     // Sắp xếp dữ liệu theo ngày
+//     const sortedData = data.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+//     const labels = sortedData.map(item => {
+//         const date = new Date(item.date);
+//         const day = date.getDate().toString().padStart(2, '0');
+//         const month = (date.getMonth() + 1).toString().padStart(2, '0');
+//         return `${day}/${month}`;
+//     });
+    
+//     const ratioData = sortedData.map(item => item.timeRatio !== undefined ? item.timeRatio : null);
+    
+//     // SỬA: Dùng cùng 1 màu cho tất cả biểu đồ tỷ lệ máy hoạt động (giống yearlyTimeLineChart)
+//     const timeRatioColor = '#FF7F7F'; // Đỏ nhạt giống trong yearlyTimeLineChart
+    
+//     new Chart(canvas, {
+//         type: 'line',
+//         data: {
+//             labels: labels,
+//             datasets: [{
+//                 label: `Máy ${machine}`,
+//                 data: ratioData,
+//                 borderColor: timeRatioColor,
+//                 backgroundColor: timeRatioColor + '20',
+//                 fill: false,
+//                 tension: 0.1,
+//                 pointRadius: 0,
+//                 pointHoverRadius: 3,
+//                 borderWidth: 2,
+//                 spanGaps: false
+//             }]
+//         },
+//         options: {
+//             responsive: true,
+//             maintainAspectRatio: false,
+//             interaction: {
+//                 intersect: false,
+//                 mode: 'index'
+//             },
+//             plugins: {
+//                 legend: {
+//                     display: false
+//                 },
+//                 tooltip: {
+//                     callbacks: {
+//                         title: function(context) {
+//                             const index = context[0].dataIndex;
+//                             const date = sortedData[index].date;
+//                             const d = new Date(date);
+//                             const day = d.getDate().toString().padStart(2, '0');
+//                             const month = (d.getMonth() + 1).toString().padStart(2, '0');
+//                             const year = d.getFullYear();
+//                             return `Ngày: ${day}/${month}/${year}`;
+//                         },
+//                         label: function(context) {
+//                             const value = context.parsed.y;
+//                             return value !== null ? `Máy ${machine}: ${value}%` : `Máy ${machine}: Không có dữ liệu`;
+//                         }
+//                     }
+//                 },
+//                 datalabels: { display: false }
+//             },
+//             scales: {
+//                 y: {
+//                     beginAtZero: true,
+//                     max: 200,
+//                     title: {
+//                         display: true,
+//                         text: 'Tỷ lệ thời gian (%)',
+//                         font: { color: 'black', weight: 'bold' }
+//                     },
+//                     ticks: {
+//                         callback: function(value) {
+//                             return value + '%';
+//                         }
+//                     }
+//                 },
+//                 x: {
+//                     title: {
+//                         display: true,
+//                         text: 'Ngày trong năm',
+//                         font: { color: 'black', weight: 'bold' }
+//                     },
+//                     ticks: {
+//                         display: false // Ẩn nhãn ngày để tránh chồng chéo giống yearlyTimeLineChart
+//                     }
+//                 }
+//             }
+//         }
+//     });
+// }
+
+
+
+// Tạo biểu đồ thành phẩm tất cả máy
+async function createAllMachineProductChart(year) {
+    try {
+        const response = await fetch(`/api/bieu-do/in/daily-product-data?year=${year}`);
+        const dailyData = await response.json();
+        
+        const canvas = document.getElementById('allMachineProductChart');
+        if (!canvas) return;
+        
+        // Destroy chart cũ
+        const existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+        
+        const machines = Object.keys(dailyData).sort();
+        if (machines.length === 0) return;
+        
+        // Màu sắc cho các máy
+        const colors = [
+            '#F1948A', '#85C1E9', '#82E0AA', '#F8C471', '#D2B4DE', '#7FCDCD',
+            '#AEB6BF', '#F0B27A', '#BB8FCE', '#85C1E9', '#7DCEA0', '#F7DC6F'
+        ];
+        
+        const datasets = machines.map((machine, index) => {
+            const machineData = dailyData[machine];
+            const sortedData = machineData.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            return {
+                label: `Máy ${machine}`,
+                data: sortedData.map(item => item.totalPaper > 0 ? item.totalPaper : null),
+                borderColor: colors[index % colors.length],
+                backgroundColor: colors[index % colors.length] + '20',
+                fill: false,
+                tension: 0.1,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                borderWidth: 3,
+                spanGaps: false
+            };
+        });
+        
+        // Lấy labels từ máy đầu tiên
+        const firstMachine = dailyData[machines[0]];
+        const sortedFirstData = firstMachine.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const labels = sortedFirstData.map(item => {
+            const date = new Date(item.date);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            return `${day}/${month}`;
+        });
+        
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'line',
+                            pointStyleWidth: 20,
+                            font: { weight: 'bold', size: 12 },
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
+                            }
+                        }
+                    },
+                    datalabels: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Thành phẩm in',
+                            font: { color: 'black', weight: 'bold' }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Ngày trong năm',
+                            font: { color: 'black', weight: 'bold' }
+                        },
+                        ticks: {
+                            maxTicksLimit: 20
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Lỗi tạo biểu đồ thành phẩm tất cả máy:', error);
+    }
+}
+
+// Tạo biểu đồ thành phẩm với option chọn máy
+async function createProductSelectCharts(year) {
+    try {
+        const response = await fetch(`/api/bieu-do/in/daily-product-data?year=${year}`);
+        const dailyData = await response.json();
+        
+        // Lấy danh sách máy từ API thay vì từ dailyData
+const machinesResponse = await fetch('/api/machines/list?module_id=innm1');
+const machines = await machinesResponse.json();
+const machineNames = machines.map(machine => machine.name).sort();
+        
+        // Populate dropdown options
+        const leftSelect = document.getElementById('productSelectLeft');
+        const rightSelect = document.getElementById('productSelectRight');
+        
+        if (leftSelect && rightSelect) {
+            machineNames.forEach(machine => {
+                const optionLeft = document.createElement('option');
+                optionLeft.value = machine;
+                optionLeft.textContent = machine;
+                leftSelect.appendChild(optionLeft);
+                
+                const optionRight = document.createElement('option');
+                optionRight.value = machine;
+                optionRight.textContent = machine;
+                rightSelect.appendChild(optionRight);
+            });
+            
+            // Chọn sẵn 2 máy đầu tiên
+            if (machineNames.length >= 2) {
+                leftSelect.value = machineNames[0];
+                rightSelect.value = machineNames[1];
+                createSingleProductChart('productChartLeft', machineNames[0], dailyData[machineNames[0]]);
+                createSingleProductChart('productChartRight', machineNames[1], dailyData[machineNames[1]]);
+            }
+            
+            // Gắn sự kiện
+            leftSelect.addEventListener('change', function() {
+                createSingleProductChart('productChartLeft', this.value, dailyData[this.value]);
+            });
+            
+            rightSelect.addEventListener('change', function() {
+                createSingleProductChart('productChartRight', this.value, dailyData[this.value]);
+            });
+        }
+    } catch (error) {
+        console.error('Lỗi tạo biểu đồ thành phẩm theo máy:', error);
+    }
+}
+
+// Tạo biểu đồ thành phẩm cho một máy (giống style biểu đồ tỷ lệ)
+// Tạo biểu đồ thành phẩm cho một máy (giống style biểu đồ tỷ lệ)
+function createSingleProductChart(canvasId, machine, data) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !data) return;
+    
+    // Destroy chart cũ
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+    
+    // Sắp xếp dữ liệu theo ngày
+    const sortedData = data.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    const labels = sortedData.map(item => {
+        const date = new Date(item.date);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        return `${day}/${month}`;
+    });
+    
+    const productData = sortedData.map(item => item.totalPaper > 0 ? item.totalPaper : null);
+    
+    // Màu xanh cho thành phẩm
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: `Máy ${machine}`,
+                data: productData,
+                borderColor: '#4CAF50',
+                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                fill: true,
+                tension: 0.2,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                borderWidth: 2,
+                spanGaps: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            const index = context[0].dataIndex;
+                            const date = sortedData[index].date;
+                            const d = new Date(date);
+                            const day = d.getDate().toString().padStart(2, '0');
+                            const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                            const year = d.getFullYear();
+                            return `Ngày: ${day}/${month}/${year}`;
+                        },
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            return value !== null ? `Thành phẩm: ${formatNumber(value)}` : 'Không có dữ liệu';
+                        }
+                    }
+                },
+                datalabels: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Thành phẩm in',
+                        font: { color: 'black', weight: 'bold' }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Ngày trong năm',
+                        font: { color: 'black', weight: 'bold' }
+                    },
+                    ticks: {
+                        maxTicksLimit: 20
+                    }
+                }
+            }
+        }
+    });
+}
 
 
 

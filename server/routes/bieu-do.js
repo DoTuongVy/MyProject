@@ -980,6 +980,385 @@ router.get('/in/yearly-leader-data', async (req, res) => {
     }
 });
 
+
+
+
+
+// API lấy dữ liệu thời gian theo máy theo ngày trong năm
+router.get('/in/yearly-time-data', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    try {
+        const { year } = req.query;
+        
+        if (!year) {
+            return res.status(400).json({ error: 'Thiếu tham số năm' });
+        }
+        
+        console.log('📊 Lấy dữ liệu thời gian theo máy theo ngày cho năm:', year);
+        
+        // Lấy dữ liệu cơ bản từ bảng bao_cao_in
+        const reports = await new Promise((resolve, reject) => {
+            db.all(`SELECT 
+                DATE(COALESCE(ngay_phu, created_at)) as date,
+                may,
+                ma_ca,
+                thoi_gian_bat_dau,
+                thoi_gian_ket_thuc,
+                thoi_gian_canh_may,
+                id
+                FROM bao_cao_in 
+                WHERE strftime('%Y', COALESCE(ngay_phu, created_at)) = ? 
+                AND is_started_only = 0
+                AND thanh_pham_in IS NOT NULL 
+                AND thanh_pham_in != ''
+                AND may IS NOT NULL 
+                AND may != ''
+                ORDER BY date, may`, 
+                [year], (err, rows) => {
+                if (err) {
+                    console.error('Lỗi query báo cáo:', err);
+                    reject(err);
+                } else {
+                    console.log('📊 Lấy được', rows.length, 'báo cáo');
+                    resolve(rows || []);
+                }
+            });
+        });
+
+
+
+// Lấy thông tin dừng máy cho từng báo cáo
+for (let report of reports) {
+    try {
+        const stopData = await new Promise((resolve, reject) => {
+            db.all(`SELECT thoi_gian_dung_may 
+                    FROM bao_cao_in_dung_may 
+                    WHERE bao_cao_id = ?`, [report.id], (err, rows) => {
+                if (err) {
+                    console.error('Lỗi query dừng máy:', err);
+                    resolve([]); // Thay reject thành resolve([])
+                } else {
+                    resolve(rows || []);
+                }
+            });
+        });
+        
+        let totalStopTime = 0;
+        stopData.forEach(stop => {
+            const duration = stop.thoi_gian_dung_may || '';
+            if (duration.includes('giờ') || duration.includes('phút')) {
+                const hours = (duration.match(/(\d+)\s*giờ/) || [0, 0])[1];
+                const minutes = (duration.match(/(\d+)\s*phút/) || [0, 0])[1];
+                totalStopTime += parseInt(hours) * 60 + parseInt(minutes);
+            }
+        });
+        
+        report.stopTime = totalStopTime;
+        
+    } catch (error) {
+        console.error('Lỗi xử lý dừng máy cho report', report.id, ':', error);
+        report.stopTime = 0;
+    }
+}
+
+
+        
+        if (reports.length === 0) {
+            console.log('📊 Không có dữ liệu cho năm', year);
+            return res.json({});
+        }
+        
+        let stopReportsForTime = [];
+try {
+    stopReportsForTime = await new Promise((resolve, reject) => {
+        db.all(`SELECT s.ly_do, s.thoi_gian_dung_may, DATE(COALESCE(b.ngay_phu, b.created_at)) as date, b.may
+                FROM bao_cao_in_dung_may s
+                JOIN bao_cao_in b ON s.bao_cao_id = b.id
+                WHERE strftime('%Y', COALESCE(b.ngay_phu, b.created_at)) = ?
+                AND b.is_started_only = 0
+                AND b.thanh_pham_in IS NOT NULL 
+                AND b.thanh_pham_in != ''
+                AND s.ly_do LIKE '%F12%'`, 
+                [year], (err, rows) => {
+            if (err) {
+                console.error('Lỗi query dừng máy giải lao:', err);
+                resolve([]); // Thay reject thành resolve
+            } else {
+                console.log('📊 Lấy được', rows?.length || 0, 'record dừng máy giải lao');
+                resolve(rows || []);
+            }
+        });
+    });
+} catch (error) {
+    console.error('Lỗi tổng thể khi lấy dữ liệu dừng máy giải lao:', error);
+    stopReportsForTime = [];
+}
+
+
+        
+        // Tính tổng thời gian giải lao theo ngày-máy-ca
+const giaiLaoPerDateMachineShift = {};
+stopReportsForTime.forEach(stop => {
+    // Cần lấy thêm thông tin ca từ báo cáo gốc
+    const matchingReport = reports.find(r => 
+        r.may === stop.may && 
+        r.thoi_gian_bat_dau && 
+        r.thoi_gian_bat_dau.includes(stop.date)
+    );
+    
+    const shift = matchingReport ? matchingReport.ma_ca : 'Unknown';
+    const key = `${stop.date}_${stop.may}_${shift}`;
+    
+    if (!giaiLaoPerDateMachineShift[key]) {
+        giaiLaoPerDateMachineShift[key] = 0;
+    }
+    
+    const duration = stop.thoi_gian_dung_may || '';
+    if (duration.includes('giờ') || duration.includes('phút')) {
+        const hours = (duration.match(/(\d+)\s*giờ/) || [0, 0])[1];
+        const minutes = (duration.match(/(\d+)\s*phút/) || [0, 0])[1];
+        giaiLaoPerDateMachineShift[key] += parseInt(hours) * 60 + parseInt(minutes);
+    }
+});
+        
+        // Định nghĩa thời gian ca (phút)
+const shiftMinutes = {
+    'A': 8 * 60, 'B': 8 * 60, 'C': 8 * 60, 'D': 12 * 60, 
+    'A1': 12 * 60, 'B1': 12 * 60, 'AB': 9 * 60, 'AB-': 8 * 60, 
+    'AB+': 10 * 60, 'HC': 9 * 60
+};
+        
+        // Xử lý dữ liệu theo máy-ca và ngày
+const machineShiftData = {};
+
+reports.forEach(report => {
+    const machine = report.may;
+    const date = report.date;
+    const shift = report.ma_ca;
+    const key = `${machine}_${shift}`;
+    
+    if (!machineShiftData[key]) {
+        machineShiftData[key] = {};
+    }
+    
+    if (!machineShiftData[key][date]) {
+        machineShiftData[key][date] = {
+            machine: machine,
+            shift: shift,
+            totalRunTime: 0,
+            shiftTime: shiftMinutes[shift] || (8 * 60), // Thời gian ca cố định (phút)
+            breakTime: 0
+        };
+    }
+    
+
+    
+    // Tính thời gian chạy máy - SỬA ĐỂ SỬ DỤNG TRỰC TIẾP runTime TỪ DATABASE
+let runTimeMinutes = 0;
+
+// Ưu tiên sử dụng trường runTime đã tính sẵn từ database
+if (report.runTime !== undefined && report.runTime !== null) {
+    runTimeMinutes = parseFloat(report.runTime) || 0;
+} else if (report.thoi_gian_chay_may !== undefined && report.thoi_gian_chay_may !== null) {
+    runTimeMinutes = parseFloat(report.thoi_gian_chay_may) || 0;
+} else {
+    // Chỉ tính toán từ thời gian khi không có sẵn runTime
+    if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+        try {
+            const start = new Date(report.thoi_gian_bat_dau);
+            const end = new Date(report.thoi_gian_ket_thuc);
+            
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                let totalSeconds = (end - start) / 1000;
+                if (totalSeconds < 0) totalSeconds += 24 * 60 * 60;
+                let totalMinutes = totalSeconds / 60;
+                
+                const setupMinutes = parseFloat(report.thoi_gian_canh_may) || 0;
+                const stopMinutes = report.stopTime || 0;
+                runTimeMinutes = Math.max(0, totalMinutes - setupMinutes - stopMinutes);
+            }
+        } catch (timeError) {
+            console.error('Lỗi xử lý thời gian:', timeError);
+            runTimeMinutes = 0;
+        }
+    }
+}
+
+
+
+
+// // DEBUG: Log chi tiết cho ngày 21/7
+// if (date === '2025-07-21' && (report.may === 'KTS' || report.may === '6M1')) {
+//     console.log(`🔍 DEBUG ${report.may} ${date}:`, {
+//         id: report.id,
+//         start: report.thoi_gian_bat_dau,
+//         end: report.thoi_gian_ket_thuc,
+//         totalMinutes: totalMinutes,
+//         setupMinutes: setupMinutes,
+//         stopMinutes: report.stopTime || 0,
+//         runTimeCalculated: runTimeMinutes
+//     });
+// }
+
+
+    
+    machineShiftData[key][date].totalRunTime += runTimeMinutes;
+});
+        
+
+
+
+        // Tính tỷ lệ theo ngày cho từng máy (tổng hợp từ các máy-ca)
+const machinesByDate = {};
+
+// Group theo máy và ngày
+Object.keys(machineShiftData).forEach(key => {
+    const [machine, shift] = key.split('_');
+    
+    Object.keys(machineShiftData[key]).forEach(date => {
+        const data = machineShiftData[key][date];
+        
+        if (!machinesByDate[machine]) {
+            machinesByDate[machine] = {};
+        }
+        
+        if (!machinesByDate[machine][date]) {
+            machinesByDate[machine][date] = {
+                totalRunTime: 0,
+                totalShiftTime: 0,
+                totalBreakTime: 0
+            };
+        }
+        
+// Cộng dồn cho từng máy theo ngày  
+machinesByDate[machine][date].totalRunTime += data.totalRunTime;
+machinesByDate[machine][date].totalShiftTime += data.shiftTime;
+
+// Tính thời gian giải lao cho máy-ca này
+const breakKey = `${date}_${machine}_${shift}`;
+const currentBreakTime = giaiLaoPerDateMachineShift[breakKey] || 0;
+machineShiftData[key][date].breakTime = currentBreakTime;
+machinesByDate[machine][date].totalBreakTime += currentBreakTime;
+    });
+});
+
+// Chuyển đổi thành format cuối cùng
+const finalResult = {};
+Object.keys(machinesByDate).forEach(machine => {
+    finalResult[machine] = [];
+    
+    Object.keys(machinesByDate[machine]).forEach(date => {
+        const data = machinesByDate[machine][date];
+        
+        // Công thức: Tổng thời gian chạy máy / (Tổng thời gian ca - Tổng thời gian giải lao)
+const effectiveWorkTime = data.totalShiftTime - data.totalBreakTime;
+const timeRatio = effectiveWorkTime > 0 ? (data.totalRunTime / effectiveWorkTime) * 100 : 0;
+        
+        finalResult[machine].push({
+            date: date,
+            timeRatio: Math.round(timeRatio * 100) / 100,
+            runTime: data.totalRunTime,
+            workTime: effectiveWorkTime,
+            breakTime: data.totalBreakTime
+        });
+    });
+    
+    // Sắp xếp theo ngày
+    finalResult[machine].sort((a, b) => new Date(a.date) - new Date(b.date));
+});
+
+
+        
+        console.log('📊 Trả về dữ liệu cho', Object.keys(finalResult).length, 'máy');
+        res.json(finalResult);
+        
+    } catch (error) {
+        console.error('Lỗi API yearly-time-data:', error);
+        res.status(500).json({ error: 'Lỗi server: ' + error.message });
+    }
+ });
+
+
+
+// API lấy dữ liệu thành phẩm theo ngày
+router.get('/in/daily-product-data', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    try {
+        const { year } = req.query;
+        
+        if (!year) {
+            return res.status(400).json({ error: 'Thiếu tham số năm' });
+        }
+        
+        console.log('📊 Lấy dữ liệu thành phẩm theo ngày cho năm:', year);
+        
+        // Lấy dữ liệu từ database
+        const reports = await new Promise((resolve, reject) => {
+            db.all(`SELECT 
+                DATE(COALESCE(ngay_phu, created_at)) as date,
+                may,
+                SUM(CAST(thanh_pham_in as REAL)) as total_paper
+                FROM bao_cao_in 
+                WHERE strftime('%Y', COALESCE(ngay_phu, created_at)) = ? 
+                AND is_started_only = 0
+                AND thanh_pham_in IS NOT NULL 
+                AND thanh_pham_in != ''
+                AND may IS NOT NULL 
+                AND may != ''
+                GROUP BY DATE(COALESCE(ngay_phu, created_at)), may
+                ORDER BY date, may`, 
+                [year], (err, rows) => {
+                if (err) {
+                    console.error('Lỗi query thành phẩm theo ngày:', err);
+                    reject(err);
+                } else {
+                    console.log('📊 Lấy được', rows.length, 'records thành phẩm theo ngày');
+                    resolve(rows || []);
+                }
+            });
+        });
+        
+        if (reports.length === 0) {
+            console.log('📊 Không có dữ liệu thành phẩm cho năm', year);
+            return res.json({});
+        }
+        
+        // Xử lý dữ liệu theo máy
+        const machineData = {};
+        
+        reports.forEach(report => {
+            const machine = report.may;
+            const date = report.date;
+            const totalPaper = report.total_paper || 0;
+            
+            if (!machineData[machine]) {
+                machineData[machine] = [];
+            }
+            
+            machineData[machine].push({
+                date: date,
+                totalPaper: totalPaper
+            });
+        });
+        
+        console.log('📊 Trả về dữ liệu thành phẩm cho', Object.keys(machineData).length, 'máy');
+        res.json(machineData);
+        
+    } catch (error) {
+        console.error('Lỗi API daily-product-data:', error);
+        res.status(500).json({ error: 'Lỗi server: ' + error.message });
+    }
+});
+
+
+
+
+
+
+
+
 // Hàm xử lý dữ liệu fallback
 function processFallbackData(fallbackData) {
     const result = {};
@@ -1048,6 +1427,7 @@ function processFallbackData(fallbackData) {
     
     return result;
 }
+
 
 
 

@@ -1,6 +1,24 @@
     const express = require('express');
 const router = express.Router();
 const { db } = require('../db');
+const nodemailer = require('nodemailer');
+
+// Cấu hình email transporter
+const emailTransporter = nodemailer.createTransport({
+    service: 'gmail', // hoặc 'outlook', 'yahoo'
+    auth: {
+        user: process.env.EMAIL_USER || 'rd04@visingpack.com', // Thay bằng email của bạn
+        pass: process.env.EMAIL_PASS || 'aeme fdfg byvv tqns'     // Thay bằng app password
+    }
+});
+
+// Danh sách email nhận cảnh báo
+const ALERT_EMAIL_LIST = [
+    'tuogvy2604@gmail.com',
+    'thien.lam@visingpack.com',
+    // 'supervisor@company.com'
+    // Thêm các email cần nhận cảnh báo
+];
 
 
 function parseFormattedNumber(value) {
@@ -60,6 +78,266 @@ function calculateWeekInMonth(dateString) {
     
     return weekOfMonth;
 }
+
+
+
+
+
+
+
+
+// Hàm tính tốc độ in (s/h)
+function calculatePrintingSpeed(thanhPhamIn, tgChayMayPhut) {
+    if (!thanhPhamIn || parseFloat(thanhPhamIn) === 0) return 0;
+    if (!tgChayMayPhut || tgChayMayPhut === 0) return 0;
+    
+    const speed = (parseFloat(thanhPhamIn) * 60) / tgChayMayPhut;
+    return Math.round(speed);
+}
+
+// Hàm tính tổng thời gian dừng máy (phút)
+function calculateTotalStopTimeMinutes(dungMayArray) {
+    if (!Array.isArray(dungMayArray) || dungMayArray.length === 0) return 0;
+    
+    let totalMinutes = 0;
+    dungMayArray.forEach(stopReport => {
+        if (stopReport.thoiGianDung && stopReport.thoiGianChayLai) {
+            try {
+                const start = new Date(stopReport.thoiGianDung);
+                const end = new Date(stopReport.thoiGianChayLai);
+                const diffMinutes = Math.floor((end - start) / (1000 * 60));
+                if (diffMinutes > 0) totalMinutes += diffMinutes;
+            } catch (error) {
+                console.warn('Lỗi tính thời gian dừng máy:', error);
+            }
+        }
+    });
+    return totalMinutes;
+}
+
+// Hàm gửi email cảnh báo tốc độ
+async function sendSpeedAlertEmail(reportData, speed, thanhPhamIn, tgChayMayPhut) {
+    try {
+        let speedText = '';
+        let alertType = '';
+        
+        if (speed === 0) {
+            speedText = 'Tốc độ = 0 s/h';
+            alertType = 'CẢNH BÁO: Có thành phẩm nhưng tốc độ = 0';
+        } else {
+            speedText = `Tốc độ ${speed.toLocaleString()} s/h`;
+            alertType = 'CẢNH BÁO: Vượt quá 12,000 s/h';
+        }
+
+        const subject = `${alertType} - WS: ${reportData.ws}`;
+        
+        const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
+            <h2 style="color: #d32f2f; text-align: center;">${alertType}</h2>
+            
+            <p><strong>Dear Manager,</strong></p>
+            <p>Hãy kiểm tra thông tin WS dưới đây:</p>
+            
+            <!-- Thông tin chính - Layout ngang -->
+            <div style="display: table; width: 100%; margin: 20px 0;">
+                <div style="display: table-row;">
+                    <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr style="background-color: #e3f2fd;">
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; width: 40%;">WS:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #1976d2;">${reportData.ws || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">Máy:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.may || 'N/A'}</td>
+                            </tr>
+                            <tr style="background-color: #f5f5f5;">
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">KH:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.khach_hang || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">MSP:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.ma_sp || 'N/A'}</td>
+                            </tr>
+                            <tr style="background-color: #f5f5f5;">
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">SL:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.sl_don_hang || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">Số màu:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.so_mau || 'N/A'}</td>
+                            </tr>
+                            <tr style="background-color: #e8f5e8;">
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">Thành phẩm in:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #388e3c;">${thanhPhamIn.toLocaleString()}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr style="background-color: #fff3e0;">
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; width: 40%;">TG Bắt đầu:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px;">${formatDateTime(reportData.thoi_gian_bat_dau)}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">TG Kết thúc:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px;">${formatDateTime(reportData.thoi_gian_ket_thuc)}</td>
+                            </tr>
+                            <tr style="background-color: #f5f5f5;">
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">TG Chạy máy:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #388e3c;">${tgChayMayPhut} phút</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">TG Canh máy:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.thoi_gian_canh_may || '0'} phút</td>
+                            </tr>
+                            <tr style="background-color: #f5f5f5;">
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">TG Dừng máy:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.tg_dung_may || '0'} phút</td>
+                            </tr>
+                            <tr style="background-color: ${speed === 0 ? '#ffebee' : speed > 12000 ? '#fff3e0' : '#f5f5f5'};">
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">Tốc độ:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">${speedText}</td>
+                            </tr>
+                            <tr style="background-color: ${speed === 0 ? '#ffcdd2' : speed > 12000 ? '#ffcc02' : '#f5f5f5'};">
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">Vượt quá:</td>
+                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">
+                                    ${speed === 0 ? 'N/A (Tốc độ = 0)' : speed > 12000 ? `${(speed - 12000).toLocaleString()} s/h` : 'Trong tiêu chuẩn'}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background-color: #ffebee; padding: 20px; border-left: 6px solid #d32f2f; margin: 30px 0; border-radius: 4px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 32px;">⚠️</div>
+                    <div>
+                        <h3 style="margin: 0; color: #d32f2f; font-size: 18px;">CẢNH BÁO TỐC ĐỘ</h3>
+                        <p style="margin: 5px 0 0; color: #d32f2f; font-weight: bold; font-size: 16px;">
+                            ${speed === 0 ? 'Có thành phẩm in nhưng tốc độ = 0' : `Vượt quá tiêu chuẩn ${(speed - 12000).toLocaleString()} s/h`}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <p style="margin: 0; font-size: 16px; color: #495057; line-height: 1.6;">
+                    <strong>🎯 Vui lòng kiểm tra và xử lý ngay lập tức</strong><br>
+                    để đảm bảo chất lượng và hiệu suất sản xuất.
+                </p>
+            </div>
+            
+            <hr style="border: none; border-top: 2px solid #dee2e6; margin: 40px 0;">
+            <div style="text-align: center; background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+                <p style="font-size: 14px; color: #6c757d; margin: 0;">
+                    <strong>Best regards,</strong><br>
+                    🤖 Hệ thống báo cáo tự động<br>
+                    📅 ${new Date().toLocaleString('vi-VN')}
+                </p>
+            </div>
+            
+            <!-- Responsive cho mobile -->
+            <style>
+                @media only screen and (max-width: 600px) {
+                    div[style*="display: table"] {
+                        display: block !important;
+                    }
+                    div[style*="display: table-row"] {
+                        display: block !important;
+                    }
+                    div[style*="display: table-cell"] {
+                        display: block !important;
+                        width: 100% !important;
+                        padding: 0 !important;
+                        margin-bottom: 20px !important;
+                    }
+                }
+            </style>
+        </div>
+        `;
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER || 'rd04@visingpack.com',
+            to: ALERT_EMAIL_LIST.join(','),
+            subject: subject,
+            html: htmlContent
+        };
+
+        const result = await emailTransporter.sendMail(mailOptions);
+        
+        console.log('✅ Đã gửi email cảnh báo tốc độ thành công:', {
+            ws: reportData.ws,
+            speed: speed,
+            messageId: result.messageId,
+            recipients: ALERT_EMAIL_LIST.length
+        });
+        
+        return true;
+
+    } catch (error) {
+        console.error('❌ Lỗi khi gửi email cảnh báo tốc độ:', error);
+        return false;
+    }
+}
+
+// Hàm format datetime cho email
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+        return new Date(dateString).toLocaleString('vi-VN');
+    } catch (error) {
+        return dateString;
+    }
+}
+
+// Hàm kiểm tra và gửi email cảnh báo tốc độ
+async function checkAndSendSpeedAlert(reportData, thanhPhamIn, tgChayMayPhut) {
+    try {
+        const speed = calculatePrintingSpeed(thanhPhamIn, tgChayMayPhut);
+        
+        // Điều kiện gửi email: tốc độ > 12000 hoặc (tốc độ = 0 và có thành phẩm in > 0)
+        const shouldAlert = (speed > 12000) || (speed === 0 && parseFloat(thanhPhamIn) > 0);
+        
+        if (shouldAlert) {
+            console.log('🚨 Phát hiện tốc độ bất thường:', {
+                ws: reportData.ws,
+                speed: speed,
+                thanhPhamIn: thanhPhamIn,
+                tgChayMayPhut: tgChayMayPhut
+            });
+            
+            // Gửi email cảnh báo
+            await sendSpeedAlertEmail(reportData, speed, thanhPhamIn, tgChayMayPhut);
+        }
+        
+        return { speed, shouldAlert };
+    } catch (error) {
+        console.error('Lỗi khi kiểm tra và gửi cảnh báo tốc độ:', error);
+        return { speed: 0, shouldAlert: false };
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Hàm tính số lần chạy
@@ -665,6 +943,49 @@ router.post('/submit', async (req, res) => {
             });
 
             await Promise.all(insertPromises);
+
+
+
+            // Kiểm tra tốc độ và gửi email cảnh báo
+try {
+    const thanhPhamInValue = parseFloat(ketThuc.thanhphamin || '0');
+    
+    if (thanhPhamInValue > 0) {
+        const tgCanhMay = parseInt(ketThuc.canhmay || '0');
+        const tgDungMay = calculateTotalStopTimeMinutes(reportData.dungMay || []);
+        
+        let tgTongPhut = 0;
+        if (batDau.thoiGianBatDau && ketThuc.thoiGianKetThuc) {
+            const startTime = new Date(batDau.thoiGianBatDau);
+            const endTime = new Date(ketThuc.thoiGianKetThuc);
+            tgTongPhut = Math.floor((endTime - startTime) / (1000 * 60));
+        }
+        
+        const tgChayMayPhut = Math.max(0, tgTongPhut - tgCanhMay - tgDungMay);
+        
+        const alertData = {
+            ws: batDau.ws,
+            may: batDau.may,
+            khach_hang: wsData.khachHang,
+            ma_sp: wsData.maSP,
+            sl_don_hang: wsData.slDonHang,
+            so_mau: wsData.soMau,
+            thoi_gian_bat_dau: batDau.thoiGianBatDau,
+            thoi_gian_ket_thuc: ketThuc.thoiGianKetThuc,
+            thoi_gian_canh_may: tgCanhMay,
+            tg_dung_may: tgDungMay
+        };
+        
+        checkAndSendSpeedAlert(alertData, thanhPhamInValue, tgChayMayPhut).catch(error => {
+            console.error('Lỗi gửi email cảnh báo tốc độ:', error);
+        });
+    }
+} catch (error) {
+    console.error('Lỗi khi kiểm tra tốc độ:', error);
+}
+
+
+
         }
 
         res.json({
@@ -1154,6 +1475,54 @@ await new Promise((resolve, reject) => {
         resolve(); // Không reject để không ảnh hưởng luồng chính
     });
 });
+
+
+
+
+
+
+
+
+// Kiểm tra tốc độ và gửi email cảnh báo
+try {
+    const thanhPhamInValue = parseFloat(ketThuc.thanhphamin || '0');
+    
+    if (thanhPhamInValue > 0) {
+        const tgCanhMay = parseInt(ketThuc.canhmay || '0');
+        const tgDungMay = calculateTotalStopTimeMinutes(dungMay || []);
+        
+        let tgTongPhut = 0;
+        if (currentReport.thoi_gian_bat_dau && ketThuc.thoiGianKetThuc) {
+            const startTime = new Date(currentReport.thoi_gian_bat_dau);
+            const endTime = new Date(ketThuc.thoiGianKetThuc);
+            tgTongPhut = Math.floor((endTime - startTime) / (1000 * 60));
+        }
+        
+        const tgChayMayPhut = Math.max(0, tgTongPhut - tgCanhMay - tgDungMay);
+        
+        const alertData = {
+            ws: currentReport.ws,
+            may: currentReport.may,
+            khach_hang: currentReport.khach_hang,
+            ma_sp: currentReport.ma_sp,
+            sl_don_hang: currentReport.sl_don_hang,
+            so_mau: currentReport.so_mau,
+            thoi_gian_bat_dau: currentReport.thoi_gian_bat_dau,
+            thoi_gian_ket_thuc: ketThuc.thoiGianKetThuc,
+            thoi_gian_canh_may: tgCanhMay,
+            tg_dung_may: tgDungMay
+        };
+        
+        // Gửi email cảnh báo (không chờ kết quả để không ảnh hưởng response)
+        checkAndSendSpeedAlert(alertData, thanhPhamInValue, tgChayMayPhut).catch(error => {
+            console.error('Lỗi gửi email cảnh báo tốc độ:', error);
+        });
+    }
+} catch (error) {
+    console.error('Lỗi khi kiểm tra tốc độ:', error);
+}
+
+
 
 
 

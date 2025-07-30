@@ -647,6 +647,7 @@ function initializeForm() {
     // Tải danh sách người dùng sản xuất
 loadUserOptions();
 
+
     // Thiết lập sự kiện cho select xả đôi
     setupXaDoiSelect();
 
@@ -948,7 +949,7 @@ document.addEventListener('DOMContentLoaded', function () {
 //todo Tải danh sách người dùng sản xuất cho các dropdown========================================
 async function loadUserOptions() {
     try {
-        const moduleId = 'gmc'; // Module ID cho GMC
+        const moduleId = 'gmcnm1'; // Module ID cho GMC
 
         // Lấy danh sách người dùng sản xuất theo chức vụ
         const [quanDocResponse, phuMay1Response, phuMay2Response] = await Promise.all([
