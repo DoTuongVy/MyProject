@@ -7,6 +7,37 @@
 
 console.log('🚀 Bắt đầu khởi tạo hệ thống báo cáo In Offset...');
 
+
+
+
+// Thêm CSS cho offline indicator
+const offlineCSS = `
+.offline-indicator {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    background: #ff9800;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 9999;
+    display: none;
+}
+.offline-indicator.show {
+    display: block;
+}
+`;
+
+if (!document.getElementById('offlineStyles')) {
+    const style = document.createElement('style');
+    style.id = 'offlineStyles';
+    style.textContent = offlineCSS;
+    document.head.appendChild(style);
+}
+
+
+
 // ====================================================================================================================================
 // BIẾN TOÀN CỤC VÀ CẤU HÌNH
 // ====================================================================================================================================
@@ -81,8 +112,144 @@ function initializeInSystem() {
     }, 500);
 
 
+// Cập nhật options giờ làm việc dựa vào giờ hiện tại
+setTimeout(() => {
+    updateShiftOptionsBasedOnCurrentTime();
+}, 800);
+
+
+
+
+
+// Kiểm tra và xử lý queue offline khi khởi tạo
+setTimeout(() => {
+    processOfflineQueue();
+}, 2000);
+
+
+
 }
 
+
+
+// Xử lý đồng bộ offline queue
+async function processOfflineQueue() {
+    if (!navigator.onLine) return;
+    
+    const offlineQueue = JSON.parse(localStorage.getItem('offlineReportQueue') || '[]');
+    if (offlineQueue.length === 0) return;
+    
+    console.log(`🔄 Xử lý ${offlineQueue.length} báo cáo offline...`);
+    
+    const processedItems = [];
+    
+    for (const item of offlineQueue) {
+        try {
+        if (item.type === 'update-end') {
+            console.log('🔄 Đồng bộ cập nhật báo cáo:', item.reportId);
+            
+            const response = await fetch(`/api/bao-cao-in/update-end/${item.reportId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item.reportData)
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                processedItems.push(item);
+                console.log('✅ Đã đồng bộ cập nhật báo cáo offline, ID:', result.id || item.reportId);
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Lỗi đồng bộ cập nhật báo cáo:', response.status, errorText);
+            }
+        } else if (item.type === 'complete') {
+                // CHỈ CÒN CASE NÀY
+                console.log('🔄 Đồng bộ báo cáo hoàn chỉnh:', item.reportId);
+                
+                const response = await fetch('/api/bao-cao-in/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...item.reportData,
+                        timestamp: item.timestamp,
+                        type: item.type
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    processedItems.push(item);
+                    console.log('✅ Đã đồng bộ báo cáo hoàn chỉnh offline, ID server:', result.id);
+                } else {
+                    const errorText = await response.text();
+                    console.error('❌ Lỗi đồng bộ báo cáo hoàn chỉnh:', response.status, errorText);
+                }
+            } else {
+                // Xóa các type không hỗ trợ khỏi queue
+                console.log('🗑️ Xóa type không hỗ trợ:', item.type);
+                processedItems.push(item);
+            }
+        } catch (error) {
+            console.error('Lỗi đồng bộ offline:', error);
+        }
+    }
+    
+// Xóa các item đã xử lý thành công
+if (processedItems.length > 0) {
+    const currentQueue = JSON.parse(localStorage.getItem('offlineReportQueue') || '[]');
+    
+    // Tạo key unique cho việc so sánh
+    const getItemKey = (item) => `${item.type}_${item.reportId || item.tempReportId}_${item.timestamp}`;
+    
+    const processedKeys = processedItems.map(getItemKey);
+    const remainingQueue = currentQueue.filter(item => !processedKeys.includes(getItemKey(item)));
+    
+    localStorage.setItem('offlineReportQueue', JSON.stringify(remainingQueue));
+    
+    console.log('🔍 Processed keys:', processedKeys);
+    console.log('🔍 Remaining after filter:', remainingQueue.length);
+    
+    // Cập nhật indicator ngay lập tức
+    updateOfflineIndicator();
+    
+    if (remainingQueue.length === 0) {
+        showNotification(`Đã đồng bộ ${processedItems.length} báo cáo offline thành công!`, 'success');
+    } else {
+        showNotification(`Đã đồng bộ ${processedItems.length}/${offlineQueue.length} báo cáo. Còn ${remainingQueue.length} báo cáo chờ xử lý.`, 'info');
+    }
+}
+}
+
+
+
+
+
+// Cập nhật trạng thái offline indicator
+function updateOfflineIndicator() {
+    const indicator = document.getElementById('offlineIndicator');
+    if (!indicator) return;
+    
+    const offlineQueue = JSON.parse(localStorage.getItem('offlineReportQueue') || '[]');
+    const isOnline = navigator.onLine;
+    
+   // Chỉ đếm báo cáo hoàn chỉnh
+const completeReports = offlineQueue.filter(item => item.type === 'complete').length;
+const totalReports = offlineQueue.length;
+
+if (!isOnline) {
+    indicator.classList.add('show');
+    let message = '📡 Offline';
+    if (totalReports > 0) {
+        message += ` - ${completeReports} báo cáo chờ đồng bộ`;
+    }
+    indicator.innerHTML = message;
+} else if (totalReports > 0) {
+        indicator.classList.add('show');
+        indicator.innerHTML = `🔄 Đang đồng bộ ${totalReports} báo cáo...`;
+    } else {
+        indicator.classList.remove('show');
+    }
+}
 
 
 
@@ -119,6 +286,40 @@ function showWaitingReportModal(waitingReport) {
     window.currentWaitingReport = waitingReport;
     
     const modal = new bootstrap.Modal(document.getElementById('waitingListModal'));
+
+
+
+    // Thêm event listener cho các nút đóng modal
+const modalElement = document.getElementById('waitingListModal');
+
+// Event cho nút X (btn-close)
+const closeButton = modalElement.querySelector('.btn-close');
+if (closeButton) {
+    closeButton.addEventListener('click', function() {
+        loadWaitingListCard();
+    });
+}
+
+// Event cho nút Đóng (nếu có)
+const cancelButton = modalElement.querySelector('.btn-secondary[data-bs-dismiss="modal"]');
+if (cancelButton) {
+    cancelButton.addEventListener('click', function() {
+        loadWaitingListCard();
+    });
+}
+
+// Event cho backdrop click (click bên ngoài modal)
+modalElement.addEventListener('hidden.bs.modal', function() {
+    // Chỉ load waiting list nếu modal bị đóng mà không phải do bấm "Tiếp tục"
+    if (!modalElement.hasAttribute('data-continued')) {
+        loadWaitingListCard();
+    }
+    // Reset attribute
+    modalElement.removeAttribute('data-continued');
+});
+
+
+
     modal.show();
 }
 
@@ -138,6 +339,12 @@ function continueWaitingReport() {
 // Bỏ qua báo cáo chờ
 function skipWaitingReport() {
     // Đóng modal và hiển thị card danh sách chờ
+
+    // Đánh dấu là đã bấm tiếp tục để không load waiting list
+const modalElement = document.getElementById('waitingListModal');
+modalElement.setAttribute('data-continued', 'true');
+
+
     const modal = bootstrap.Modal.getInstance(document.getElementById('waitingListModal'));
     modal.hide();
     
@@ -151,6 +358,25 @@ function skipWaitingReport() {
 // ====================================================================================================================================
 
 function setupInEvents() {
+
+
+// Tạo offline indicator
+if (!document.getElementById('offlineIndicator')) {
+    const indicator = document.createElement('div');
+    indicator.id = 'offlineIndicator';
+    indicator.className = 'offline-indicator';
+    indicator.innerHTML = '📡 Offline - Dữ liệu sẽ đồng bộ khi có mạng';
+    document.body.appendChild(indicator);
+}
+
+// Gọi update indicator
+setTimeout(() => {
+    updateOfflineIndicator();
+    setInterval(updateOfflineIndicator, 5000);
+}, 1000);
+
+
+
     // Event cho nút bắt đầu
     const startButton = document.querySelector('.btn-success');
     if (startButton) {
@@ -285,7 +511,82 @@ if (stopMachineModal) {
 
 
 
+
+    // Xử lý khi có mạng trở lại
+window.addEventListener('online', () => {
+    console.log('🌐 Mạng đã kết nối, xử lý queue offline...');
+    showNotification('Mạng đã kết nối. Đang đồng bộ dữ liệu...', 'info');
+    setTimeout(() => {
+        processOfflineQueue();
+    }, 1000);
+});
+
+// Hiển thị trạng thái offline
+window.addEventListener('offline', () => {
+    showNotification('Mất kết nối mạng. Báo cáo sẽ được lưu offline.', 'warning');
+});
+
+
+
+
+// Event cho click vào text checkbox
+const mau3toneLabel = document.querySelector('label[for="mau3tone"]');
+const matsauLabel = document.querySelector('label[for="matsau"]');
+
+if (mau3toneLabel) {
+    mau3toneLabel.addEventListener('click', function(e) {
+        const checkbox = document.getElementById('mau3tone');
+        if (checkbox && e.target !== checkbox) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+        }
+    });
 }
+
+if (matsauLabel) {
+    matsauLabel.addEventListener('click', function(e) {
+        const checkbox = document.getElementById('matsau');
+        if (checkbox && e.target !== checkbox) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+// Nếu không có label, thêm event cho text gần checkbox
+const mau3toneText = document.querySelector('input[id="mau3tone"] + *'); // Element sau checkbox
+const matsauText = document.querySelector('input[id="matsau"] + *');
+
+if (mau3toneText && !mau3toneLabel) {
+    mau3toneText.style.cursor = 'pointer';
+    mau3toneText.addEventListener('click', function() {
+        const checkbox = document.getElementById('mau3tone');
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+if (matsauText && !matsauLabel) {
+    matsauText.style.cursor = 'pointer';
+    matsauText.addEventListener('click', function() {
+        const checkbox = document.getElementById('matsau');
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+
+
+}
+
+
+
+
+
 
 
 
@@ -744,35 +1045,29 @@ function handleTuychonLogic(tuychonValue) {
             // Enable phủ keo và đánh dấu bắt buộc
             phuKeoSelect.disabled = false;
             phuKeoSelect.style.backgroundColor = '';
-            // phuKeoSelect.style.borderColor = 'red';
-            // phuKeoSelect.style.borderWidth = '2px';
             phuKeoSelect.required = true;
-
-            // Thêm chú thích bắt buộc
-            // addRequiredIndicator('phukeo', 'Bắt buộc chọn khi có cán bóng');
             break;
-
-            case '7': // In dặm (Gia công)
-    // Disable phủ keo và không bắt buộc
-    phuKeoSelect.disabled = true;
-    phuKeoSelect.selectedIndex = 0;
-    phuKeoSelect.style.backgroundColor = '#f8f9fa';
-    phuKeoSelect.style.borderColor = '';
-    phuKeoSelect.style.borderWidth = '';
-    phuKeoSelect.required = false;
-
-    // Xóa chú thích bắt buộc
-    removeRequiredIndicator('phukeo');
-    break;
-
-case '8': // In dặm + Cán bóng (Gia công)
-case '9': // Cán bóng lại (Gia công)
-    // Enable phủ keo và đánh dấu bắt buộc
-    phuKeoSelect.disabled = false;
-    phuKeoSelect.style.backgroundColor = '';
-    phuKeoSelect.required = true;
-    break;
-
+    
+        case '7': // In dặm (Gia công)
+            // Disable phủ keo và không bắt buộc
+            phuKeoSelect.disabled = true;
+            phuKeoSelect.selectedIndex = 0;
+            phuKeoSelect.style.backgroundColor = '#f8f9fa';
+            phuKeoSelect.style.borderColor = '';
+            phuKeoSelect.style.borderWidth = '';
+            phuKeoSelect.required = false;
+            removeRequiredIndicator('phukeo');
+            phuKeoSelect.blur();
+            break;
+    
+        case '8': // In dặm + Cán bóng (Gia công)
+        case '9': // Cán bóng lại (Gia công)
+            // Enable phủ keo và đánh dấu bắt buộc
+            phuKeoSelect.disabled = false;
+            phuKeoSelect.style.backgroundColor = '';
+            phuKeoSelect.required = true;
+            break;
+    
         case '1': // In
         case '4': // In dặm
             // Disable phủ keo và không bắt buộc
@@ -782,11 +1077,10 @@ case '9': // Cán bóng lại (Gia công)
             phuKeoSelect.style.borderColor = '';
             phuKeoSelect.style.borderWidth = '';
             phuKeoSelect.required = false;
-
-            // Xóa chú thích bắt buộc
             removeRequiredIndicator('phukeo');
+            phuKeoSelect.blur();
             break;
-
+    
         default:
             // Mặc định enable nhưng không bắt buộc
             phuKeoSelect.disabled = false;
@@ -794,9 +1088,8 @@ case '9': // Cán bóng lại (Gia công)
             phuKeoSelect.style.borderColor = '';
             phuKeoSelect.style.borderWidth = '';
             phuKeoSelect.required = false;
-
-            // Xóa chú thích bắt buộc
             removeRequiredIndicator('phukeo');
+            phuKeoSelect.blur();
             break;
     }
 
@@ -873,6 +1166,21 @@ if (!startData) {
 }
 
         updateInLoadingText('Đang gửi báo cáo bắt đầu...', 'Kết nối server');
+
+
+
+
+// Kiểm tra kết nối mạng trước khi gửi
+if (!navigator.onLine) {
+    // Không lưu báo cáo bắt đầu riêng lẻ khi offline
+    // Chỉ cập nhật UI và đợi người dùng hoàn thành báo cáo
+    currentReportId = 'offline_temp_' + Date.now().toString();
+    updateUIAfterStart();
+    hideInLoading();
+    showNotification('Offline: Vui lòng hoàn thành báo cáo. Sẽ lưu toàn bộ khi xác nhận.', 'warning');
+    return;
+}
+
 
         // Xác định API endpoint
         const apiEndpoint = currentReportId ?
@@ -1106,10 +1414,35 @@ async function restoreStartedReportData() {
     try {
         // Gọi API để lấy dữ liệu báo cáo
         const response = await fetch(`/api/bao-cao-in/${currentReportId}`);
-        if (!response.ok) {
-            console.warn('Không thể lấy dữ liệu báo cáo đã bắt đầu');
-            return;
-        }
+if (!response.ok) {
+    console.warn('Không thể lấy dữ liệu báo cáo đã bắt đầu, reset trạng thái');
+    
+    // Reset trạng thái nếu báo cáo không tồn tại
+    currentReportId = null;
+    isStarted = false;
+    startTime = null;
+    hasValidStartTime = false;
+    
+    // Cập nhật UI về trạng thái ban đầu
+    const startButton = document.querySelector('.btn-success');
+    if (startButton) {
+        startButton.style.display = 'none'; // Ẩn nút để chờ tiến độ 100%
+    }
+    
+    // Xóa thời gian hiển thị
+    const startTimeElement = document.getElementById('startTime');
+    if (startTimeElement) {
+        startTimeElement.textContent = '';
+    }
+    
+    // Cập nhật tiến độ
+    updateInProgress();
+    
+    // Xóa form state cũ
+    clearFormState();
+    
+    return;
+}
 
         const reportData = await response.json();
 
@@ -1221,7 +1554,7 @@ if (passSelect) { // THÊM KIỂM TRA
         // Đảm bảo các trường được phép chỉnh sửa không bị disable
         const editableFields = [
             'quandoc', 'gioLamViec', 'phumay1', 'phumay2', 'ws', 'tuychon',
-            'sokem', 'mau3tone', 'matsau', 'phukeo', 'phunbot'
+            'sokem', 'mau3tone', 'matsau', 'phunbot'
         ];
 
         editableFields.forEach(fieldId => {
@@ -1248,6 +1581,13 @@ if (passSelect) { // THÊM KIỂM TRA
         }
 
 
+        // Áp dụng lại logic tùy chọn để đảm bảo phủ keo đúng trạng thái
+const tuychonValue = getSelectValue('tuychon');
+if (tuychonValue) {
+    handleTuychonLogic(tuychonValue);
+}
+
+
         // Cập nhật tiến độ
         setTimeout(() => {
             updateInProgress();
@@ -1266,6 +1606,7 @@ if (passSelect) { // THÊM KIỂM TRA
 
 // Xử lý khi bấm nút xác nhận
 async function handleConfirmReport() {
+    
     try {
         console.log('=== KIỂM TRA THÔNG TIN BÁO CÁO IN ===');
 
@@ -1390,6 +1731,47 @@ async function collectEndReportData() {
         return null;
     }
 }
+
+
+
+
+
+// Thu thập dữ liệu báo cáo bắt đầu (tương tự collectStartReportData cũ)
+async function collectStartReportData() {
+    try {
+        const currentUser = getCurrentUser();
+        const machineId = getCurrentMachineId();
+
+        const startData = {
+            may: machineId,
+            quanDoc: getSelectText('quandoc'),
+            ca: getInputValue('ca'),
+            gioLamViec: getSelectText('gioLamViec'),
+            maCa: getInputValue('maCa'),
+            truongMay: getInputValue('truongmay'),
+            ws: getInputValue('ws'),
+            tuychon: getSelectText('tuychon'),
+            mau3tone: getCheckboxValue('mau3tone'),
+            sokem: getInputValue('sokem'),
+            matsau: getCheckboxValue('matsau'),
+            phukeo: getSelectValue('phukeo'),
+            phunbot: getInputValue('phunbot'),
+            phumay1: getSelectText('phumay1'),
+            phumay2: getSelectText('phumay2'),
+            soPassIn: getSelectText('pass'),
+            thoiGianBatDau: startTime ? startTime.toISOString() : new Date().toISOString(),
+            nguoiThucHien: getCurrentUserFullName()
+        };
+
+        return startData;
+
+    } catch (error) {
+        console.error('Lỗi khi thu thập dữ liệu bắt đầu:', error);
+        return null;
+    }
+}
+
+
 
 
 
@@ -2793,14 +3175,24 @@ console.log('🔄 Khôi phục trạng thái thời gian:', hasValidStartTime ? 
                     }, 600);
                 })
                 .catch(error => {
-                    console.warn('Không thể kiểm tra báo cáo, giữ nguyên trạng thái form:', error);
-                    // Không reset trạng thái để tránh mất dữ liệu khi có lỗi mạng
-                    // Chỉ reset reportId để tránh xung đột
+                    console.warn('Không thể kiểm tra báo cáo, reset trạng thái:', error);
+                    
+                    // Reset hoàn toàn trạng thái
                     currentReportId = null;
                     isStarted = false;
                     startTime = null;
+                    hasValidStartTime = false;
                     
-                    // Vẫn cập nhật UI để người dùng có thể tiếp tục làm việc
+                    // Xóa form state
+                    clearFormState();
+                    
+                    // Ẩn nút bắt đầu để chờ tiến độ 100%
+                    const startButton = document.querySelector('.btn-success');
+                    if (startButton) {
+                        startButton.style.display = 'none';
+                    }
+                    
+                    // Cập nhật UI
                     updateInProgress();
                 });
         } else if (currentReportId && !isStarted) {
@@ -2954,6 +3346,15 @@ function executeFormRestore() {
         if (formData.tuychon) setSelectValue('tuychon', formData.tuychon);
         if (formData.phukeo) setSelectValue('phukeo', formData.phukeo);
 
+
+// Áp dụng logic tùy chọn sau khi restore
+if (formData.tuychon) {
+    const tuychonValue = document.getElementById('tuychon')?.value;
+    if (tuychonValue) {
+        handleTuychonLogic(tuychonValue);
+    }
+}
+
         // Khôi phục pass in với xử lý đặc biệt
         if (formData.passActualValue !== undefined) {
             const passSelect = document.getElementById('pass');
@@ -3092,6 +3493,15 @@ setTimeout(() => {
     saveFormDataByMachine();
 }, 200);
 
+
+// Cập nhật options giờ làm việc sau khi restore
+setTimeout(() => {
+    updateShiftOptionsBasedOnCurrentTime();
+}, 300);
+
+
+
+
     } catch (error) {
         console.error('Lỗi khi thực hiện khôi phục form:', error);
         delete window.pendingFormRestore;
@@ -3208,6 +3618,14 @@ if (startTimeElement) {
 }
 
 
+
+// Cập nhật options giờ làm việc cho báo cáo chờ
+setTimeout(() => {
+    updateShiftOptionsBasedOnCurrentTime();
+}, 1000);
+
+
+
         
         console.log('Đã khôi phục báo cáo chờ vào form');
         
@@ -3245,8 +3663,8 @@ function showWaitingListCard(waitingList) {
             <div class="border rounded p-2 mb-2">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <strong>WS: ${item.ws || 'Không có'}</strong><br>
-                        <small>${item.tuy_chon || ''} - ${formatDateTime(item.thoi_gian_bat_dau)}</small>
+                        <strong style="color : blue">WS: ${item.ws || 'Không có'}</strong><br>
+                        <small>Tùy chọn : <strong>${item.tuy_chon || ''}</strong>  -  Thời gian bắt đầu : <strong>${formatDateTimeCustom(item.thoi_gian_bat_dau)}</strong></small>
                     </div>
                     <div>
                         <button class="btn btn-sm btn-primary me-1" onclick="loadWaitingReport('${item.id}')">
@@ -3475,6 +3893,18 @@ if (startButton) {
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Reset tất cả elements trong form
 function resetAllFormElements() {
@@ -3993,6 +4423,48 @@ function formatDateTime(dateTimeString) {
         return dateTimeString; // Trả về giá trị gốc nếu có lỗi
     }
 }
+
+
+
+
+// Format datetime dạng HH:mm:ss DD/MM/YYYY
+function formatDateTimeCustom(dateTimeString) {
+    if (!dateTimeString) return '';
+
+    try {
+        let date;
+        
+        if (dateTimeString.includes('T')) {
+            date = new Date(dateTimeString);
+        } else if (dateTimeString.includes('-') && dateTimeString.includes(':')) {
+            date = new Date(dateTimeString);
+        } else {
+            date = new Date(dateTimeString);
+        }
+        
+        if (isNaN(date.getTime())) {
+            return dateTimeString;
+        }
+        
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        
+        return `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
+    } catch (error) {
+        console.warn('Lỗi format datetime custom:', error, 'Input:', dateTimeString);
+        return dateTimeString;
+    }
+}
+
+
+
+
+
+
 
 
 // ====================================================================================================================================
@@ -6932,65 +7404,330 @@ async function handleFinalConfirm() {
     }
 }
 
+
+
+
+
 // Thực hiện gửi báo cáo (code từ hàm handleConfirmReport cũ)
 async function executeReportSubmission() {
     showInLoading('Đang xử lý báo cáo...', 'Cập nhật dữ liệu');
 
-    // Thu thập dữ liệu kết thúc
-    const endData = await collectEndReportData();
-    if (!endData) {
-        hideInLoading();
-        return;
-    }
-
-    const startButton = document.querySelector('.btn-success');
-    if (startButton) {
-        startButton.textContent = 'Bắt Đầu';
-        startButton.classList.remove('btn-warning');
-        startButton.classList.add('btn-success');
-        startButton.style.display = 'inline-block';
-    }
-
-    updateInLoadingText('Đang gửi báo cáo...', 'Cập nhật dữ liệu');
-
-    // Gửi dữ liệu cập nhật
-    const response = await fetch(`/api/bao-cao-in/update-end/${currentReportId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(endData),
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-    }
-
-    const result = await response.json();
-    
-    // Cập nhật các báo cáo liên quan
-    if (result.success) {
-        await updateRelatedReportsAfterSubmit();
-        
-        const tuychonValue = getSelectValue('tuychon');
-        if (['4', '5', '6'].includes(tuychonValue)) {
-            console.log('🔄 Đã submit waste process, các báo cáo production sẽ được cập nhật thành phẩm');
+    try {
+        // Thu thập dữ liệu kết thúc
+        const endData = await collectEndReportData();
+        if (!endData) {
+            hideInLoading();
+            return;
         }
+
+        const startButton = document.querySelector('.btn-success');
+        if (startButton) {
+            startButton.textContent = 'Bắt Đầu';
+            startButton.classList.remove('btn-warning');
+            startButton.classList.add('btn-success');
+            startButton.style.display = 'inline-block';
+        }
+
+        updateInLoadingText('Đang gửi báo cáo...', 'Cập nhật dữ liệu');
+
+        const isAlreadyStarted = currentReportId && 
+            !currentReportId.toString().startsWith('offline_') && 
+            hasValidStartTime && 
+            isStarted;
+
+        console.log('🔍 Kiểm tra trạng thái:', {
+            currentReportId,
+            hasValidStartTime,
+            isStarted,
+            isAlreadyStarted
+        });
+
+        // Kiểm tra kết nối mạng
+        if (!navigator.onLine) {
+            if (isAlreadyStarted) {
+                console.log('📤 Offline: Lưu cập nhật báo cáo đã bắt đầu');
+                
+                // Lưu dữ liệu cập nhật cho báo cáo đã có
+                const updateOfflineReport = {
+                    reportId: currentReportId,
+                    reportData: endData,
+                    timestamp: new Date().toISOString(),
+                    type: 'update-end',
+                    machineId: getCurrentMachineId()
+                };
+                
+                const offlineQueue = JSON.parse(localStorage.getItem('offlineReportQueue') || '[]');
+                offlineQueue.push(updateOfflineReport);
+                localStorage.setItem('offlineReportQueue', JSON.stringify(offlineQueue));
+                
+                hideInLoading();
+                showNotification('Cập nhật báo cáo đã được lưu offline. Sẽ gửi khi có mạng.', 'success');
+                
+                // Reset form sau khi lưu thành công
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                resetFormButKeepUserFields();
+                return;
+            } else {
+                console.log('📤 Offline: Tạo báo cáo hoàn chỉnh mới');
+                
+                // Thu thập dữ liệu bắt đầu
+                const startData = await collectStartReportData();
+                if (!startData) {
+                    hideInLoading();
+                    return;
+                }
+                
+                // Tạo báo cáo hoàn chỉnh theo đúng format API /submit
+                const completeOfflineReport = {
+                    reportId: 'complete_' + Date.now().toString(),
+                    reportData: {
+                        batDau: startData,
+                        ketThuc: endData.ketThuc,
+                        dungMay: endData.dungMay,
+                        nguoiDung: getCurrentUser()
+                    },
+                    timestamp: new Date().toISOString(),
+                    type: 'complete',
+                    machineId: getCurrentMachineId()
+                };
+                
+                const offlineQueue = JSON.parse(localStorage.getItem('offlineReportQueue') || '[]');
+                offlineQueue.push(completeOfflineReport);
+                localStorage.setItem('offlineReportQueue', JSON.stringify(offlineQueue));
+                
+                hideInLoading();
+                showNotification('Báo cáo hoàn chỉnh đã được lưu offline. Sẽ gửi khi có mạng.', 'success');
+                
+                // Reset form sau khi lưu thành công
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                resetFormButKeepUserFields();
+                return;
+            }
+        }
+
+        // === XỬ LÝ KHI CÓ MẠNG ===
+        // Gửi dữ liệu cập nhật
+        const response = await fetch(`/api/bao-cao-in/update-end/${currentReportId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(endData),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const result = await response.json();
+        
+        // Cập nhật các báo cáo liên quan
+        if (result.success) {
+            await updateRelatedReportsAfterSubmit();
+            
+            const tuychonValue = getSelectValue('tuychon');
+            if (['4', '5', '6'].includes(tuychonValue)) {
+                console.log('🔄 Đã submit waste process, các báo cáo production sẽ được cập nhật thành phẩm');
+            }
+        }
+
+        updateInLoadingText('Hoàn tất!', 'Báo cáo đã được lưu');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        hideInLoading();
+        showNotification('Đã lưu báo cáo In thành công!', 'success');
+
+        // Reset form
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        resetFormButKeepUserFields();
+
+        console.log('✅ Đã xác nhận báo cáo In thành công');
+
+    } catch (error) {
+        console.error('Lỗi khi gửi báo cáo cuối cùng:', error);
+        hideInLoading();
+        showNotification('Lỗi khi gửi báo cáo: ' + error.message, 'error');
     }
-
-    updateInLoadingText('Hoàn tất!', 'Báo cáo đã được lưu');
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    hideInLoading();
-    showNotification('Đã lưu báo cáo In thành công!', 'success');
-
-    // Reset form
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    resetFormButKeepUserFields();
-
-    console.log('✅ Đã xác nhận báo cáo In thành công');
 }
+
+
+
+
+// ====================================================================================================================================
+// XỬ LÝ TỰ ĐỘNG CHỌN GIỜ LÀM VIỆC THEO GIỜ HIỆN TẠI
+// ====================================================================================================================================
+
+// Lấy giờ hiện tại (online hoặc local)
+async function getCurrentHour() {
+    try {
+        // Thử lấy giờ online trước
+        const response = await fetch('http://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh', {
+            timeout: 3000
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const currentTime = new Date(data.datetime);
+            console.log('✅ Lấy giờ online thành công:', currentTime.getHours());
+            return currentTime.getHours();
+        }
+    } catch (error) {
+        console.warn('⚠️ Không thể lấy giờ online, sử dụng giờ local');
+    }
+    
+    // Fallback về giờ local nếu không lấy được online
+    const localTime = new Date();
+    console.log('✅ Sử dụng giờ local:', localTime.getHours());
+    return localTime.getHours();
+}
+
+// Kiểm tra ca làm việc có phù hợp với giờ hiện tại không
+function isShiftValidForCurrentHour(shiftValue, currentHour) {
+    const shifts = {
+        '0': { start: 6, end: 14, name: '6H - 14H' },      // A
+        '1': { start: 14, end: 22, name: '14H - 22H' },    // B
+        '2': { start: 22, end: 6, name: '22H - 6H' },      // C (qua ngày)
+        '3': { start: 10, end: 22, name: '10H - 22H' },    // D
+        '4': { start: 6, end: 18, name: '6H - 18H' },      // A1
+        '5': { start: 18, end: 6, name: '18H - 6H' },      // B1 (qua ngày)
+        '6': { start: 7, end: 16, name: '7H - 16H' },      // AB
+        '7': { start: 7, end: 15, name: '7H - 15H' },      // AB-
+        '8': { start: 7, end: 17, name: '7H - 17H' },      // AB+
+        '9': { start: 8, end: 17, name: '8H - 17H' }       // HC
+    };
+    
+    const shift = shifts[shiftValue];
+    if (!shift) return false;
+    
+    // Xử lý ca qua ngày (22H - 6H, 18H - 6H)
+    if (shift.end < shift.start) {
+        // Ca qua ngày: hợp lệ nếu giờ hiện tại >= start HOẶC <= end
+        return currentHour >= shift.start || currentHour <= shift.end;
+    } else {
+        // Ca trong ngày: hợp lệ nếu start <= giờ hiện tại <= end
+        return currentHour >= shift.start && currentHour <= shift.end;
+    }
+}
+
+// Cập nhật trạng thái enable/disable cho options giờ làm việc
+async function updateShiftOptionsBasedOnCurrentTime() {
+    const gioLamViecSelect = document.getElementById('gioLamViec');
+    if (!gioLamViecSelect) return;
+    
+    try {
+        const currentHour = await getCurrentHour();
+        const options = gioLamViecSelect.querySelectorAll('option');
+        
+        console.log(`🕐 Giờ hiện tại: ${currentHour}h - Cập nhật options giờ làm việc`);
+        
+        let firstValidOption = null;
+        
+        options.forEach(option => {
+            if (option.value === '') {
+                // Giữ nguyên option đầu tiên "-- Chọn giờ làm việc --"
+                return;
+            }
+            
+            const isValid = isShiftValidForCurrentHour(option.value, currentHour);
+            
+            if (isValid) {
+                option.disabled = false;
+                option.style.color = '';
+                option.style.backgroundColor = '';
+                
+                // Lưu option hợp lệ đầu tiên để auto-select
+                if (!firstValidOption) {
+                    firstValidOption = option;
+                }
+            } else {
+                option.disabled = true;
+                option.style.color = '#ccc';
+                option.style.backgroundColor = '#f8f9fa';
+            }
+            
+            console.log(`- Option ${option.textContent}: ${isValid ? 'Enabled' : 'Disabled'}`);
+        });
+        
+        // Tự động chọn option hợp lệ đầu tiên nếu chưa có gì được chọn
+        if (firstValidOption && gioLamViecSelect.selectedIndex === 0) {
+            gioLamViecSelect.value = firstValidOption.value;
+            
+            // Trigger change event để cập nhật mã ca
+            const changeEvent = new Event('change', { bubbles: true });
+            gioLamViecSelect.dispatchEvent(changeEvent);
+            
+            console.log(`✅ Tự động chọn: ${firstValidOption.textContent}`);
+        }
+        
+    } catch (error) {
+        console.error('Lỗi khi cập nhật options giờ làm việc:', error);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

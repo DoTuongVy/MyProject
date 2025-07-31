@@ -7,8 +7,8 @@ const nodemailer = require('nodemailer');
 const emailTransporter = nodemailer.createTransport({
     service: 'gmail', // hoặc 'outlook', 'yahoo'
     auth: {
-        user: process.env.EMAIL_USER || 'rd04@visingpack.com', // Thay bằng email của bạn
-        pass: process.env.EMAIL_PASS || 'aeme fdfg byvv tqns'     // Thay bằng app password
+        user: process.env.EMAIL_USER || 'rd04@visingpack.com', 
+        pass: process.env.EMAIL_PASS || 'aeme fdfg byvv tqns'     
     }
 });
 
@@ -16,8 +16,7 @@ const emailTransporter = nodemailer.createTransport({
 const ALERT_EMAIL_LIST = [
     'tuogvy2604@gmail.com',
     'thien.lam@visingpack.com',
-    // 'supervisor@company.com'
-    // Thêm các email cần nhận cảnh báo
+
 ];
 
 
@@ -122,11 +121,11 @@ async function sendSpeedAlertEmail(reportData, speed, thanhPhamIn, tgChayMayPhut
         let alertType = '';
         
         if (speed === 0) {
-            speedText = 'Tốc độ = 0 s/h';
-            alertType = 'CẢNH BÁO: Có thành phẩm nhưng tốc độ = 0';
+            speedText = '0 s/h';
+            alertType = 'CẢNH BÁO: KHÔNG CÓ THỜI GIAN CHẠY MÁY';
         } else {
             speedText = `Tốc độ ${speed.toLocaleString()} s/h`;
-            alertType = 'CẢNH BÁO: Vượt quá 12,000 s/h';
+            alertType = 'CẢNH BÁO: TỐC ĐỘ VƯỢT QUÁ 12,000 s/h';
         }
 
         const subject = `${alertType} - WS: ${reportData.ws}`;
@@ -138,86 +137,86 @@ async function sendSpeedAlertEmail(reportData, speed, thanhPhamIn, tgChayMayPhut
             <p><strong>Dear Manager,</strong></p>
             <p>Hãy kiểm tra thông tin WS dưới đây:</p>
             
-            <!-- Thông tin chính - Layout ngang -->
-            <div style="display: table; width: 100%; margin: 20px 0;">
-                <div style="display: table-row;">
-                    <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr style="background-color: #e3f2fd;">
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; width: 40%;">WS:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #1976d2;">${reportData.ws || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">Máy:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.may || 'N/A'}</td>
-                            </tr>
-                            <tr style="background-color: #f5f5f5;">
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">KH:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.khach_hang || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">MSP:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.ma_sp || 'N/A'}</td>
-                            </tr>
-                            <tr style="background-color: #f5f5f5;">
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">SL:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.sl_don_hang || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">Số màu:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.so_mau || 'N/A'}</td>
-                            </tr>
-                            <tr style="background-color: #e8f5e8;">
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">Thành phẩm in:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #388e3c;">${thanhPhamIn.toLocaleString()}</td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr style="background-color: #fff3e0;">
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; width: 40%;">TG Bắt đầu:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px;">${formatDateTime(reportData.thoi_gian_bat_dau)}</td>
-                            </tr>
-                            <tr>
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">TG Kết thúc:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px;">${formatDateTime(reportData.thoi_gian_ket_thuc)}</td>
-                            </tr>
-                            <tr style="background-color: #f5f5f5;">
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">TG Chạy máy:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #388e3c;">${tgChayMayPhut} phút</td>
-                            </tr>
-                            <tr>
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">TG Canh máy:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.thoi_gian_canh_may || '0'} phút</td>
-                            </tr>
-                            <tr style="background-color: #f5f5f5;">
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">TG Dừng máy:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px;">${reportData.tg_dung_may || '0'} phút</td>
-                            </tr>
-                            <tr style="background-color: ${speed === 0 ? '#ffebee' : speed > 12000 ? '#fff3e0' : '#f5f5f5'};">
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">Tốc độ:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">${speedText}</td>
-                            </tr>
-                            <tr style="background-color: ${speed === 0 ? '#ffcdd2' : speed > 12000 ? '#ffcc02' : '#f5f5f5'};">
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">Vượt quá:</td>
-                                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">
-                                    ${speed === 0 ? 'N/A (Tốc độ = 0)' : speed > 12000 ? `${(speed - 12000).toLocaleString()} s/h` : 'Trong tiêu chuẩn'}
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+            <!-- Thông tin chính - Layout đơn giản -->
+            <div style="width: 100%; margin: 20px 0;">
+                <div style="float: left; width: 48%; margin-right: 2%;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr style="background-color: #e3f2fd;">
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; width: 40%; word-wrap: break-word;">WS:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; color: #1976d2; word-wrap: break-word;">${reportData.ws || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; word-wrap: break-word;">Máy:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; word-wrap: break-word;">${reportData.may || 'N/A'}</td>
+                        </tr>
+                        <tr style="background-color: #f5f5f5;">
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; word-wrap: break-word;">KH:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; word-wrap: break-word;">${reportData.khach_hang || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; word-wrap: break-word;">MSP:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; word-wrap: break-word;">${reportData.ma_sp || 'N/A'}</td>
+                        </tr>
+                        <tr style="background-color: #f5f5f5;">
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; word-wrap: break-word;">SL:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; word-wrap: break-word;">${reportData.sl_don_hang || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; word-wrap: break-word;">Số màu:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; word-wrap: break-word;">${reportData.so_mau || 'N/A'}</td>
+                        </tr>
+                        <tr style="background-color: #e8f5e8;">
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; word-wrap: break-word;">Thành phẩm in:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; color: ${speed === 0 ? '#d32f2f' : speed > 12000 ? '#388e3c' : '#388e3c'}; word-wrap: break-word;">${thanhPhamIn.toLocaleString()}</td>
+                        </tr>
+                    </table>
                 </div>
+                
+                <div style="float: left; width: 48%; margin-left: 2%;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr style="background-color: #fff3e0;">
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; width: 40%; word-wrap: break-word;">TG Bắt đầu:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; word-wrap: break-word;">${formatDateTime(reportData.thoi_gian_bat_dau)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; word-wrap: break-word;">TG Kết thúc:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; word-wrap: break-word;">${formatDateTime(reportData.thoi_gian_ket_thuc)}</td>
+                        </tr>
+                        <tr style="background-color: #f5f5f5;">
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; word-wrap: break-word; color: ${speed === 0 ? '#d32f2f' : speed > 12000 ? '#388e3c' : '#388e3c'}; background-color: ${speed === 0 ? '#ffcdd2' : '#f5f5f5'}">TG Chạy máy:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; color: ${speed === 0 ? '#d32f2f' : speed > 12000 ? '#388e3c' : '#388e3c'}; word-wrap: break-word; background-color: ${speed === 0 ? '#ffcdd2' : '#f5f5f5'}">${tgChayMayPhut} phút</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; word-wrap: break-word;">TG Canh máy:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; word-wrap: break-word;">${reportData.thoi_gian_canh_may || '0'} phút</td>
+                        </tr>
+                        <tr style="background-color: #f5f5f5;">
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; word-wrap: break-word;">TG Dừng máy:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; word-wrap: break-word;">${reportData.tg_dung_may || '0'} phút</td>
+                        </tr>
+                        <tr style="background-color: ${speed === 0 ? '#ffebee' : speed > 12000 ? '#fff3e0' : '#f5f5f5'};">
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; color: #d32f2f; word-wrap: break-word;">Tốc độ:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; color: #d32f2f; word-wrap: break-word;">${speedText}</td>
+                        </tr>
+                        <tr style="background-color: ${speed === 0 ? '#ffcdd2' : speed > 12000 ? '#ffcc02' : '#f5f5f5'};">
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; color: #d32f2f; word-wrap: break-word;">Vượt quá:</td>
+                            <td style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; color: #d32f2f; word-wrap: break-word;">
+                                ${speed === 0 ? '0 s/h' : speed > 12000 ? `${(speed - 12000).toLocaleString()} s/h` : 'Trong tiêu chuẩn'}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div style="clear: both;"></div>
             </div>
             
             <div style="background-color: #ffebee; padding: 20px; border-left: 6px solid #d32f2f; margin: 30px 0; border-radius: 4px;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="font-size: 32px;">⚠️</div>
-                    <div>
-                        <h3 style="margin: 0; color: #d32f2f; font-size: 18px;">CẢNH BÁO TỐC ĐỘ</h3>
+                <div style="text-align: left;">
+                    <div style="font-size: 32px; display: inline-block; vertical-align: top; margin-right: 15px;">⚠️</div>
+                    <div style="display: inline-block; vertical-align: top;">
+                        <h3 style="margin: 0; color: #d32f2f; font-size: 18px;">CẢNH BÁO</h3>
                         <p style="margin: 5px 0 0; color: #d32f2f; font-weight: bold; font-size: 16px;">
-                            ${speed === 0 ? 'Có thành phẩm in nhưng tốc độ = 0' : `Vượt quá tiêu chuẩn ${(speed - 12000).toLocaleString()} s/h`}
+                            ${speed === 0 ? 'Không có thời gian chạy máy' : `Vượt quá tiêu chuẩn : ${(speed - 12000).toLocaleString()} s/h`}
                         </p>
                     </div>
                 </div>
@@ -225,7 +224,7 @@ async function sendSpeedAlertEmail(reportData, speed, thanhPhamIn, tgChayMayPhut
             
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
                 <p style="margin: 0; font-size: 16px; color: #495057; line-height: 1.6;">
-                    <strong>🎯 Vui lòng kiểm tra và xử lý ngay lập tức</strong><br>
+                    <a href="http://118.69.34.102:8686/" style="text-decoration: none;"><strong>⚠️ Vui lòng kiểm tra và xử lý ngay lập tức</strong></a><br>
                     để đảm bảo chất lượng và hiệu suất sản xuất.
                 </p>
             </div>
@@ -238,24 +237,6 @@ async function sendSpeedAlertEmail(reportData, speed, thanhPhamIn, tgChayMayPhut
                     📅 ${new Date().toLocaleString('vi-VN')}
                 </p>
             </div>
-            
-            <!-- Responsive cho mobile -->
-            <style>
-                @media only screen and (max-width: 600px) {
-                    div[style*="display: table"] {
-                        display: block !important;
-                    }
-                    div[style*="display: table-row"] {
-                        display: block !important;
-                    }
-                    div[style*="display: table-cell"] {
-                        display: block !important;
-                        width: 100% !important;
-                        padding: 0 !important;
-                        margin-bottom: 20px !important;
-                    }
-                }
-            </style>
         </div>
         `;
 
@@ -826,7 +807,7 @@ router.post('/submit', async (req, res) => {
             thoi_gian_ket_thuc, thanh_pham_in, phe_lieu, phe_lieu_trang, ghi_chu,
             tong_so_luong, tong_phe_lieu, tong_phe_lieu_trang, sl_giay_ream, tuan,
             gio_lam_viec, ma_ca, sl_giay_theo_ws, sl_cat, chenh_lech_tt_ws, chenh_lech_tt_scc,
-            phu_may_1, phu_may_2, so_pass_in, thanh_pham, dung_may, nguoi_thuc_hien, user_id
+            phu_may_1, phu_may_2, so_pass_in, thanh_pham, dung_may, nguoi_thuc_hien, user_id, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         
         await new Promise((resolve, reject) => {
@@ -882,7 +863,8 @@ router.post('/submit', async (req, res) => {
                 thanhPham.toString(), // ✅ Từ frontend
                 ketThuc.dungMay ? 1 : 0,
                 batDau.nguoiThucHien || '',
-                nguoiDung.id || ''
+                nguoiDung.id || '',
+                new Date().toISOString()
             ], function (err) {
                 if (err) reject(err);
                 else resolve(this.lastID);
@@ -1017,6 +999,13 @@ try {
 // API gửi báo cáo In phần bắt đầu
 router.post('/submit-start', async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+    // Kiểm tra flag offline trong request
+const isOfflineSync = req.body.timestamp && req.body.type;
+if (isOfflineSync) {
+    console.log(`🔄 Xử lý đồng bộ offline: ${req.body.type} - ${req.body.timestamp}`);
+}
+
 
     const startData = req.body;
     if (!startData) {
@@ -1170,6 +1159,12 @@ await new Promise((resolve, reject) => {
 });
 
 
+// Log đồng bộ offline
+if (isOfflineSync) {
+    console.log(`✅ Đã đồng bộ báo cáo bắt đầu offline: ${reportId}`);
+}
+
+
 
         res.json({
             success: true,
@@ -1292,6 +1287,14 @@ router.put('/update-start/:id', async (req, res) => {
 // API cập nhật báo cáo In phần kết thúc
 router.put('/update-end/:id', async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+
+    // Kiểm tra flag offline trong request
+const isOfflineSync = req.body.timestamp && req.body.type;
+if (isOfflineSync) {
+    console.log(`🔄 Xử lý đồng bộ offline: ${req.body.type} - ${req.body.timestamp}`);
+}
+
     
     const { id } = req.params;
     const { ketThuc, dungMay } = req.body;
