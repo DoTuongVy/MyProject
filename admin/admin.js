@@ -519,6 +519,9 @@ function initAdminPanel() {
         setTimeout(() => {
             hideLoading();
         }, 500);
+
+        setupDinhMucPlanningEvents();
+
     }).catch(error => {
         console.error("Lỗi khi khởi tạo dữ liệu admin:", error);
         hideLoading();
@@ -5905,7 +5908,186 @@ function setupWsTongExcelEvents() {
             window.tempWsTongData = null;
         });
     }
+
+    
 }
+
+
+
+
+// Thêm hàm setup events cho định mức planning
+function setupDinhMucPlanningEvents() {
+    // Event cho nút định mức chung
+    const dinhMucChungBtn = document.querySelector('.dinh-muc-chung-btn');
+    if (dinhMucChungBtn) {
+        dinhMucChungBtn.addEventListener('click', function() {
+            document.querySelector('.dinh-muc-categories').style.display = 'none';
+            document.getElementById('dinh-muc-chung-container').style.display = 'block';
+            loadDinhMucData();
+        });
+    }
+    
+    // Event cho nút định mức chi tiết
+    const dinhMucChiTietBtn = document.querySelector('.dinh-muc-chi-tiet-btn');
+    if (dinhMucChiTietBtn) {
+        dinhMucChiTietBtn.addEventListener('click', function() {
+            showToast('Chức năng định mức chi tiết sẽ phát triển sau!', 'info');
+        });
+    }
+    
+    // Event cho nút quay lại
+    const backBtn = document.querySelector('.back-to-categories-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            document.querySelector('.dinh-muc-categories').style.display = 'grid';
+            document.getElementById('dinh-muc-chung-container').style.display = 'none';
+        });
+    }
+    
+    // Event cho các card công đoạn
+    document.querySelectorAll('.cong-doan-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const type = this.getAttribute('data-type');
+            openDinhMucModal(type);
+        });
+    });
+    
+    // Event cho nút đóng modal
+    const closeModalBtn = document.querySelector('#dinh-muc-cong-doan-modal .close-modal');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function() {
+            document.getElementById('dinh-muc-cong-doan-modal').style.display = 'none';
+        });
+    }
+    
+    // Event cho nút lưu
+    const saveBtn = document.querySelector('#dinh-muc-cong-doan-modal .btn-primary');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            saveDinhMucCongDoan();
+        });
+    }
+    
+    // Event cho nút hủy
+    const cancelBtn = document.querySelector('#dinh-muc-cong-doan-modal .btn-secondary');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            document.getElementById('dinh-muc-cong-doan-modal').style.display = 'none';
+        });
+    }
+}
+
+function openDinhMucModal(type) {
+    const modal = document.getElementById('dinh-muc-cong-doan-modal');
+    const title = document.getElementById('dinh-muc-modal-title');
+    const typeInput = document.getElementById('dinh-muc-type');
+    
+    typeInput.value = type;
+    title.textContent = `Định mức ${type.toUpperCase()}`;
+    
+    // Load dữ liệu hiện có
+    const savedData = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
+    document.getElementById('gio-doi-ma').value = savedData.gioDoimMa || '';
+    document.getElementById('may-6m1-6m5').value = savedData.may6M || '';
+    document.getElementById('may-6k1-6k2').value = savedData.may6K || '';
+    
+    modal.style.display = 'block';
+}
+
+function saveDinhMucCongDoan() {
+    const type = document.getElementById('dinh-muc-type').value;
+    const gioDoimMa = document.getElementById('gio-doi-ma').value;
+    const may6M = document.getElementById('may-6m1-6m5').value;
+    const may6K = document.getElementById('may-6k1-6k2').value;
+    
+    const data = { gioDoimMa, may6M, may6K };
+    localStorage.setItem(`dinh-muc-${type}`, JSON.stringify(data));
+    
+    // Cập nhật hiển thị
+    document.getElementById(`${type}-gio-doi-ma`).textContent = gioDoimMa || '--';
+    document.getElementById(`${type}-may-6m`).textContent = may6M || '--';
+    document.getElementById(`${type}-may-6k`).textContent = may6K || '--';
+    
+    document.getElementById('dinh-muc-cong-doan-modal').style.display = 'none';
+    showToast('Đã lưu định mức thành công!');
+}
+
+function loadDinhMucData() {
+    ['gmc', 'in'].forEach(type => {
+        const data = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
+        document.getElementById(`${type}-gio-doi-ma`).textContent = data.gioDoimMa || '--';
+        document.getElementById(`${type}-may-6m`).textContent = data.may6M || '--';
+        document.getElementById(`${type}-may-6k`).textContent = data.may6K || '--';
+    });
+}
+
+
+
+
+// Thêm các hàm xử lý định mức planning
+window.showDinhMucChung = function() {
+    document.querySelector('.dinh-muc-categories').style.display = 'none';
+    document.getElementById('dinh-muc-chung-container').style.display = 'block';
+    loadDinhMucData();
+};
+
+window.showDinhMucChiTiet = function() {
+    showToast('Chức năng định mức chi tiết sẽ phát triển sau!', 'info');
+};
+
+window.backToDinhMucCategories = function() {
+    document.querySelector('.dinh-muc-categories').style.display = 'grid';
+    document.getElementById('dinh-muc-chung-container').style.display = 'none';
+};
+
+window.openDinhMucModal = function(type) {
+    const modal = document.getElementById('dinh-muc-cong-doan-modal');
+    const title = document.getElementById('dinh-muc-modal-title');
+    const typeInput = document.getElementById('dinh-muc-type');
+    
+    typeInput.value = type;
+    title.textContent = `Định mức ${type.toUpperCase()}`;
+    
+    // Load dữ liệu hiện có
+    const savedData = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
+    document.getElementById('gio-doi-ma').value = savedData.gioDoimMa || '';
+    document.getElementById('may-6m1-6m5').value = savedData.may6M || '';
+    document.getElementById('may-6k1-6k2').value = savedData.may6K || '';
+    
+    modal.style.display = 'block';
+};
+
+window.closeDinhMucModal = function() {
+    document.getElementById('dinh-muc-cong-doan-modal').style.display = 'none';
+};
+
+window.saveDinhMucCongDoan = function() {
+    const type = document.getElementById('dinh-muc-type').value;
+    const gioDoimMa = document.getElementById('gio-doi-ma').value;
+    const may6M = document.getElementById('may-6m1-6m5').value;
+    const may6K = document.getElementById('may-6k1-6k2').value;
+    
+    const data = { gioDoimMa, may6M, may6K };
+    localStorage.setItem(`dinh-muc-${type}`, JSON.stringify(data));
+    
+    // Cập nhật hiển thị
+    document.getElementById(`${type}-gio-doi-ma`).textContent = gioDoimMa || '--';
+    document.getElementById(`${type}-may-6m`).textContent = may6M || '--';
+    document.getElementById(`${type}-may-6k`).textContent = may6K || '--';
+    
+    closeDinhMucModal();
+    showToast('Đã lưu định mức thành công!');
+};
+
+function loadDinhMucData() {
+    ['gmc', 'in'].forEach(type => {
+        const data = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
+        document.getElementById(`${type}-gio-doi-ma`).textContent = data.gioDoimMa || '--';
+        document.getElementById(`${type}-may-6m`).textContent = data.may6M || '--';
+        document.getElementById(`${type}-may-6k`).textContent = data.may6K || '--';
+    });
+}
+
 
 
 
@@ -5930,6 +6112,21 @@ document.querySelectorAll('.tab[data-planning-tab]').forEach(tab => {
         if (targetContent) {
             targetContent.classList.add('active');
         }
+
+
+
+        if (this.getAttribute('data-planning-tab') === 'dinh-muc-planning') {
+    // Reset về view categories khi chuyển tab
+    setTimeout(() => {
+        const categories = document.querySelector('.dinh-muc-categories');
+        const container = document.getElementById('dinh-muc-chung-container');
+        if (categories) categories.style.display = 'grid';
+        if (container) container.style.display = 'none';
+        setupDinhMucPlanningEvents(); // Setup lại events
+    }, 100);
+}
+
+
     });
 });
 
