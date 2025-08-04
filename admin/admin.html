@@ -270,6 +270,41 @@
     transform: translateY(-2px);
 }
 
+
+
+/* Thêm sau các style hiện có */
+.ws-tong-pagination {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.btn-pagination {
+    padding: 8px 12px !important;
+    border: 1px solid #dee2e6 !important;
+    background: white !important;
+    cursor: pointer !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background: #e9ecef !important;
+}
+
+.btn-pagination:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+}
+
+#ws-tong-page-size {
+    padding: 8px 12px !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 4px !important;
+    background: white !important;
+}
+
+
                 </style>
 
     </head>
@@ -911,6 +946,26 @@
                     </tbody>
                 </table>
             </div>
+
+            <div class="ws-tong-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 15px; background: white; border-radius: 8px;">
+                <div class="pagination-info">
+                    <span id="ws-tong-showing-info">Hiển thị 0 - 0 của 0 bản ghi</span>
+                </div>
+                <div class="pagination-controls" style="display: flex; align-items: center; gap: 10px;">
+                    <select id="ws-tong-page-size" style="padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="50">50/trang</option>
+                        <option value="100" selected>100/trang</option>
+                        <option value="200">200/trang</option>
+                        <option value="500">500/trang</option>
+                    </select>
+                    <button id="ws-tong-first-page" class="btn-pagination" style="padding: 5px 10px; border: 1px solid #ddd; background: white; cursor: pointer;">Đầu</button>
+                    <button id="ws-tong-prev-page" class="btn-pagination" style="padding: 5px 10px; border: 1px solid #ddd; background: white; cursor: pointer;">Trước</button>
+                    <span id="ws-tong-page-info">Trang 1 / 1</span>
+                    <button id="ws-tong-next-page" class="btn-pagination" style="padding: 5px 10px; border: 1px solid #ddd; background: white; cursor: pointer;">Sau</button>
+                    <button id="ws-tong-last-page" class="btn-pagination" style="padding: 5px 10px; border: 1px solid #ddd; background: white; cursor: pointer;">Cuối</button>
+                </div>
+            </div>
+
         </div>
 
 
@@ -951,27 +1006,31 @@
         
         <div class="cong-doan-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
             <!-- Card Định mức GMC -->
-            <div class="cong-doan-card cong-doan-gmc-btn" data-type="gmc" style="background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" >
+            <div class="cong-doan-card cong-doan-gmc-btn" data-type="gmc" style="background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;">
                 <div style="text-align: center;">
                     <i class="fas fa-cut" style="font-size: 36px; color: #ff6b6b; margin-bottom: 10px;"></i>
                     <h5>Định mức GMC</h5>
                     <div class="dinh-muc-data" id="gmc-data" style="margin-top: 10px; font-size: 12px; color: #666;">
                         <div>Giờ đổi mã: <span id="gmc-gio-doi-ma">--</span></div>
-                        <div>Máy 6M1-6M5: <span id="gmc-may-6m">--</span></div>
-                        <div>Máy 6K1-6K2: <span id="gmc-may-6k">--</span></div>
+                        <div>Máy 6M1: <span id="gmc-may-6m1">--</span></div>
+                        <div>Máy 6M5: <span id="gmc-may-6m5">--</span></div>
+                        <div>Máy 6K1: <span id="gmc-may-6k1">--</span></div>
+                        <div>Máy 6K2: <span id="gmc-may-6k2">--</span></div>
                     </div>
                 </div>
             </div>
             
             <!-- Card Định mức In -->
-            <div class="cong-doan-card cong-doan-in-btn" data-type="in" style="background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="openDinhMucModal('in')">
+            <div class="cong-doan-card cong-doan-in-btn" data-type="in" style="background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;">
                 <div style="text-align: center;">
                     <i class="fas fa-print" style="font-size: 36px; color: #4ecdc4; margin-bottom: 10px;"></i>
                     <h5>Định mức In</h5>
                     <div class="dinh-muc-data" id="in-data" style="margin-top: 10px; font-size: 12px; color: #666;">
                         <div>Giờ đổi mã: <span id="in-gio-doi-ma">--</span></div>
-                        <div>Máy 6M1-6M5: <span id="in-may-6m">--</span></div>
-                        <div>Máy 6K1-6K2: <span id="in-may-6k">--</span></div>
+                        <div>Máy 6M1: <span id="in-may-6m1">--</span></div>
+                        <div>Máy 6M5: <span id="in-may-6m5">--</span></div>
+                        <div>Máy 6K1: <span id="in-may-6k1">--</span></div>
+                        <div>Máy 6K2: <span id="in-may-6k2">--</span></div>
                     </div>
                 </div>
             </div>
@@ -1082,13 +1141,23 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="may-6m1-6m5">Máy 6M1-6M5:</label>
-                    <input type="number" id="may-6m1-6m5" step="0.1" placeholder="Nhập định mức máy 6M1-6M5">
+                    <label for="may-6m1">Máy 6M1:</label>
+                    <input type="number" id="may-6m1" step="0.1" placeholder="Nhập tốc độ máy 6M1 (s/h)">
                 </div>
                 
                 <div class="form-group">
-                    <label for="may-6k1-6k2">Máy 6K1-6K2:</label>
-                    <input type="number" id="may-6k1-6k2" step="0.1" placeholder="Nhập định mức máy 6K1-6K2">
+                    <label for="may-6m5">Máy 6M5:</label>
+                    <input type="number" id="may-6m5" step="0.1" placeholder="Nhập tốc độ máy 6M5 (s/h)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="may-6k1">Máy 6K1:</label>
+                    <input type="number" id="may-6k1" step="0.1" placeholder="Nhập tốc độ máy 6K1 (s/h)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="may-6k2">Máy 6K2:</label>
+                    <input type="number" id="may-6k2" step="0.1" placeholder="Nhập tốc độ máy 6K2 (s/h)">
                 </div>
                 
                 <div class="modal-actions">

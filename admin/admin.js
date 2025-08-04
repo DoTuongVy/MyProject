@@ -1,3 +1,11 @@
+//! Biến phân trang cho WS Tổng
+let currentWsTongPage = 1;
+let wsTongPageSize = 100;
+let totalWsTongRecords = 0;
+let totalWsTongPages = 0;
+
+
+
 //! =================================================================
 //! UTILITY FUNCTIONS
 //  Mô tả: Các hàm tiện ích
@@ -546,6 +554,19 @@ if (existingLogoutBtn) {
 setupWsTongExcelEvents();
 
 
+
+// Khởi tạo trạng thái mặc định cho Planning tabs
+setTimeout(() => {
+    const wsTongContent = document.getElementById('ws-tong-planning-content');
+    const dinhMucContent = document.getElementById('dinh-muc-planning-content');
+    
+    if (wsTongContent && dinhMucContent) {
+        wsTongContent.style.display = 'block';
+        dinhMucContent.style.display = 'none';
+    }
+}, 500);
+
+
 }
 
 //TODO  Đóng tất cả các modal====================================================================================================================================
@@ -802,6 +823,15 @@ async function loadTabData(tabName) {
                 break;
                 case 'planning':
     await loadWsTong();
+    // Delay để đảm bảo DOM đã được render
+    setTimeout(() => {
+        loadDinhMucData();
+    }, 500);
+    // Đảm bảo tab WS Tổng được hiển thị mặc định
+    setTimeout(() => {
+        document.getElementById('ws-tong-planning-content').style.display = 'block';
+        document.getElementById('dinh-muc-planning-content').style.display = 'none';
+    }, 100);
     break;
             default:
                 console.log('No specific data loading for tab:', tabName);
@@ -5909,6 +5939,46 @@ function setupWsTongExcelEvents() {
         });
     }
 
+
+
+    // Sự kiện thay đổi số bản ghi/trang
+    const wsTongPageSize = document.getElementById('ws-tong-page-size');
+    if (wsTongPageSize) {
+        wsTongPageSize.addEventListener('change', function() {
+            loadWsTong(1, parseInt(this.value));
+        });
+    }
+    
+    // Sự kiện các nút phân trang
+    const wsTongFirstPage = document.getElementById('ws-tong-first-page');
+    if (wsTongFirstPage) {
+        wsTongFirstPage.addEventListener('click', function() {
+            if (currentWsTongPage > 1) loadWsTong(1);
+        });
+    }
+    
+    const wsTongPrevPage = document.getElementById('ws-tong-prev-page');
+    if (wsTongPrevPage) {
+        wsTongPrevPage.addEventListener('click', function() {
+            if (currentWsTongPage > 1) loadWsTong(currentWsTongPage - 1);
+        });
+    }
+    
+    const wsTongNextPage = document.getElementById('ws-tong-next-page');
+    if (wsTongNextPage) {
+        wsTongNextPage.addEventListener('click', function() {
+            if (currentWsTongPage < totalWsTongPages) loadWsTong(currentWsTongPage + 1);
+        });
+    }
+    
+    const wsTongLastPage = document.getElementById('ws-tong-last-page');
+    if (wsTongLastPage) {
+        wsTongLastPage.addEventListener('click', function() {
+            if (currentWsTongPage < totalWsTongPages) loadWsTong(totalWsTongPages);
+        });
+    }
+
+
     
 }
 
@@ -5917,15 +5987,22 @@ function setupWsTongExcelEvents() {
 
 // Thêm hàm setup events cho định mức planning
 function setupDinhMucPlanningEvents() {
+
+    
     // Event cho nút định mức chung
-    const dinhMucChungBtn = document.querySelector('.dinh-muc-chung-btn');
-    if (dinhMucChungBtn) {
-        dinhMucChungBtn.addEventListener('click', function() {
-            document.querySelector('.dinh-muc-categories').style.display = 'none';
-            document.getElementById('dinh-muc-chung-container').style.display = 'block';
+const dinhMucChungBtn = document.querySelector('.dinh-muc-chung-btn');
+if (dinhMucChungBtn) {
+    dinhMucChungBtn.addEventListener('click', function() {
+        document.querySelector('.dinh-muc-categories').style.display = 'none';
+        document.getElementById('dinh-muc-chung-container').style.display = 'block';
+        
+        // Load dữ liệu với delay nhỏ
+        setTimeout(() => {
             loadDinhMucData();
-        });
-    }
+        }, 100);
+    });
+}
+
     
     // Event cho nút định mức chi tiết
     const dinhMucChiTietBtn = document.querySelector('.dinh-muc-chi-tiet-btn');
@@ -5975,9 +6052,77 @@ function setupDinhMucPlanningEvents() {
             document.getElementById('dinh-muc-cong-doan-modal').style.display = 'none';
         });
     }
+
+
+
+    // Event cho tab Planning chính
+document.querySelectorAll('.tab[data-planning-tab]').forEach(tab => {
+    // Xóa event listener cũ nếu có
+    tab.removeEventListener('click', handlePlanningTabClick);
+    
+    // Thêm event listener mới
+    tab.addEventListener('click', handlePlanningTabClick);
+});
+
+function handlePlanningTabClick() {
+    // Loại bỏ active từ tất cả các tab planning
+    document.querySelectorAll('.tab[data-planning-tab]').forEach(t => {
+        t.classList.remove('active');
+    });
+    
+    // Add active cho tab hiện tại
+    this.classList.add('active');
+    
+    // Logic show/hide content
+    if (this.getAttribute('data-planning-tab') === 'ws-tong-planning') {
+        // Hiển thị WS Tổng, ẩn Định mức
+        document.getElementById('ws-tong-planning-content').style.display = 'block';
+        document.getElementById('dinh-muc-planning-content').style.display = 'none';
+    } else if (this.getAttribute('data-planning-tab') === 'dinh-muc-planning') {
+        // Hiển thị Định mức, ẩn WS Tổng  
+        document.getElementById('ws-tong-planning-content').style.display = 'none';
+        document.getElementById('dinh-muc-planning-content').style.display = 'block';
+        
+        // Load dữ liệu định mức với delay
+        setTimeout(() => {
+            loadDinhMucData();
+        }, 200);
+        
+        // Reset về view categories khi chuyển tab định mức
+        setTimeout(() => {
+            const categories = document.querySelector('.dinh-muc-categories');
+            const container = document.getElementById('dinh-muc-chung-container');
+            if (categories) categories.style.display = 'grid';
+            if (container) container.style.display = 'none';
+        }, 100);
+    }
 }
 
-function openDinhMucModal(type) {
+
+
+// Thêm observer để load dữ liệu khi DOM sẵn sàng
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+            const target = mutation.target;
+            if (target.id === 'dinh-muc-chung-container' && target.style.display === 'block') {
+                setTimeout(() => {
+                    loadDinhMucData();
+                }, 100);
+            }
+        }
+    });
+});
+
+const container = document.getElementById('dinh-muc-chung-container');
+if (container) {
+    observer.observe(container, { attributes: true, attributeFilter: ['style'] });
+}
+
+
+}
+
+async function openDinhMucModal(type) {
     const modal = document.getElementById('dinh-muc-cong-doan-modal');
     const title = document.getElementById('dinh-muc-modal-title');
     const typeInput = document.getElementById('dinh-muc-type');
@@ -5985,42 +6130,143 @@ function openDinhMucModal(type) {
     typeInput.value = type;
     title.textContent = `Định mức ${type.toUpperCase()}`;
     
-    // Load dữ liệu hiện có
-    const savedData = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
-    document.getElementById('gio-doi-ma').value = savedData.gioDoimMa || '';
-    document.getElementById('may-6m1-6m5').value = savedData.may6M || '';
-    document.getElementById('may-6k1-6k2').value = savedData.may6K || '';
+    // Load dữ liệu hiện có từ server
+    try {
+        const response = await fetch(`/api/dinh-muc-chung/${type}`);
+        if (response.ok) {
+            const savedData = await response.json();
+            document.getElementById('gio-doi-ma').value = savedData.gio_doi_ma || '';
+            document.getElementById('may-6m1').value = savedData.may_6m1 || '';
+            document.getElementById('may-6m5').value = savedData.may_6m5 || '';
+            document.getElementById('may-6k1').value = savedData.may_6k1 || '';
+            document.getElementById('may-6k2').value = savedData.may_6k2 || '';
+        } else {
+            // Fallback về localStorage nếu chưa có dữ liệu trên server
+            const savedData = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
+            document.getElementById('gio-doi-ma').value = savedData.gioDoimMa || '';
+            document.getElementById('may-6m1').value = savedData.may6M1 || '';
+            document.getElementById('may-6m5').value = savedData.may6M5 || '';
+            document.getElementById('may-6k1').value = savedData.may6K1 || '';
+            document.getElementById('may-6k2').value = savedData.may6K2 || '';
+        }
+    } catch (error) {
+        console.error('Lỗi khi tải dữ liệu:', error);
+        // Fallback về localStorage
+        const savedData = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
+        document.getElementById('gio-doi-ma').value = savedData.gioDoimMa || '';
+        document.getElementById('may-6m1').value = savedData.may6M1 || '';
+        document.getElementById('may-6m5').value = savedData.may6M5 || '';
+        document.getElementById('may-6k1').value = savedData.may6K1 || '';
+        document.getElementById('may-6k2').value = savedData.may6K2 || '';
+    }
     
     modal.style.display = 'block';
 }
 
-function saveDinhMucCongDoan() {
-    const type = document.getElementById('dinh-muc-type').value;
-    const gioDoimMa = document.getElementById('gio-doi-ma').value;
-    const may6M = document.getElementById('may-6m1-6m5').value;
-    const may6K = document.getElementById('may-6k1-6k2').value;
-    
-    const data = { gioDoimMa, may6M, may6K };
-    localStorage.setItem(`dinh-muc-${type}`, JSON.stringify(data));
-    
-    // Cập nhật hiển thị
-    document.getElementById(`${type}-gio-doi-ma`).textContent = gioDoimMa || '--';
-    document.getElementById(`${type}-may-6m`).textContent = may6M || '--';
-    document.getElementById(`${type}-may-6k`).textContent = may6K || '--';
-    
-    document.getElementById('dinh-muc-cong-doan-modal').style.display = 'none';
-    showToast('Đã lưu định mức thành công!');
+async function saveDinhMucCongDoan() {
+    try {
+        const type = document.getElementById('dinh-muc-type').value;
+        const gioDoimMa = document.getElementById('gio-doi-ma').value;
+        const may6M1 = document.getElementById('may-6m1').value;
+        const may6M5 = document.getElementById('may-6m5').value;
+        const may6K1 = document.getElementById('may-6k1').value;
+        const may6K2 = document.getElementById('may-6k2').value;
+        
+        // Gửi dữ liệu lên server
+        const response = await fetch('/api/dinh-muc-chung/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type,
+                gioDoimMa,
+                may6M1,
+                may6M5,
+                may6K1,
+                may6K2
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Lỗi khi lưu định mức');
+        }
+        
+        // Cập nhật hiển thị
+        document.getElementById(`${type}-gio-doi-ma`).textContent = gioDoimMa || '--';
+        document.getElementById(`${type}-may-6m1`).textContent = may6M1 || '--';
+        document.getElementById(`${type}-may-6m5`).textContent = may6M5 || '--';
+        document.getElementById(`${type}-may-6k1`).textContent = may6K1 || '--';
+        document.getElementById(`${type}-may-6k2`).textContent = may6K2 || '--';
+        
+        document.getElementById('dinh-muc-cong-doan-modal').style.display = 'none';
+        showToast('Đã lưu định mức thành công!');
+    } catch (error) {
+        console.error('Lỗi khi lưu định mức:', error);
+        showToast('Lỗi khi lưu định mức: ' + error.message, 'error');
+    }
 }
 
-function loadDinhMucData() {
-    ['gmc', 'in'].forEach(type => {
-        const data = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
-        document.getElementById(`${type}-gio-doi-ma`).textContent = data.gioDoimMa || '--';
-        document.getElementById(`${type}-may-6m`).textContent = data.may6M || '--';
-        document.getElementById(`${type}-may-6k`).textContent = data.may6K || '--';
-    });
+async function loadDinhMucData() {
+    console.log('Đang load dữ liệu định mức...');
+    
+    // Chờ một chút để đảm bảo DOM đã render
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    try {
+        // Kiểm tra DOM đã sẵn sàng chưa
+        const dinhMucContainer = document.getElementById('dinh-muc-chung-container');
+        const planningContent = document.getElementById('dinh-muc-planning-content');
+        
+        if (!dinhMucContainer || !planningContent) {
+            console.log('DOM chưa sẵn sàng, bỏ qua load định mức');
+            return;
+        }
+        
+        if (dinhMucContainer.style.display === 'none' || planningContent.style.display === 'none') {
+            console.log('Container định mức chưa hiển thị, bỏ qua load định mức');
+            return;
+        }
+        
+        const response = await fetch('/api/dinh-muc-chung/list');
+        if (!response.ok) {
+            throw new Error('Không thể lấy dữ liệu định mức');
+        }
+        
+        const data = await response.json();
+        console.log('Dữ liệu định mức từ server:', data);
+        
+        // Cập nhật hiển thị cho từng loại một cách an toàn
+        ['gmc', 'in'].forEach(type => {
+            const item = data.find(d => d.type === type);
+            console.log(`Đang cập nhật ${type}:`, item);
+            
+            // Tìm và cập nhật từng element một cách an toàn
+            const elements = [
+                { id: `${type}-gio-doi-ma`, value: item ? (item.gio_doi_ma || '--') : '--' },
+                { id: `${type}-may-6m1`, value: item ? (item.may_6m1 || '--') : '--' },
+                { id: `${type}-may-6m5`, value: item ? (item.may_6m5 || '--') : '--' },
+                { id: `${type}-may-6k1`, value: item ? (item.may_6k1 || '--') : '--' },
+                { id: `${type}-may-6k2`, value: item ? (item.may_6k2 || '--') : '--' }
+            ];
+            
+            elements.forEach(({ id, value }) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                    console.log(`✓ Cập nhật thành công ${id}: ${value}`);
+                } else {
+                    console.warn(`✗ Không tìm thấy element: ${id}`);
+                }
+            });
+        });
+        
+        console.log('Đã hoàn thành cập nhật hiển thị định mức');
+    } catch (error) {
+        console.error('Lỗi khi tải dữ liệu định mức:', error);
+    }
 }
-
 
 
 
@@ -6040,7 +6286,7 @@ window.backToDinhMucCategories = function() {
     document.getElementById('dinh-muc-chung-container').style.display = 'none';
 };
 
-window.openDinhMucModal = function(type) {
+window.openDinhMucModal = async function(type) {
     const modal = document.getElementById('dinh-muc-cong-doan-modal');
     const title = document.getElementById('dinh-muc-modal-title');
     const typeInput = document.getElementById('dinh-muc-type');
@@ -6048,11 +6294,33 @@ window.openDinhMucModal = function(type) {
     typeInput.value = type;
     title.textContent = `Định mức ${type.toUpperCase()}`;
     
-    // Load dữ liệu hiện có
-    const savedData = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
-    document.getElementById('gio-doi-ma').value = savedData.gioDoimMa || '';
-    document.getElementById('may-6m1-6m5').value = savedData.may6M || '';
-    document.getElementById('may-6k1-6k2').value = savedData.may6K || '';
+    // Load dữ liệu hiện có từ server
+    try {
+        const response = await fetch(`/api/dinh-muc-chung/${type}`);
+        if (response.ok) {
+            const savedData = await response.json();
+            document.getElementById('gio-doi-ma').value = savedData.gio_doi_ma || '';
+            document.getElementById('may-6m1').value = savedData.may_6m1 || '';
+            document.getElementById('may-6m5').value = savedData.may_6m5 || '';
+            document.getElementById('may-6k1').value = savedData.may_6k1 || '';
+            document.getElementById('may-6k2').value = savedData.may_6k2 || '';
+        } else {
+            // Reset form nếu chưa có dữ liệu
+            document.getElementById('gio-doi-ma').value = '';
+            document.getElementById('may-6m1').value = '';
+            document.getElementById('may-6m5').value = '';
+            document.getElementById('may-6k1').value = '';
+            document.getElementById('may-6k2').value = '';
+        }
+    } catch (error) {
+        console.error('Lỗi khi tải dữ liệu:', error);
+        // Reset form nếu có lỗi
+        document.getElementById('gio-doi-ma').value = '';
+        document.getElementById('may-6m1').value = '';
+        document.getElementById('may-6m5').value = '';
+        document.getElementById('may-6k1').value = '';
+        document.getElementById('may-6k2').value = '';
+    }
     
     modal.style.display = 'block';
 };
@@ -6064,71 +6332,31 @@ window.closeDinhMucModal = function() {
 window.saveDinhMucCongDoan = function() {
     const type = document.getElementById('dinh-muc-type').value;
     const gioDoimMa = document.getElementById('gio-doi-ma').value;
-    const may6M = document.getElementById('may-6m1-6m5').value;
-    const may6K = document.getElementById('may-6k1-6k2').value;
+    const may6M1 = document.getElementById('may-6m1').value;
+    const may6M5 = document.getElementById('may-6m5').value;
+    const may6K1 = document.getElementById('may-6k1').value;
+    const may6K2 = document.getElementById('may-6k2').value;
     
-    const data = { gioDoimMa, may6M, may6K };
+    const data = { gioDoimMa, may6M1, may6M5, may6K1, may6K2 };
     localStorage.setItem(`dinh-muc-${type}`, JSON.stringify(data));
     
     // Cập nhật hiển thị
     document.getElementById(`${type}-gio-doi-ma`).textContent = gioDoimMa || '--';
-    document.getElementById(`${type}-may-6m`).textContent = may6M || '--';
-    document.getElementById(`${type}-may-6k`).textContent = may6K || '--';
+    document.getElementById(`${type}-may-6m1`).textContent = may6M1 || '--';
+    document.getElementById(`${type}-may-6m5`).textContent = may6M5 || '--';
+    document.getElementById(`${type}-may-6k1`).textContent = may6K1 || '--';
+    document.getElementById(`${type}-may-6k2`).textContent = may6K2 || '--';
     
     closeDinhMucModal();
     showToast('Đã lưu định mức thành công!');
 };
 
-function loadDinhMucData() {
-    ['gmc', 'in'].forEach(type => {
-        const data = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
-        document.getElementById(`${type}-gio-doi-ma`).textContent = data.gioDoimMa || '--';
-        document.getElementById(`${type}-may-6m`).textContent = data.may6M || '--';
-        document.getElementById(`${type}-may-6k`).textContent = data.may6K || '--';
-    });
-}
 
 
 
 
 // Sự kiện cho tab Planning
-document.querySelectorAll('.tab[data-planning-tab]').forEach(tab => {
-    tab.addEventListener('click', function() {
-        // Loại bỏ active từ tất cả các tab planning
-        document.querySelectorAll('.tab[data-planning-tab]').forEach(t => {
-            t.classList.remove('active');
-        });
-        
-        // Add active cho tab hiện tại
-        this.classList.add('active');
-        
-        // Hiển thị nội dung tab tương ứng
-        const tabContentId = this.getAttribute('data-planning-tab') + '-content';
-        document.querySelectorAll('.planning-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        
-        const targetContent = document.getElementById(tabContentId);
-        if (targetContent) {
-            targetContent.classList.add('active');
-        }
 
-
-
-        if (this.getAttribute('data-planning-tab') === 'dinh-muc-planning') {
-    // Reset về view categories khi chuyển tab
-    setTimeout(() => {
-        const categories = document.querySelector('.dinh-muc-categories');
-        const container = document.getElementById('dinh-muc-chung-container');
-        if (categories) categories.style.display = 'grid';
-        if (container) container.style.display = 'none';
-        setupDinhMucPlanningEvents(); // Setup lại events
-    }, 100);
-}
-
-
-    });
-});
 
 
 // Hàm xử lý file Excel WS Tổng
@@ -6392,7 +6620,7 @@ async function saveWsTongData() {
             document.getElementById('ws-tong-preview-modal').style.display = 'none';
             
             // Tải lại danh sách WS Tổng
-            await loadWsTong();
+            await loadWsTong(1, wsTongPageSize);
             
             showToast(result.message || 'Đã lưu danh mục WS Tổng thành công!');
         } catch (fetchError) {
@@ -6418,33 +6646,81 @@ function cancelWsTongImport() {
 }
 
 // Tải danh sách WS Tổng
-async function loadWsTong() {
+async function loadWsTong(page = 1, pageSize = null) {
     try {
+        // Sử dụng giá trị từ select nếu pageSize không được truyền
+        if (pageSize === null) {
+            const pageSizeSelect = document.getElementById('ws-tong-page-size');
+            pageSize = pageSizeSelect ? parseInt(pageSizeSelect.value) : wsTongPageSize;
+        }
+        
+        wsTongPageSize = pageSize;
+        currentWsTongPage = page;
+        
         const wsTongList = document.getElementById('ws-tong-list');
         if (!wsTongList) {
             console.warn('Element #ws-tong-list not found');
             return;
         }
         
+        // Hiển thị loading
         wsTongList.innerHTML = '<tr><td colspan="48" class="text-center">Đang tải danh sách WS Tổng...</td></tr>';
+        updateWsTongPaginationInfo(0, 0, 0, 0);
         
-        const response = await fetch('/api/ws-tong/list');
-        if (!response.ok) {
+        // Thử gọi API với phân trang trước
+        let response = await fetch(`/api/ws-tong/list?page=${page}&limit=${pageSize}`);
+        let wsTongData = [];
+        let total = 0;
+        let totalPages = 0;
+        
+        if (response.ok) {
+            const result = await response.json();
+            
+            // Kiểm tra xem API có trả về format phân trang không
+            if (result && typeof result === 'object' && result.data && Array.isArray(result.data)) {
+                // Format phân trang mới
+                wsTongData = result.data;
+                total = result.total || result.data.length;
+                totalPages = result.totalPages || Math.ceil(total / pageSize);
+                currentWsTongPage = result.page || page;
+            } else if (Array.isArray(result)) {
+                // Format cũ - API trả về array trực tiếp
+                console.log('API chưa hỗ trợ phân trang, sử dụng phân trang client-side');
+                const allData = result;
+                total = allData.length;
+                totalPages = Math.ceil(total / pageSize);
+                
+                // Tính toán dữ liệu cho trang hiện tại
+                const startIndex = (page - 1) * pageSize;
+                const endIndex = startIndex + pageSize;
+                wsTongData = allData.slice(startIndex, endIndex);
+            } else {
+                throw new Error('Format dữ liệu không hợp lệ');
+            }
+        } else {
             throw new Error('Không thể lấy danh sách WS Tổng');
         }
         
-        const wsTongData = await response.json();
+        // Cập nhật biến toàn cục
+        totalWsTongRecords = total;
+        totalWsTongPages = totalPages;
         
-        // Hiển thị danh sách WS Tổng
+        // Hiển thị dữ liệu
         displayWsTongList(wsTongData);
+        
+        // Cập nhật pagination
+        updateWsTongPagination();
+        
     } catch (error) {
         console.error('Lỗi khi tải danh sách WS Tổng:', error);
         const wsTongList = document.getElementById('ws-tong-list');
         if (wsTongList) {
             wsTongList.innerHTML = `<tr><td colspan="48" class="text-center" style="color: red;">Lỗi: ${error.message}</td></tr>`;
         }
+        updateWsTongPaginationInfo(0, 0, 0, 0);
     }
 }
+
 
 // Hiển thị danh sách WS Tổng
 function displayWsTongList(wsTongData) {
@@ -6572,6 +6848,64 @@ window.addEventListener('click', function(event) {
         window.tempWsTongData = null;
     }
 });
+
+
+
+//TODO Cập nhật thông tin phân trang WS Tổng
+function updateWsTongPagination() {
+    const startRecord = totalWsTongRecords > 0 ? (currentWsTongPage - 1) * wsTongPageSize + 1 : 0;
+    const endRecord = Math.min(currentWsTongPage * wsTongPageSize, totalWsTongRecords);
+    
+    updateWsTongPaginationInfo(startRecord, endRecord, totalWsTongRecords, totalWsTongPages);
+    updateWsTongPaginationButtons();
+}
+
+//TODO Cập nhật thông tin hiển thị phân trang
+function updateWsTongPaginationInfo(start, end, total, totalPages) {
+    const showingInfo = document.getElementById('ws-tong-showing-info');
+    const pageInfo = document.getElementById('ws-tong-page-info');
+    
+    if (showingInfo) {
+        if (total === 0) {
+            showingInfo.textContent = 'Không có dữ liệu';
+        } else {
+            showingInfo.textContent = `Hiển thị ${start} - ${end} của ${total} bản ghi`;
+        }
+    }
+    
+    if (pageInfo) {
+        if (totalPages === 0) {
+            pageInfo.textContent = 'Trang 0 / 0';
+        } else {
+            pageInfo.textContent = `Trang ${currentWsTongPage} / ${totalPages}`;
+        }
+    }
+}
+
+
+//TODO Cập nhật trạng thái các nút phân trang
+function updateWsTongPaginationButtons() {
+    const firstBtn = document.getElementById('ws-tong-first-page');
+    const prevBtn = document.getElementById('ws-tong-prev-page');
+    const nextBtn = document.getElementById('ws-tong-next-page');
+    const lastBtn = document.getElementById('ws-tong-last-page');
+    
+    if (firstBtn) firstBtn.disabled = currentWsTongPage <= 1;
+    if (prevBtn) prevBtn.disabled = currentWsTongPage <= 1;
+    if (nextBtn) nextBtn.disabled = currentWsTongPage >= totalWsTongPages;
+    if (lastBtn) lastBtn.disabled = currentWsTongPage >= totalWsTongPages;
+    
+    // Cập nhật style cho disabled buttons
+    [firstBtn, prevBtn, nextBtn, lastBtn].forEach(btn => {
+        if (btn) {
+            btn.style.opacity = btn.disabled ? '0.5' : '1';
+            btn.style.cursor = btn.disabled ? 'not-allowed' : 'pointer';
+        }
+    });
+}
+
+
+
 
 // Load WS Tổng khi tải trang
 document.addEventListener('DOMContentLoaded', function() {

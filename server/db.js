@@ -1171,6 +1171,30 @@ db.run(`CREATE TABLE IF NOT EXISTS production_users (
 });
 
 
+// Bảng định mức chung planning
+db.run(`CREATE TABLE IF NOT EXISTS dinh_muc_chung_planning (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL UNIQUE, -- 'gmc' hoặc 'in'
+  gio_doi_ma TEXT,
+  may_6m1 TEXT,
+  may_6m5 TEXT,
+  may_6k1 TEXT,
+  may_6k2 TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`, (err) => {
+  if (err) {
+    console.error('Lỗi khởi tạo bảng dinh_muc_chung_planning:', err.message);
+  } else {
+    console.log('Bảng dinh_muc_chung_planning đã được tạo hoặc đã tồn tại');
+  }
+});
+
+
+
+
+
+
 
 
 

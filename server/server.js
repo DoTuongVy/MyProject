@@ -40,6 +40,7 @@ const machinesRoutes = require('./routes/machines');
 const wsTongRoutes = require('./routes/ws-tong');
 const quanLynguoiDungsanXuat = require('./routes/quan-ly-nguoi-dung-sanxuat');
 const bieuDoRoutes = require('./routes/bieu-do');
+const dinhMucChungRoutes = require('./routes/dinh-muc-chung');
 
 // Sử dụng routes
 app.use('/api/sang-cuon', sangCuonRoutes);
@@ -58,6 +59,7 @@ app.use('/api/machines', machinesRoutes);
 app.use('/api/ws-tong', wsTongRoutes);
 app.use('/api/production-users',quanLynguoiDungsanXuat);
 app.use('/api/bieu-do', bieuDoRoutes);
+app.use('/api/dinh-muc-chung', dinhMucChungRoutes);
 
 
 app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
