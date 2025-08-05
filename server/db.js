@@ -1175,11 +1175,22 @@ db.run(`CREATE TABLE IF NOT EXISTS production_users (
 db.run(`CREATE TABLE IF NOT EXISTS dinh_muc_chung_planning (
   id TEXT PRIMARY KEY,
   type TEXT NOT NULL UNIQUE, -- 'gmc' hoặc 'in'
-  gio_doi_ma TEXT,
-  may_6m1 TEXT,
-  may_6m5 TEXT,
-  may_6k1 TEXT,
-  may_6k2 TEXT,
+  // Máy 6M1
+  may_6m1_gio_doi_ma TEXT,
+  may_6m1_gio_doi_ma_trung TEXT,
+  may_6m1_toc_do TEXT,
+  // Máy 6M5
+  may_6m5_gio_doi_ma TEXT,
+  may_6m5_gio_doi_ma_trung TEXT,
+  may_6m5_toc_do TEXT,
+  // Máy 6K1
+  may_6k1_gio_doi_ma TEXT,
+  may_6k1_gio_doi_ma_trung TEXT,
+  may_6k1_toc_do TEXT,
+  // Máy 6K2
+  may_6k2_gio_doi_ma TEXT,
+  may_6k2_gio_doi_ma_trung TEXT,
+  may_6k2_toc_do TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`, (err) => {

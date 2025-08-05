@@ -4,7 +4,11 @@ let wsTongPageSize = 100;
 let totalWsTongRecords = 0;
 let totalWsTongPages = 0;
 
-
+//! Biến phân trang cho định mức chi tiết in
+let currentDinhMucChiTietPage = 1;
+let dinhMucChiTietPageSize = 50;
+let totalDinhMucChiTietRecords = 0;
+let totalDinhMucChiTietPages = 0;
 
 //! =================================================================
 //! UTILITY FUNCTIONS
@@ -5985,10 +5989,11 @@ function setupWsTongExcelEvents() {
 
 
 
+
+
+
 // Thêm hàm setup events cho định mức planning
 function setupDinhMucPlanningEvents() {
-
-    
     // Event cho nút định mức chung
 const dinhMucChungBtn = document.querySelector('.dinh-muc-chung-btn');
 if (dinhMucChungBtn) {
@@ -6005,21 +6010,75 @@ if (dinhMucChungBtn) {
 
     
     // Event cho nút định mức chi tiết
-    const dinhMucChiTietBtn = document.querySelector('.dinh-muc-chi-tiet-btn');
-    if (dinhMucChiTietBtn) {
-        dinhMucChiTietBtn.addEventListener('click', function() {
-            showToast('Chức năng định mức chi tiết sẽ phát triển sau!', 'info');
-        });
-    }
+const dinhMucChiTietBtn = document.querySelector('.dinh-muc-chi-tiet-btn');
+if (dinhMucChiTietBtn) {
+    dinhMucChiTietBtn.addEventListener('click', function() {
+        document.querySelector('.dinh-muc-categories').style.display = 'none';
+        document.getElementById('dinh-muc-chi-tiet-container').style.display = 'block';
+        
+        // Load dữ liệu với delay nhỏ
+        setTimeout(() => {
+            loadDinhMucChiTietData();
+        }, 100);
+    });
+}
     
     // Event cho nút quay lại
     const backBtn = document.querySelector('.back-to-categories-btn');
+    // Event cho nút quay lại từ chi tiết
+const backFromChiTietBtn = document.querySelector('.back-from-chi-tiet-btn');
+if (backFromChiTietBtn) {
+    backFromChiTietBtn.addEventListener('click', function() {
+        document.querySelector('.dinh-muc-categories').style.display = 'grid';
+        document.getElementById('dinh-muc-chi-tiet-container').style.display = 'none';
+    });
+}
     if (backBtn) {
         backBtn.addEventListener('click', function() {
             document.querySelector('.dinh-muc-categories').style.display = 'grid';
             document.getElementById('dinh-muc-chung-container').style.display = 'none';
         });
     }
+
+
+// Sự kiện thay đổi số bản ghi/trang cho định mức chi tiết
+const dinhMucChiTietPageSize = document.getElementById('dinh-muc-chi-tiet-page-size');
+if (dinhMucChiTietPageSize) {
+    dinhMucChiTietPageSize.addEventListener('change', function() {
+        loadDinhMucChiTietData(1, parseInt(this.value));
+    });
+}
+
+// Sự kiện các nút phân trang cho định mức chi tiết
+const dinhMucChiTietFirstPage = document.getElementById('dinh-muc-chi-tiet-first-page');
+if (dinhMucChiTietFirstPage) {
+    dinhMucChiTietFirstPage.addEventListener('click', function() {
+        if (currentDinhMucChiTietPage > 1) loadDinhMucChiTietData(1);
+    });
+}
+
+const dinhMucChiTietPrevPage = document.getElementById('dinh-muc-chi-tiet-prev-page');
+if (dinhMucChiTietPrevPage) {
+    dinhMucChiTietPrevPage.addEventListener('click', function() {
+        if (currentDinhMucChiTietPage > 1) loadDinhMucChiTietData(currentDinhMucChiTietPage - 1);
+    });
+}
+
+const dinhMucChiTietNextPage = document.getElementById('dinh-muc-chi-tiet-next-page');
+if (dinhMucChiTietNextPage) {
+    dinhMucChiTietNextPage.addEventListener('click', function() {
+        if (currentDinhMucChiTietPage < totalDinhMucChiTietPages) loadDinhMucChiTietData(currentDinhMucChiTietPage + 1);
+    });
+}
+
+const dinhMucChiTietLastPage = document.getElementById('dinh-muc-chi-tiet-last-page');
+if (dinhMucChiTietLastPage) {
+    dinhMucChiTietLastPage.addEventListener('click', function() {
+        if (currentDinhMucChiTietPage < totalDinhMucChiTietPages) loadDinhMucChiTietData(totalDinhMucChiTietPages);
+    });
+}
+
+
     
     // Event cho các card công đoạn
     document.querySelectorAll('.cong-doan-card').forEach(card => {
@@ -6135,29 +6194,62 @@ async function openDinhMucModal(type) {
         const response = await fetch(`/api/dinh-muc-chung/${type}`);
         if (response.ok) {
             const savedData = await response.json();
-            document.getElementById('gio-doi-ma').value = savedData.gio_doi_ma || '';
-            document.getElementById('may-6m1').value = savedData.may_6m1 || '';
-            document.getElementById('may-6m5').value = savedData.may_6m5 || '';
-            document.getElementById('may-6k1').value = savedData.may_6k1 || '';
-            document.getElementById('may-6k2').value = savedData.may_6k2 || '';
+            // Máy 6M1
+document.getElementById('may-6m1-gio-doi-ma').value = savedData.may_6m1_gio_doi_ma || '';
+document.getElementById('may-6m1-gio-doi-ma-trung').value = savedData.may_6m1_gio_doi_ma_trung || '';
+document.getElementById('may-6m1-toc-do').value = savedData.may_6m1_toc_do || '';
+// Máy 6M5
+document.getElementById('may-6m5-gio-doi-ma').value = savedData.may_6m5_gio_doi_ma || '';
+document.getElementById('may-6m5-gio-doi-ma-trung').value = savedData.may_6m5_gio_doi_ma_trung || '';
+document.getElementById('may-6m5-toc-do').value = savedData.may_6m5_toc_do || '';
+// Máy 6K1
+document.getElementById('may-6k1-gio-doi-ma').value = savedData.may_6k1_gio_doi_ma || '';
+document.getElementById('may-6k1-gio-doi-ma-trung').value = savedData.may_6k1_gio_doi_ma_trung || '';
+document.getElementById('may-6k1-toc-do').value = savedData.may_6k1_toc_do || '';
+// Máy 6K2
+document.getElementById('may-6k2-gio-doi-ma').value = savedData.may_6k2_gio_doi_ma || '';
+document.getElementById('may-6k2-gio-doi-ma-trung').value = savedData.may_6k2_gio_doi_ma_trung || '';
+document.getElementById('may-6k2-toc-do').value = savedData.may_6k2_toc_do || '';
         } else {
             // Fallback về localStorage nếu chưa có dữ liệu trên server
             const savedData = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
-            document.getElementById('gio-doi-ma').value = savedData.gioDoimMa || '';
-            document.getElementById('may-6m1').value = savedData.may6M1 || '';
-            document.getElementById('may-6m5').value = savedData.may6M5 || '';
-            document.getElementById('may-6k1').value = savedData.may6K1 || '';
-            document.getElementById('may-6k2').value = savedData.may6K2 || '';
+// Máy 6M1
+document.getElementById('may-6m1-gio-doi-ma').value = savedData.may_6m1_gio_doi_ma || '';
+document.getElementById('may-6m1-gio-doi-ma-trung').value = savedData.may_6m1_gio_doi_ma_trung || '';
+document.getElementById('may-6m1-toc-do').value = savedData.may_6m1_toc_do || '';
+// Máy 6M5
+document.getElementById('may-6m5-gio-doi-ma').value = savedData.may_6m5_gio_doi_ma || '';
+document.getElementById('may-6m5-gio-doi-ma-trung').value = savedData.may_6m5_gio_doi_ma_trung || '';
+document.getElementById('may-6m5-toc-do').value = savedData.may_6m5_toc_do || '';
+// Máy 6K1
+document.getElementById('may-6k1-gio-doi-ma').value = savedData.may_6k1_gio_doi_ma || '';
+document.getElementById('may-6k1-gio-doi-ma-trung').value = savedData.may_6k1_gio_doi_ma_trung || '';
+document.getElementById('may-6k1-toc-do').value = savedData.may_6k1_toc_do || '';
+// Máy 6K2
+document.getElementById('may-6k2-gio-doi-ma').value = savedData.may_6k2_gio_doi_ma || '';
+document.getElementById('may-6k2-gio-doi-ma-trung').value = savedData.may_6k2_gio_doi_ma_trung || '';
+document.getElementById('may-6k2-toc-do').value = savedData.may_6k2_toc_do || '';
         }
     } catch (error) {
         console.error('Lỗi khi tải dữ liệu:', error);
         // Fallback về localStorage
         const savedData = JSON.parse(localStorage.getItem(`dinh-muc-${type}`) || '{}');
-        document.getElementById('gio-doi-ma').value = savedData.gioDoimMa || '';
-        document.getElementById('may-6m1').value = savedData.may6M1 || '';
-        document.getElementById('may-6m5').value = savedData.may6M5 || '';
-        document.getElementById('may-6k1').value = savedData.may6K1 || '';
-        document.getElementById('may-6k2').value = savedData.may6K2 || '';
+// Máy 6M1
+document.getElementById('may-6m1-gio-doi-ma').value = savedData.may_6m1_gio_doi_ma || '';
+document.getElementById('may-6m1-gio-doi-ma-trung').value = savedData.may_6m1_gio_doi_ma_trung || '';
+document.getElementById('may-6m1-toc-do').value = savedData.may_6m1_toc_do || '';
+// Máy 6M5
+document.getElementById('may-6m5-gio-doi-ma').value = savedData.may_6m5_gio_doi_ma || '';
+document.getElementById('may-6m5-gio-doi-ma-trung').value = savedData.may_6m5_gio_doi_ma_trung || '';
+document.getElementById('may-6m5-toc-do').value = savedData.may_6m5_toc_do || '';
+// Máy 6K1
+document.getElementById('may-6k1-gio-doi-ma').value = savedData.may_6k1_gio_doi_ma || '';
+document.getElementById('may-6k1-gio-doi-ma-trung').value = savedData.may_6k1_gio_doi_ma_trung || '';
+document.getElementById('may-6k1-toc-do').value = savedData.may_6k1_toc_do || '';
+// Máy 6K2
+document.getElementById('may-6k2-gio-doi-ma').value = savedData.may_6k2_gio_doi_ma || '';
+document.getElementById('may-6k2-gio-doi-ma-trung').value = savedData.may_6k2_gio_doi_ma_trung || '';
+document.getElementById('may-6k2-toc-do').value = savedData.may_6k2_toc_do || '';
     }
     
     modal.style.display = 'block';
@@ -6166,11 +6258,22 @@ async function openDinhMucModal(type) {
 async function saveDinhMucCongDoan() {
     try {
         const type = document.getElementById('dinh-muc-type').value;
-        const gioDoimMa = document.getElementById('gio-doi-ma').value;
-        const may6M1 = document.getElementById('may-6m1').value;
-        const may6M5 = document.getElementById('may-6m5').value;
-        const may6K1 = document.getElementById('may-6k1').value;
-        const may6K2 = document.getElementById('may-6k2').value;
+// Lấy dữ liệu từ form
+const may6M1GioDoiMa = document.getElementById('may-6m1-gio-doi-ma').value;
+const may6M1GioDoiMaTrung = document.getElementById('may-6m1-gio-doi-ma-trung').value;
+const may6M1TocDo = document.getElementById('may-6m1-toc-do').value;
+
+const may6M5GioDoiMa = document.getElementById('may-6m5-gio-doi-ma').value;
+const may6M5GioDoiMaTrung = document.getElementById('may-6m5-gio-doi-ma-trung').value;
+const may6M5TocDo = document.getElementById('may-6m5-toc-do').value;
+
+const may6K1GioDoiMa = document.getElementById('may-6k1-gio-doi-ma').value;
+const may6K1GioDoiMaTrung = document.getElementById('may-6k1-gio-doi-ma-trung').value;
+const may6K1TocDo = document.getElementById('may-6k1-toc-do').value;
+
+const may6K2GioDoiMa = document.getElementById('may-6k2-gio-doi-ma').value;
+const may6K2GioDoiMaTrung = document.getElementById('may-6k2-gio-doi-ma-trung').value;
+const may6K2TocDo = document.getElementById('may-6k2-toc-do').value;
         
         // Gửi dữ liệu lên server
         const response = await fetch('/api/dinh-muc-chung/save', {
@@ -6180,11 +6283,10 @@ async function saveDinhMucCongDoan() {
             },
             body: JSON.stringify({
                 type,
-                gioDoimMa,
-                may6M1,
-                may6M5,
-                may6K1,
-                may6K2
+                may6M1GioDoiMa, may6M1GioDoiMaTrung, may6M1TocDo,
+                may6M5GioDoiMa, may6M5GioDoiMaTrung, may6M5TocDo,
+                may6K1GioDoiMa, may6K1GioDoiMaTrung, may6K1TocDo,
+                may6K2GioDoiMa, may6K2GioDoiMaTrung, may6K2TocDo
             })
         });
         
@@ -6193,12 +6295,24 @@ async function saveDinhMucCongDoan() {
             throw new Error(errorData.error || 'Lỗi khi lưu định mức');
         }
         
-        // Cập nhật hiển thị
-        document.getElementById(`${type}-gio-doi-ma`).textContent = gioDoimMa || '--';
-        document.getElementById(`${type}-may-6m1`).textContent = may6M1 || '--';
-        document.getElementById(`${type}-may-6m5`).textContent = may6M5 || '--';
-        document.getElementById(`${type}-may-6k1`).textContent = may6K1 || '--';
-        document.getElementById(`${type}-may-6k2`).textContent = may6K2 || '--';
+        // Cập nhật hiển thị cho từng máy
+const machines = ['6m1', '6m5', '6k1', '6k2'];
+const dataValues = {
+    '6m1': { gioDoiMa: may6M1GioDoiMa, gioDoiMaTrung: may6M1GioDoiMaTrung, tocDo: may6M1TocDo },
+    '6m5': { gioDoiMa: may6M5GioDoiMa, gioDoiMaTrung: may6M5GioDoiMaTrung, tocDo: may6M5TocDo },
+    '6k1': { gioDoiMa: may6K1GioDoiMa, gioDoiMaTrung: may6K1GioDoiMaTrung, tocDo: may6K1TocDo },
+    '6k2': { gioDoiMa: may6K2GioDoiMa, gioDoiMaTrung: may6K2GioDoiMaTrung, tocDo: may6K2TocDo }
+};
+
+machines.forEach(machine => {
+    const gioDoiMaEl = document.getElementById(`${type}-${machine}-gio-doi-ma`);
+    const gioDoiMaTrungEl = document.getElementById(`${type}-${machine}-gio-doi-ma-trung`);
+    const tocDoEl = document.getElementById(`${type}-${machine}-toc-do`);
+    
+    if (gioDoiMaEl) gioDoiMaEl.textContent = dataValues[machine].gioDoiMa || '--';
+    if (gioDoiMaTrungEl) gioDoiMaTrungEl.textContent = dataValues[machine].gioDoiMaTrung || '--';
+    if (tocDoEl) tocDoEl.textContent = dataValues[machine].tocDo || '--';
+});
         
         document.getElementById('dinh-muc-cong-doan-modal').style.display = 'none';
         showToast('Đã lưu định mức thành công!');
@@ -6242,24 +6356,19 @@ async function loadDinhMucData() {
             const item = data.find(d => d.type === type);
             console.log(`Đang cập nhật ${type}:`, item);
             
-            // Tìm và cập nhật từng element một cách an toàn
-            const elements = [
-                { id: `${type}-gio-doi-ma`, value: item ? (item.gio_doi_ma || '--') : '--' },
-                { id: `${type}-may-6m1`, value: item ? (item.may_6m1 || '--') : '--' },
-                { id: `${type}-may-6m5`, value: item ? (item.may_6m5 || '--') : '--' },
-                { id: `${type}-may-6k1`, value: item ? (item.may_6k1 || '--') : '--' },
-                { id: `${type}-may-6k2`, value: item ? (item.may_6k2 || '--') : '--' }
-            ];
-            
-            elements.forEach(({ id, value }) => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.textContent = value;
-                    console.log(`✓ Cập nhật thành công ${id}: ${value}`);
-                } else {
-                    console.warn(`✗ Không tìm thấy element: ${id}`);
-                }
-            });
+            if (item) {
+                // Cập nhật hiển thị cho từng máy
+                const machines = ['6m1', '6m5', '6k1', '6k2'];
+                machines.forEach(machine => {
+                    const gioDoiMaEl = document.getElementById(`${type}-${machine}-gio-doi-ma`);
+                    const gioDoiMaTrungEl = document.getElementById(`${type}-${machine}-gio-doi-ma-trung`);
+                    const tocDoEl = document.getElementById(`${type}-${machine}-toc-do`);
+                    
+                    if (gioDoiMaEl) gioDoiMaEl.textContent = item[`may_${machine}_gio_doi_ma`] || '--';
+                    if (gioDoiMaTrungEl) gioDoiMaTrungEl.textContent = item[`may_${machine}_gio_doi_ma_trung`] || '--';
+                    if (tocDoEl) tocDoEl.textContent = item[`may_${machine}_toc_do`] || '--';
+                });
+            }
         });
         
         console.log('Đã hoàn thành cập nhật hiển thị định mức');
@@ -6267,6 +6376,215 @@ async function loadDinhMucData() {
         console.error('Lỗi khi tải dữ liệu định mức:', error);
     }
 }
+
+
+
+async function loadDinhMucChiTietData(page = 1, pageSize = null) {
+    console.log('Đang load dữ liệu định mức chi tiết in...');
+    
+    try {
+        // Sử dụng giá trị từ select nếu pageSize không được truyền
+        if (pageSize === null) {
+            const pageSizeSelect = document.getElementById('dinh-muc-chi-tiet-page-size');
+            pageSize = pageSizeSelect ? parseInt(pageSizeSelect.value) : dinhMucChiTietPageSize;
+        }
+        
+        dinhMucChiTietPageSize = pageSize;
+        currentDinhMucChiTietPage = page;
+
+        // Hiển thị loading
+        const tableBody = document.getElementById('dinh-muc-chi-tiet-table-body');
+        if (tableBody) {
+            tableBody.innerHTML = '<tr><td colspan="21" class="text-center">Đang tải dữ liệu...</td></tr>';
+        }
+        updateDinhMucChiTietPaginationInfo(0, 0, 0, 0);
+
+        const response = await fetch(`/api/dinh-muc-in/list?page=${page}&limit=${pageSize}`);
+        if (!response.ok) {
+            throw new Error('Không thể lấy dữ liệu định mức chi tiết in');
+        }
+        
+        const result = await response.json();
+        console.log('Dữ liệu định mức chi tiết in:', result);
+        
+        // Cập nhật biến toàn cục
+        totalDinhMucChiTietRecords = result.total;
+        totalDinhMucChiTietPages = result.totalPages;
+        currentDinhMucChiTietPage = result.page;
+        
+        // Hiển thị dữ liệu trong bảng
+        displayDinhMucChiTietTable(result.data);
+        
+        // Cập nhật pagination
+        updateDinhMucChiTietPagination();
+        
+    } catch (error) {
+        console.error('Lỗi khi tải dữ liệu định mức chi tiết in:', error);
+        showToast('Lỗi khi tải dữ liệu định mức chi tiết: ' + error.message, 'error');
+        
+        const tableBody = document.getElementById('dinh-muc-chi-tiet-table-body');
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="15" class="text-center" style="color: red;">Lỗi: ${error.message}</td></tr>`;
+        }
+        updateDinhMucChiTietPaginationInfo(0, 0, 0, 0);
+    }
+}
+
+
+function displayDinhMucChiTietTable(data) {
+    const tableBody = document.getElementById('dinh-muc-chi-tiet-table-body');
+    if (!tableBody) {
+        console.error('Không tìm thấy element table body');
+        return;
+    }
+    
+    tableBody.innerHTML = '';
+    
+    if (!data || data.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="21" style="text-align: center; padding: 20px;">Không có dữ liệu định mức chi tiết</td>';
+        tableBody.appendChild(emptyRow);
+        return;
+    }
+    
+    data.forEach(item => {
+        const row = document.createElement('tr');
+        
+        // Format khổ và dài để hiển thị ngang nhau
+        const khoVaDai = `${item.kho || ''}${item.kho && item.dai_giay ? ' x ' : ''}${item.dai_giay || ''}`;
+        
+        row.innerHTML = `
+            <td class="product-code-cell" style="text-align: center; font-weight: bold; background: #f8f9fa;">${item.ma_sp || ''}</td>
+            <td style="text-align: center;">${item.khach_hang || ''}</td>
+            <td style="text-align: center;">${item.so_mau || ''}</td>
+            
+            <td class="machine-cell" data-machine="6M1" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #d8ead3; cursor: pointer;">${item.ngay_phu || '2025-05-08'}</td>
+            <td class="machine-cell" data-machine="6M1" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #d8ead3; cursor: pointer;">${item.may_6m1_gio_doi_ma || '60'}</td>
+            <td class="machine-cell" data-machine="6M1" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #d8ead3; cursor: pointer;">${item.may_6m1_toc_do || '7000'}</td>
+            
+            <td class="machine-cell" data-machine="6M5" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #c9daf8; cursor: pointer;">${item.ngay_phu || '2025-05-08'}</td>
+            <td class="machine-cell" data-machine="6M5" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #c9daf8; cursor: pointer;">${item.may_6m5_gio_doi_ma || '60'}</td>
+            <td class="machine-cell" data-machine="6M5" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #c9daf8; cursor: pointer;">${item.may_6m5_toc_do || '7000'}</td>
+            
+            <td class="machine-cell" data-machine="6K1" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #fce5cd; cursor: pointer;">${item.ngay_phu || '2025-05-08'}</td>
+            <td class="machine-cell" data-machine="6K1" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #fce5cd; cursor: pointer;">${item.may_6k1_gio_doi_ma || '60'}</td>
+            <td class="machine-cell" data-machine="6K1" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #fce5cd; cursor: pointer;">${item.may_6k1_toc_do || '7000'}</td>
+            
+            <td class="machine-cell" data-machine="6K2" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #f4cccc; cursor: pointer;">${item.ngay_phu || '2025-05-08'}</td>
+            <td class="machine-cell" data-machine="6K2" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #f4cccc; cursor: pointer;">${item.may_6k2_gio_doi_ma || '60'}</td>
+            <td class="machine-cell" data-machine="6K2" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #f4cccc; cursor: pointer;">${item.may_6k2_toc_do || '7000'}</td>
+            
+            <td class="machine-cell" data-machine="2M" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #ead1dc; cursor: pointer;">${item.ngay_phu || '2025-05-08'}</td>
+            <td class="machine-cell" data-machine="2M" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #ead1dc; cursor: pointer;">${item.may_2m_gio_doi_ma || '60'}</td>
+            <td class="machine-cell" data-machine="2M" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #ead1dc; cursor: pointer;">${item.may_2m_toc_do || '7000'}</td>
+            
+            <td class="machine-cell" data-machine="KTS" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #d0e0e3; cursor: pointer;">${item.ngay_phu || '2025-05-08'}</td>
+            <td class="machine-cell" data-machine="KTS" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #d0e0e3; cursor: pointer;">${item.may_kts_gio_doi_ma || '60'}</td>
+            <td class="machine-cell" data-machine="KTS" data-product="${item.ma_sp}" data-so-con="${item.so_con || ''}" data-loai-giay="${item.loai_giay || ''}" data-kho-dai="${khoVaDai}" data-phu-keo="${item.phu_keo || ''}" style="text-align: center; background: #d0e0e3; cursor: pointer;">${item.may_kts_toc_do || '7000'}</td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+    
+    // Thêm event listeners cho popover
+    setupMachinePopover();
+}
+
+
+
+// Cập nhật thông tin phân trang định mức chi tiết
+function updateDinhMucChiTietPagination() {
+    const startRecord = totalDinhMucChiTietRecords > 0 ? (currentDinhMucChiTietPage - 1) * dinhMucChiTietPageSize + 1 : 0;
+    const endRecord = Math.min(currentDinhMucChiTietPage * dinhMucChiTietPageSize, totalDinhMucChiTietRecords);
+    
+    updateDinhMucChiTietPaginationInfo(startRecord, endRecord, totalDinhMucChiTietRecords, totalDinhMucChiTietPages);
+    updateDinhMucChiTietPaginationButtons();
+}
+
+// Cập nhật thông tin hiển thị phân trang
+function updateDinhMucChiTietPaginationInfo(start, end, total, totalPages) {
+    const showingInfo = document.getElementById('dinh-muc-chi-tiet-showing-info');
+    const pageInfo = document.getElementById('dinh-muc-chi-tiet-page-info');
+    
+    if (showingInfo) {
+        if (total === 0) {
+            showingInfo.textContent = 'Không có dữ liệu';
+        } else {
+            showingInfo.textContent = `Hiển thị ${start} - ${end} của ${total} sản phẩm`;
+        }
+    }
+    
+    if (pageInfo) {
+        if (totalPages === 0) {
+            pageInfo.textContent = 'Trang 0 / 0';
+        } else {
+            pageInfo.textContent = `Trang ${currentDinhMucChiTietPage} / ${totalPages}`;
+        }
+    }
+}
+
+// Cập nhật trạng thái các nút phân trang
+function updateDinhMucChiTietPaginationButtons() {
+    const firstBtn = document.getElementById('dinh-muc-chi-tiet-first-page');
+    const prevBtn = document.getElementById('dinh-muc-chi-tiet-prev-page');
+    const nextBtn = document.getElementById('dinh-muc-chi-tiet-next-page');
+    const lastBtn = document.getElementById('dinh-muc-chi-tiet-last-page');
+    
+    if (firstBtn) firstBtn.disabled = currentDinhMucChiTietPage <= 1;
+    if (prevBtn) prevBtn.disabled = currentDinhMucChiTietPage <= 1;
+    if (nextBtn) nextBtn.disabled = currentDinhMucChiTietPage >= totalDinhMucChiTietPages;
+    if (lastBtn) lastBtn.disabled = currentDinhMucChiTietPage >= totalDinhMucChiTietPages;
+    
+    // Cập nhật style cho disabled buttons
+    [firstBtn, prevBtn, nextBtn, lastBtn].forEach(btn => {
+        if (btn) {
+            btn.style.opacity = btn.disabled ? '0.5' : '1';
+            btn.style.cursor = btn.disabled ? 'not-allowed' : 'pointer';
+        }
+    });
+}
+
+
+
+
+// Hàm cập nhật giá trị định mức
+async function updateDinhMucValue(maSanPham, field, value) {
+    try {
+        // Lấy tất cả giá trị hiện tại của sản phẩm này
+        const inputs = document.querySelectorAll(`input[onchange*="${maSanPham}"]`);
+        const data = {};
+        
+        inputs.forEach(input => {
+            const fieldName = input.getAttribute('onchange').match(/'([^']+)'/g)[1].replace(/'/g, '');
+            data[fieldName] = input.value;
+        });
+        
+        // Cập nhật field vừa thay đổi
+        data[field] = value;
+        
+        const response = await fetch(`/api/dinh-muc-in/${encodeURIComponent(maSanPham)}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Không thể cập nhật định mức');
+        }
+        
+        console.log(`Đã cập nhật ${field} = ${value} cho sản phẩm ${maSanPham}`);
+    } catch (error) {
+        console.error('Lỗi khi cập nhật định mức:', error);
+        showToast('Lỗi khi cập nhật định mức: ' + error.message, 'error');
+    }
+}
+
+// Export hàm để có thể gọi từ HTML
+window.updateDinhMucValue = updateDinhMucValue;
+
+
 
 
 
@@ -6300,6 +6618,7 @@ window.openDinhMucModal = async function(type) {
         if (response.ok) {
             const savedData = await response.json();
             document.getElementById('gio-doi-ma').value = savedData.gio_doi_ma || '';
+            document.getElementById('gio-doi-ma-trung').value = savedData.gio_doi_ma_trung || '';
             document.getElementById('may-6m1').value = savedData.may_6m1 || '';
             document.getElementById('may-6m5').value = savedData.may_6m5 || '';
             document.getElementById('may-6k1').value = savedData.may_6k1 || '';
@@ -6307,6 +6626,7 @@ window.openDinhMucModal = async function(type) {
         } else {
             // Reset form nếu chưa có dữ liệu
             document.getElementById('gio-doi-ma').value = '';
+            document.getElementById('gio-doi-ma-trung').value = '';
             document.getElementById('may-6m1').value = '';
             document.getElementById('may-6m5').value = '';
             document.getElementById('may-6k1').value = '';
@@ -6316,6 +6636,7 @@ window.openDinhMucModal = async function(type) {
         console.error('Lỗi khi tải dữ liệu:', error);
         // Reset form nếu có lỗi
         document.getElementById('gio-doi-ma').value = '';
+        document.getElementById('gio-doi-ma-trung').value = '';
         document.getElementById('may-6m1').value = '';
         document.getElementById('may-6m5').value = '';
         document.getElementById('may-6k1').value = '';
@@ -6331,17 +6652,19 @@ window.closeDinhMucModal = function() {
 
 window.saveDinhMucCongDoan = function() {
     const type = document.getElementById('dinh-muc-type').value;
-    const gioDoimMa = document.getElementById('gio-doi-ma').value;
+    const gioDoiMa = document.getElementById('gio-doi-ma').value;
+    const gioDoiMaTrung = document.getElementById('gio-doi-ma-trung').value;
     const may6M1 = document.getElementById('may-6m1').value;
     const may6M5 = document.getElementById('may-6m5').value;
     const may6K1 = document.getElementById('may-6k1').value;
     const may6K2 = document.getElementById('may-6k2').value;
     
-    const data = { gioDoimMa, may6M1, may6M5, may6K1, may6K2 };
+    const data = { gioDoiMa, gioDoiMaTrung, may6M1, may6M5, may6K1, may6K2 };
     localStorage.setItem(`dinh-muc-${type}`, JSON.stringify(data));
     
     // Cập nhật hiển thị
-    document.getElementById(`${type}-gio-doi-ma`).textContent = gioDoimMa || '--';
+    document.getElementById(`${type}-gio-doi-ma`).textContent = gioDoiMa || '--';
+    document.getElementById(`${type}-gio-doi-ma-trung`).textContent = gioDoiMaTrung || '--';
     document.getElementById(`${type}-may-6m1`).textContent = may6M1 || '--';
     document.getElementById(`${type}-may-6m5`).textContent = may6M5 || '--';
     document.getElementById(`${type}-may-6k1`).textContent = may6K1 || '--';
@@ -7178,3 +7501,63 @@ async function removeProductionUser(productionUserId) {
 window.openProductionUserManagementModal = openProductionUserManagementModal;
 window.addProductionUser = addProductionUser;
 window.removeProductionUser = removeProductionUser;
+
+
+
+
+
+
+// Hàm thiết lập popover cho các ô máy
+function setupMachinePopover() {
+    // Tạo popover element nếu chưa có
+    let popover = document.getElementById('machine-popover');
+    if (!popover) {
+        popover = document.createElement('div');
+        popover.id = 'machine-popover';
+        popover.style.cssText = `
+            position: absolute;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            min-width: 200px;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        `;
+        document.body.appendChild(popover);
+    }
+    
+    // Gắn event cho các ô máy
+    document.querySelectorAll('.machine-cell').forEach(cell => {
+        cell.addEventListener('mouseenter', function(e) {
+            const machine = this.getAttribute('data-machine');
+            const product = this.getAttribute('data-product');
+            const soCon = this.getAttribute('data-so-con') || '--';
+            const loaiGiay = this.getAttribute('data-loai-giay') || '--';
+            const khoDai = this.getAttribute('data-kho-dai') || '--';
+            const phuKeo = this.getAttribute('data-phu-keo') || '--';
+            
+            popover.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 8px; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 4px;">
+                    Máy ${machine} - ${product}
+                </div>
+                <div style="margin-bottom: 4px;"><strong>Số con:</strong> ${soCon}</div>
+                <div style="margin-bottom: 4px;"><strong>Loại giấy:</strong> ${loaiGiay}</div>
+                <div style="margin-bottom: 4px;"><strong>Khổ x Dài (cm):</strong> ${khoDai}</div>
+                <div><strong>Phủ keo:</strong> ${phuKeo}</div>
+            `;
+            
+            const rect = this.getBoundingClientRect();
+            popover.style.left = (rect.left + window.scrollX) + 'px';
+            popover.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+            popover.style.display = 'block';
+        });
+        
+        cell.addEventListener('mouseleave', function() {
+            popover.style.display = 'none';
+        });
+    });
+}

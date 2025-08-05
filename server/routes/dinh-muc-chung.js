@@ -5,7 +5,13 @@ const { db } = require('../db');
 // Lưu định mức chung
 router.post('/save', async (req, res) => {
     try {
-        const { type, gioDoimMa, may6M1, may6M5, may6K1, may6K2 } = req.body;
+        const { 
+            type, 
+            may6M1GioDoiMa, may6M1GioDoiMaTrung, may6M1TocDo,
+            may6M5GioDoiMa, may6M5GioDoiMaTrung, may6M5TocDo,
+            may6K1GioDoiMa, may6K1GioDoiMaTrung, may6K1TocDo,
+            may6K2GioDoiMa, may6K2GioDoiMaTrung, may6K2TocDo
+        } = req.body;
         
         if (!type) {
             return res.status(400).json({ error: 'Thiếu thông tin loại định mức' });
@@ -16,19 +22,64 @@ router.post('/save', async (req, res) => {
         // Thử update trước
         const updateResult = await db.runAsync(`
             UPDATE dinh_muc_chung_planning 
-            SET gio_doi_ma = ?, may_6m1 = ?, may_6m5 = ?, may_6k1 = ?, may_6k2 = ?, updated_at = ?
+            SET may_6m1_gio_doi_ma = ?, may_6m1_gio_doi_ma_trung = ?, may_6m1_toc_do = ?,
+                may_6m5_gio_doi_ma = ?, may_6m5_gio_doi_ma_trung = ?, may_6m5_toc_do = ?,
+                may_6k1_gio_doi_ma = ?, may_6k1_gio_doi_ma_trung = ?, may_6k1_toc_do = ?,
+                may_6k2_gio_doi_ma = ?, may_6k2_gio_doi_ma_trung = ?, may_6k2_toc_do = ?,
+                updated_at = ?
             WHERE type = ?
-        `, [gioDoimMa, may6M1, may6M5, may6K1, may6K2, now, type]);
+        `, [
+            may6M1GioDoiMa, may6M1GioDoiMaTrung, may6M1TocDo,
+            may6M5GioDoiMa, may6M5GioDoiMaTrung, may6M5TocDo,
+            may6K1GioDoiMa, may6K1GioDoiMaTrung, may6K1TocDo,
+            may6K2GioDoiMa, may6K2GioDoiMaTrung, may6K2TocDo,
+            now, type
+        ]);
         
         // Nếu không có row nào được update (changes = 0), thực hiện insert
-        if (updateResult.changes === 0) {
-            const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+if (updateResult.changes === 0) {
+    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    try {
+        await db.runAsync(`
+            INSERT INTO dinh_muc_chung_planning 
+            (id, type, may_6m1_gio_doi_ma, may_6m1_gio_doi_ma_trung, may_6m1_toc_do,
+             may_6m5_gio_doi_ma, may_6m5_gio_doi_ma_trung, may_6m5_toc_do,
+             may_6k1_gio_doi_ma, may_6k1_gio_doi_ma_trung, may_6k1_toc_do,
+             may_6k2_gio_doi_ma, may_6k2_gio_doi_ma_trung, may_6k2_toc_do,
+             created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            id, type, 
+            may6M1GioDoiMa, may6M1GioDoiMaTrung, may6M1TocDo,
+            may6M5GioDoiMa, may6M5GioDoiMaTrung, may6M5TocDo,
+            may6K1GioDoiMa, may6K1GioDoiMaTrung, may6K1TocDo,
+            may6K2GioDoiMa, may6K2GioDoiMaTrung, may6K2TocDo,
+            now, now
+        ]);
+    } catch (insertError) {
+        // Nếu INSERT cũng thất bại do UNIQUE constraint, có nghĩa record đã tồn tại
+        // Thực hiện UPDATE một lần nữa
+        if (insertError.message.includes('UNIQUE constraint failed')) {
             await db.runAsync(`
-                INSERT INTO dinh_muc_chung_planning 
-                (id, type, gio_doi_ma, may_6m1, may_6m5, may_6k1, may_6k2, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `, [id, type, gioDoimMa, may6M1, may6M5, may6K1, may6K2, now, now]);
+                UPDATE dinh_muc_chung_planning 
+                SET may_6m1_gio_doi_ma = ?, may_6m1_gio_doi_ma_trung = ?, may_6m1_toc_do = ?,
+                    may_6m5_gio_doi_ma = ?, may_6m5_gio_doi_ma_trung = ?, may_6m5_toc_do = ?,
+                    may_6k1_gio_doi_ma = ?, may_6k1_gio_doi_ma_trung = ?, may_6k1_toc_do = ?,
+                    may_6k2_gio_doi_ma = ?, may_6k2_gio_doi_ma_trung = ?, may_6k2_toc_do = ?,
+                    updated_at = ?
+                WHERE type = ?
+            `, [
+                may6M1GioDoiMa, may6M1GioDoiMaTrung, may6M1TocDo,
+                may6M5GioDoiMa, may6M5GioDoiMaTrung, may6M5TocDo,
+                may6K1GioDoiMa, may6K1GioDoiMaTrung, may6K1TocDo,
+                may6K2GioDoiMa, may6K2GioDoiMaTrung, may6K2TocDo,
+                now, type
+            ]);
+        } else {
+            throw insertError;
         }
+    }
+}
         
         res.json({ success: true, message: 'Đã lưu định mức thành công' });
     } catch (error) {

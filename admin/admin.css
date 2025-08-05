@@ -1868,3 +1868,43 @@ tbody tr:hover {
     font-size: 12px;
     color: #666;
 }
+
+
+
+
+
+
+/* CSS cho bảng định mức chi tiết */
+#dinh-muc-chi-tiet-container table {
+    border: 2px solid #333;
+    border-collapse: collapse;
+}
+
+#dinh-muc-chi-tiet-container table th,
+#dinh-muc-chi-tiet-container table td {
+    border: 1px solid #333 !important;
+    padding: 6px 8px !important;
+}
+
+#dinh-muc-chi-tiet-container table thead th {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+#dinh-muc-chi-tiet-container table tbody td {
+    font-size: 13px;
+}
+
+.product-code-cell {
+    position: relative;
+}
+
+.product-code-cell::after {
+    content: '▼';
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: #666;
+}
