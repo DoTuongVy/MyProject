@@ -396,16 +396,16 @@ router.get('/in/yearly-data', async (req, res) => {
         // Lấy dữ liệu theo năm, group theo máy và tháng
         const yearlyData = await new Promise((resolve, reject) => {
             db.all(`SELECT 
-                strftime('%m', created_at) as month,
+                MONTH(created_at) as month,
                 may,
                 SUM(CAST(thanh_pham_in as REAL)) as total_paper,
                 SUM(CAST(phe_lieu as REAL) + CAST(phe_lieu_trang as REAL)) as total_waste
                 FROM bao_cao_in 
-                WHERE strftime('%Y', created_at) = ? 
+                WHERE YEAR(created_at) = ? 
                 AND is_started_only = 0
                 AND thanh_pham_in IS NOT NULL AND thanh_pham_in != ''
                 AND may IS NOT NULL AND may != ''
-                GROUP BY strftime('%m', created_at), may
+                GROUP BY MONTH(created_at), may
                 ORDER BY may, month`, 
                 [year], (err, rows) => {
                 if (err) reject(err);
@@ -875,18 +875,18 @@ router.get('/in/yearly-leader-data', async (req, res) => {
         // Lấy dữ liệu theo năm, group theo trưởng máy, tháng và mã ca
         const yearlyLeaderData = await new Promise((resolve, reject) => {
             db.all(`SELECT 
-                strftime('%m', ngay_phu) as month,
+                MONTH(ngay_phu) as month,
                 truong_may,
                 ma_ca,
                 SUM(CAST(thanh_pham_in as REAL)) as total_paper,
                 SUM(CAST(phe_lieu as REAL) + CAST(phe_lieu_trang as REAL)) as total_waste
                 FROM bao_cao_in 
-                WHERE strftime('%Y', ngay_phu) = ? 
+                WHERE YEAR(ngay_phu) = ? 
                 AND is_started_only = 0
                 AND thanh_pham_in IS NOT NULL AND thanh_pham_in != ''
                 AND truong_may IS NOT NULL AND truong_may != ''
                 AND ma_ca IS NOT NULL AND ma_ca != ''
-                GROUP BY strftime('%m', ngay_phu), truong_may, ma_ca
+                GROUP BY MONTH(ngay_phu), truong_may, ma_ca
                 ORDER BY truong_may, month, ma_ca`, 
                 [year], (err, rows) => {
                 if (err) reject(err);
@@ -903,16 +903,16 @@ router.get('/in/yearly-leader-data', async (req, res) => {
             
             const fallbackData = await new Promise((resolve, reject) => {
                 db.all(`SELECT 
-                    strftime('%m', created_at) as month,
+                    MONTH(created_at) as month,
                     truong_may,
                     ma_ca,
                     SUM(CAST(thanh_pham_in as REAL)) as total_paper,
                     SUM(CAST(phe_lieu as REAL) + CAST(phe_lieu_trang as REAL)) as total_waste
                     FROM bao_cao_in 
-                    WHERE strftime('%Y', created_at) = ? 
+                    WHERE YEAR(created_at) = ? 
                     AND is_started_only = 0
                     AND thanh_pham_in IS NOT NULL AND thanh_pham_in != ''
-                    GROUP BY strftime('%m', created_at), truong_may, ma_ca
+                    GROUP BY MONTH(created_at), truong_may, ma_ca
                     ORDER BY truong_may, month, ma_ca`, 
                     [year], (err, rows) => {
                     if (err) reject(err);
@@ -1008,7 +1008,7 @@ router.get('/in/yearly-time-data', async (req, res) => {
                 thoi_gian_canh_may,
                 id
                 FROM bao_cao_in 
-                WHERE strftime('%Y', COALESCE(ngay_phu, created_at)) = ? 
+                WHERE YEAR(COALESCE(ngay_phu, created_at)) = ? 
                 AND is_started_only = 0
                 AND thanh_pham_in IS NOT NULL 
                 AND thanh_pham_in != ''
@@ -1075,7 +1075,7 @@ try {
         db.all(`SELECT s.ly_do, s.thoi_gian_dung_may, DATE(COALESCE(b.ngay_phu, b.created_at)) as date, b.may
                 FROM bao_cao_in_dung_may s
                 JOIN bao_cao_in b ON s.bao_cao_id = b.id
-                WHERE strftime('%Y', COALESCE(b.ngay_phu, b.created_at)) = ?
+                WHERE YEAR(COALESCE(b.ngay_phu, b.created_at)) = ?
                 AND b.is_started_only = 0
                 AND b.thanh_pham_in IS NOT NULL 
                 AND b.thanh_pham_in != ''
@@ -1301,7 +1301,7 @@ router.get('/in/daily-product-data', async (req, res) => {
                 may,
                 SUM(CAST(thanh_pham_in as REAL)) as total_paper
                 FROM bao_cao_in 
-                WHERE strftime('%Y', COALESCE(ngay_phu, created_at)) = ? 
+                WHERE YEAR(COALESCE(ngay_phu, created_at)) = ? 
                 AND is_started_only = 0
                 AND thanh_pham_in IS NOT NULL 
                 AND thanh_pham_in != ''

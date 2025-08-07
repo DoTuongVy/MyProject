@@ -3,6 +3,10 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 
+
+require('dotenv').config();
+console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '***' : 'NOT SET');
+
 // Khởi tạo Express app
 const app = express();
 const PORT = process.env.PORT || 8686;

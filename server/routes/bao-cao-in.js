@@ -1075,8 +1075,8 @@ const thanhPham = 0;
             id, stt, ngay, may, quan_doc, ca, truong_may, ws, so_lan_chay, khach_hang, ma_sp,
             sl_don_hang, so_con, so_mau, ma_giay_1, ma_giay_2, ma_giay_3, kho, dai_giay,
             tuy_chon, mau_3_tone, so_kem, mat_sau, phu_keo, phun_bot, gio_lam_viec,
-            ma_ca, phu_may_1, phu_may_2, so_pass_in, thanh_pham, thoi_gian_bat_dau, nguoi_thuc_hien, is_started_only, sl_giay_theo_ws, thanh_pham
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            ma_ca, phu_may_1, phu_may_2, so_pass_in, thanh_pham, thoi_gian_bat_dau, nguoi_thuc_hien, is_started_only, sl_giay_theo_ws
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         
         await new Promise((resolve, reject) => {
             db.run(insertSQL, [
@@ -1113,7 +1113,7 @@ const thanhPham = 0;
                 startData.nguoiThucHien || '',
                 1,  // Đánh dấu là chỉ mới bắt đầu
                 wsData.slGiayTheoWS || '',
-                thanhPham
+                // thanhPham
             ], function (err) {
                 if (err) reject(err);
                 else resolve(this.lastID);
@@ -1587,13 +1587,6 @@ router.delete('/:id', (req, res) => {
 
     const { id } = req.params;
 
-    // Bắt đầu transaction
-    db.run('BEGIN TRANSACTION', (err) => {
-        if (err) {
-            console.error('Lỗi khi bắt đầu transaction:', err.message);
-            return res.status(500).json({ error: 'Lỗi khi bắt đầu transaction' });
-        }
-
         // Xóa các báo cáo dừng máy liên quan
         db.run(`DELETE FROM bao_cao_in_dung_may WHERE bao_cao_id = ?`, [id], (err) => {
             if (err) {
@@ -1629,7 +1622,6 @@ router.delete('/:id', (req, res) => {
                     });
                 });
             });
-        });
     });
 });
 

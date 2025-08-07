@@ -9,105 +9,109 @@ router.get('/list', async (req, res) => {
         const limit = parseInt(req.query.limit) || 50;
         const offset = (page - 1) * limit;
 
-        // Query đếm tổng số bản ghi
-        const countQuery = `
-            SELECT COUNT(DISTINCT bi.ma_sp) as total
-            FROM bao_cao_in bi
-            WHERE bi.ma_sp IS NOT NULL AND TRIM(bi.ma_sp) != ''
-        `;
+        // Tạo bảng định mức chi tiết nếu chưa có
+        await db.runAsync(`
+            CREATE TABLE IF NOT EXISTS dinh_muc_chi_tiet_in (
+                id VARCHAR(255) PRIMARY KEY,
+                ma_san_pham VARCHAR(255) UNIQUE NOT NULL,
+                may_6m1_gio_doi_ma VARCHAR(50),
+                may_6m1_toc_do VARCHAR(50),
+                may_6m5_gio_doi_ma VARCHAR(50),
+                may_6m5_toc_do VARCHAR(50),
+                may_6k1_gio_doi_ma VARCHAR(50),
+                may_6k1_toc_do VARCHAR(50),
+                may_6k2_gio_doi_ma VARCHAR(50),
+                may_6k2_toc_do VARCHAR(50),
+                may_2m_gio_doi_ma VARCHAR(50),
+                may_2m_toc_do VARCHAR(50),
+                may_kts_gio_doi_ma VARCHAR(50),
+                may_kts_toc_do VARCHAR(50),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Debug parameters trước khi query
+        console.log('Debug params:', { page, limit, offset });
         
-        const countResult = await db.getAsync(countQuery);
+        // Query đếm với kiểu parameters chính xác
+        const countQuery = `SELECT COUNT(*) as total FROM bao_cao_in WHERE ma_sp IS NOT NULL`;
+        const countResult = await db.getAsync(countQuery, []);
         const total = countResult.total || 0;
         const totalPages = Math.ceil(total / limit);
 
-        // Query lấy dữ liệu với pagination
-        const query = `
-            WITH ProductData AS (
-                SELECT 
-                    bi.ma_sp,
-                    bi.khach_hang,
-                    bi.so_con,
-                    bi.so_mau,
-                    bi.ma_giay_1,
-                    bi.ma_giay_2,
-                    bi.ma_giay_3,
-                    bi.kho,
-                    bi.dai_giay,
-                    bi.phu_keo,
-                    MAX(bi.ngay_phu) as ngay_phu_moi_nhat,
-                    COUNT(DISTINCT bi.id) as so_lan_chay,
-                    -- Gộp các loại giấy khác nhau
-                    GROUP_CONCAT(
-                        DISTINCT CASE 
-                            WHEN TRIM(bi.ma_giay_1) != '' THEN TRIM(bi.ma_giay_1)
-                            ELSE NULL 
-                        END
-                    ) as loai_giay_1_list,
-                    GROUP_CONCAT(
-                        DISTINCT CASE 
-                            WHEN TRIM(bi.ma_giay_2) != '' THEN TRIM(bi.ma_giay_2)
-                            ELSE NULL 
-                        END
-                    ) as loai_giay_2_list,
-                    GROUP_CONCAT(
-                        DISTINCT CASE 
-                            WHEN TRIM(bi.ma_giay_3) != '' THEN TRIM(bi.ma_giay_3)
-                            ELSE NULL 
-                        END
-                    ) as loai_giay_3_list
-                FROM bao_cao_in bi
-                WHERE bi.ma_sp IS NOT NULL AND TRIM(bi.ma_sp) != ''
-                GROUP BY bi.ma_sp
-                ORDER BY bi.ma_sp
-                LIMIT ? OFFSET ?
-            )
-            SELECT 
-                pd.ma_sp,
-                pd.khach_hang,
-                pd.so_con,
-                pd.so_mau,
-                pd.kho,
-                pd.dai_giay,
-                pd.phu_keo,
-                pd.ngay_phu_moi_nhat as ngay_phu,
-                -- Gộp tất cả loại giấy
-                CASE 
-                    WHEN pd.loai_giay_1_list IS NOT NULL AND pd.loai_giay_2_list IS NOT NULL AND pd.loai_giay_3_list IS NOT NULL 
-                    THEN pd.loai_giay_1_list || ', ' || pd.loai_giay_2_list || ', ' || pd.loai_giay_3_list
-                    WHEN pd.loai_giay_1_list IS NOT NULL AND pd.loai_giay_2_list IS NOT NULL 
-                    THEN pd.loai_giay_1_list || ', ' || pd.loai_giay_2_list
-                    WHEN pd.loai_giay_1_list IS NOT NULL AND pd.loai_giay_3_list IS NOT NULL 
-                    THEN pd.loai_giay_1_list || ', ' || pd.loai_giay_3_list
-                    WHEN pd.loai_giay_2_list IS NOT NULL AND pd.loai_giay_3_list IS NOT NULL 
-                    THEN pd.loai_giay_2_list || ', ' || pd.loai_giay_3_list
-                    WHEN pd.loai_giay_1_list IS NOT NULL 
-                    THEN pd.loai_giay_1_list
-                    WHEN pd.loai_giay_2_list IS NOT NULL 
-                    THEN pd.loai_giay_2_list
-                    WHEN pd.loai_giay_3_list IS NOT NULL 
-                    THEN pd.loai_giay_3_list
-                    ELSE ''
-                END as loai_giay,
-                -- Giá trị mặc định cho các máy
-                '60' as may_6m1_gio_doi_ma,
-                '7000' as may_6m1_toc_do,
-                '60' as may_6m5_gio_doi_ma, 
-                '7000' as may_6m5_toc_do,
-                '60' as may_6k1_gio_doi_ma,
-                '7000' as may_6k1_toc_do,
-                '60' as may_6k2_gio_doi_ma,
-                '7000' as may_6k2_toc_do,
-                '60' as may_2m_gio_doi_ma,
-                '7000' as may_2m_toc_do,
-                '60' as may_kts_gio_doi_ma,
-                '7000' as may_kts_toc_do
-            FROM ProductData pd
-        `;
+        // Đảm bảo parameters là number và > 0
+        const safeLimit = Math.max(1, Math.min(1000, parseInt(limit) || 50));
+        const safeOffset = Math.max(0, parseInt(offset) || 0);
         
-        const rows = await db.allAsync(query, [limit, offset]);
+        console.log('Safe params:', { safeLimit, safeOffset });
+
+        // Query lấy dữ liệu mới nhất cho mỗi mã sản phẩm
+const query = `
+SELECT DISTINCT ma_sp, 
+       khach_hang, 
+       so_con, 
+       so_mau, 
+       kho, 
+       dai_giay, 
+       phu_keo, 
+       ngay_phu, 
+       ma_giay_1
+FROM bao_cao_in b1
+WHERE ma_sp IS NOT NULL 
+AND created_at = (
+    SELECT MAX(created_at) 
+    FROM bao_cao_in b2 
+    WHERE b2.ma_sp = b1.ma_sp
+)
+ORDER BY ma_sp
+`;
+        
+        // Thử query không có LIMIT trước
+        let allRows = await db.allAsync(query, []);
+        
+        // Áp dụng pagination bằng JavaScript
+        const rows = allRows.slice(safeOffset, safeOffset + safeLimit);
+        
+        console.log(`Query result: ${allRows.length} total, ${rows.length} in page`);
+
+        // Xử lý từng record để lấy định mức tùy chỉnh
+        const processedRows = [];
+        for (const row of rows) {
+            // Lấy định mức tùy chỉnh nếu có
+            const customDinhMuc = await db.getAsync(
+                `SELECT * FROM dinh_muc_chi_tiet_in WHERE ma_san_pham = ?`, 
+                [row.ma_sp]
+            );
+
+            processedRows.push({
+                ma_sp: row.ma_sp || '',
+                khach_hang: row.khach_hang || '',
+                so_con: row.so_con || '',
+                so_mau: row.so_mau || '',
+                kho: row.kho || '',
+                dai_giay: row.dai_giay || '',
+                phu_keo: row.phu_keo || '',
+                ngay_phu: row.ngay_phu || '2025-05-08',
+                loai_giay: row.ma_giay_1 || '',
+                // Dùng giá trị tùy chỉnh nếu có, không thì dùng default
+                may_6m1_gio_doi_ma: customDinhMuc?.may_6m1_gio_doi_ma || '60',
+                may_6m1_toc_do: customDinhMuc?.may_6m1_toc_do || '7000',
+                may_6m5_gio_doi_ma: customDinhMuc?.may_6m5_gio_doi_ma || '60',
+                may_6m5_toc_do: customDinhMuc?.may_6m5_toc_do || '7000',
+                may_6k1_gio_doi_ma: customDinhMuc?.may_6k1_gio_doi_ma || '60',
+                may_6k1_toc_do: customDinhMuc?.may_6k1_toc_do || '7000',
+                may_6k2_gio_doi_ma: customDinhMuc?.may_6k2_gio_doi_ma || '60',
+                may_6k2_toc_do: customDinhMuc?.may_6k2_toc_do || '7000',
+                may_2m_gio_doi_ma: customDinhMuc?.may_2m_gio_doi_ma || '60',
+                may_2m_toc_do: customDinhMuc?.may_2m_toc_do || '7000',
+                may_kts_gio_doi_ma: customDinhMuc?.may_kts_gio_doi_ma || '60',
+                may_kts_toc_do: customDinhMuc?.may_kts_toc_do || '7000'
+            });
+        }
 
         res.json({
-            data: rows,
+            data: processedRows,
             page: page,
             limit: limit,
             total: total,
@@ -135,20 +139,20 @@ router.put('/:maSanPham', async (req, res) => {
         // Tạo bảng định mức chi tiết in nếu chưa có
         await db.runAsync(`
             CREATE TABLE IF NOT EXISTS dinh_muc_chi_tiet_in (
-                id TEXT PRIMARY KEY,
-                ma_san_pham TEXT UNIQUE NOT NULL,
-                may_6m1_gio_doi_ma TEXT,
-                may_6m1_toc_do TEXT,
-                may_6m5_gio_doi_ma TEXT,
-                may_6m5_toc_do TEXT,
-                may_6k1_gio_doi_ma TEXT,
-                may_6k1_toc_do TEXT,
-                may_6k2_gio_doi_ma TEXT,
-                may_6k2_toc_do TEXT,
-                may_2m_gio_doi_ma TEXT,
-                may_2m_toc_do TEXT,
-                may_kts_gio_doi_ma TEXT,
-                may_kts_toc_do TEXT,
+                id VARCHAR(255) PRIMARY KEY,
+                ma_san_pham VARCHAR(255) UNIQUE NOT NULL,
+                may_6m1_gio_doi_ma VARCHAR(50),
+                may_6m1_toc_do VARCHAR(50),
+                may_6m5_gio_doi_ma VARCHAR(50),
+                may_6m5_toc_do VARCHAR(50),
+                may_6k1_gio_doi_ma VARCHAR(50),
+                may_6k1_toc_do VARCHAR(50),
+                may_6k2_gio_doi_ma VARCHAR(50),
+                may_6k2_toc_do VARCHAR(50),
+                may_2m_gio_doi_ma VARCHAR(50),
+                may_2m_toc_do VARCHAR(50),
+                may_kts_gio_doi_ma VARCHAR(50),
+                may_kts_toc_do VARCHAR(50),
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
