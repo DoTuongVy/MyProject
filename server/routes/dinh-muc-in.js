@@ -2,6 +2,216 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../db');
 
+
+// Helper function tính toán định mức cho một sản phẩm
+async function calculateDinhMucForProduct(maSanPham) {
+    try {
+        console.log('=== TÍNH TOÁN ĐỊNH MỨC CHO:', maSanPham, '===');
+        
+        // Lấy định mức chung từ bảng dinh_muc_chung_planning
+        const dinhMucChung = await db.allAsync(
+            `SELECT * FROM dinh_muc_chung_planning WHERE type = 'in'`
+        );
+        const dinhMucChungData = dinhMucChung[0] || {};
+        console.log('Định mức chung có sẵn:', Object.keys(dinhMucChungData).length > 0);
+        
+        // Lấy tất cả báo cáo in của sản phẩm này
+        const baoCaoIn = await db.allAsync(
+            `SELECT id, may, thoi_gian_canh_may, thoi_gian_bat_dau, thoi_gian_ket_thuc, 
+                    thanh_pham_in, created_at
+             FROM bao_cao_in 
+             WHERE ma_sp = ? AND may IS NOT NULL
+             ORDER BY created_at`, 
+            [maSanPham]
+        );
+        console.log(`Tìm thấy ${baoCaoIn.length} báo cáo cho sản phẩm ${maSanPham}`);
+        
+        // Hàm chuyển đổi thời gian từ string sang phút
+        function timeToMinutes(timeString) {
+            if (!timeString || timeString === '' || timeString === '0') return 0;
+            
+            const timeStr = timeString.toString().trim();
+            
+            // Format HH:MM
+            if (timeStr.includes(':')) {
+                const parts = timeStr.split(':');
+                const hours = parseInt(parts[0]) || 0;
+                const minutes = parseInt(parts[1]) || 0;
+                return hours * 60 + minutes;
+            }
+            
+            // Nếu chỉ là số (phút)
+            return parseInt(timeStr) || 0;
+        }
+        
+        // Hàm tính khoảng cách thời gian giữa 2 thời điểm (HH:MM)
+        function calculateTimeDifference(startTime, endTime) {
+            if (!startTime || !endTime) return 0;
+            
+            const start = timeToMinutes(startTime);
+            const end = timeToMinutes(endTime);
+            
+            if (end >= start) {
+                return end - start;
+            } else {
+                // Trường hợp qua ngày (ví dụ: 23:00 -> 01:00)
+                return (24 * 60) - start + end;
+            }
+        }
+        
+        // Nhóm dữ liệu theo máy và tính toán cho từng báo cáo
+        const dataByMachine = {};
+        
+        for (const bc of baoCaoIn) {
+            if (!bc.may) continue;
+            
+            const machine = bc.may.toLowerCase().trim();
+            
+            console.log(`\n--- Báo cáo ID: ${bc.id} ---`);
+            console.log('Thành phẩm in:', bc.thanh_pham_in);
+            console.log('Thời gian bắt đầu:', bc.thoi_gian_bat_dau);
+            console.log('Thời gian kết thúc:', bc.thoi_gian_ket_thuc);
+            console.log('Thời gian canh máy:', bc.thoi_gian_canh_may);
+            
+            // Tính thời gian chạy máy thực tế
+            let thoiGianChayMayPhut = 0;
+            
+            if (bc.thoi_gian_bat_dau && bc.thoi_gian_ket_thuc) {
+                // Tổng thời gian = kết thúc - bắt đầu
+                const tongThoiGian = calculateTimeDifference(bc.thoi_gian_bat_dau, bc.thoi_gian_ket_thuc);
+                console.log('Tổng thời gian (phút):', tongThoiGian);
+                
+                // Trừ thời gian canh máy
+                const thoiGianCanhMay = timeToMinutes(bc.thoi_gian_canh_may);
+                console.log('Thời gian canh máy (phút):', thoiGianCanhMay);
+                
+                // Lấy tổng thời gian dừng máy
+                const dungMayRecords = await db.allAsync(
+                    `SELECT thoi_gian_dung_may FROM bao_cao_in_dung_may WHERE bao_cao_id = ?`,
+                    [bc.id]
+                );
+                
+                let tongThoiGianDungMay = 0;
+                dungMayRecords.forEach(dm => {
+                    tongThoiGianDungMay += timeToMinutes(dm.thoi_gian_dung_may);
+                });
+                console.log('Tổng thời gian dừng máy (phút):', tongThoiGianDungMay);
+                
+                // Thời gian chạy máy = Tổng - Canh máy - Dừng máy
+                thoiGianChayMayPhut = tongThoiGian - thoiGianCanhMay - tongThoiGianDungMay;
+                console.log('Thời gian chạy máy tính được (phút):', thoiGianChayMayPhut);
+            }
+            
+            // Tính tốc độ
+            let tocDoTinh = null;
+            if (bc.thanh_pham_in && thoiGianChayMayPhut > 0) {
+                const thanhPham = parseInt(bc.thanh_pham_in) || 0;
+                if (thanhPham > 0) {
+                    tocDoTinh = Math.round((thanhPham * 60) / thoiGianChayMayPhut);
+                    console.log(`Tốc độ tính: (${thanhPham} × 60) ÷ ${thoiGianChayMayPhut} = ${tocDoTinh}`);
+                }
+            }
+            
+            // Khởi tạo mảng cho máy nếu chưa có
+            if (!dataByMachine[machine]) {
+                dataByMachine[machine] = {
+                    canhMayValues: [],
+                    tocDoValues: []
+                };
+            }
+            
+            // Thêm vào mảng
+            dataByMachine[machine].canhMayValues.push(bc.thoi_gian_canh_may);
+            dataByMachine[machine].tocDoValues.push(tocDoTinh);
+        }
+        
+        console.log('Dữ liệu nhóm theo máy:', Object.keys(dataByMachine));
+        
+        // Hàm tính trung bình (bỏ qua giá trị null và 0)
+        function calculateAverage(values) {
+            const validValues = values.filter(v => v !== null && v !== undefined && parseFloat(v) > 0);
+            
+            if (validValues.length === 0) {
+                return null;
+            }
+            
+            if (validValues.length === 1) {
+                return validValues[0];
+            }
+            
+            const sum = validValues.reduce((acc, val) => acc + parseFloat(val), 0);
+            return Math.round(sum / validValues.length);
+        }
+        
+        // Các máy cần xử lý
+        const machines = ['6m1', '6m5', '6k1', '6k2', '2m', 'kts'];
+        const result = {};
+        
+        // Xử lý từng máy
+        machines.forEach(machine => {
+            const machineData = dataByMachine[machine];
+            let gioDoiMa = '';
+            let tocDo = '';
+            
+            if (!machineData || machineData.canhMayValues.length === 0) {
+                // Chưa có báo cáo nào cho máy này
+                console.log(`Máy ${machine}: Chưa có báo cáo - sử dụng định mức chung`);
+                
+                if (machine === '2m' || machine === 'kts') {
+                    // Máy 2M và KTS: để trống nếu chưa chạy
+                    gioDoiMa = '';
+                    tocDo = '';
+                } else {
+                    // Các máy khác: lấy từ định mức chung
+                    gioDoiMa = dinhMucChungData[`may_${machine}_gio_doi_ma`] || '';
+                    tocDo = dinhMucChungData[`may_${machine}_toc_do`] || '';
+                }
+            } else {
+                // Có báo cáo - tính trung bình
+                const avgCanhMay = calculateAverage(machineData.canhMayValues);
+                const avgTocDo = calculateAverage(machineData.tocDoValues);
+                
+                console.log(`Máy ${machine}: ${machineData.canhMayValues.length} báo cáo, trung bình canh máy: ${avgCanhMay}, tốc độ: ${avgTocDo}`);
+                
+                // Nếu tính được trung bình thì dùng, không thì fallback
+                if (avgCanhMay !== null) {
+                    gioDoiMa = avgCanhMay;
+                } else if (machine !== '2m' && machine !== 'kts') {
+                    gioDoiMa = dinhMucChungData[`may_${machine}_gio_doi_ma`] || '';
+                }
+                
+                if (avgTocDo !== null) {
+                    tocDo = avgTocDo;
+                } else if (machine !== '2m' && machine !== 'kts') {
+                    tocDo = dinhMucChungData[`may_${machine}_toc_do`] || '';
+                }
+            }
+            
+            // Lưu kết quả
+            result[`may_${machine}_gio_doi_ma`] = gioDoiMa;
+            result[`may_${machine}_toc_do`] = tocDo;
+        });
+        
+        console.log('Kết quả tính toán:', result);
+        return result;
+        
+    } catch (error) {
+        console.error('LỖI trong calculateDinhMucForProduct:', error);
+        
+        // Trả về giá trị trống nếu có lỗi
+        return {
+            may_6m1_gio_doi_ma: '', may_6m1_toc_do: '',
+            may_6m5_gio_doi_ma: '', may_6m5_toc_do: '',
+            may_6k1_gio_doi_ma: '', may_6k1_toc_do: '',
+            may_6k2_gio_doi_ma: '', may_6k2_toc_do: '',
+            may_2m_gio_doi_ma: '', may_2m_toc_do: '',
+            may_kts_gio_doi_ma: '', may_kts_toc_do: ''
+        };
+    }
+}
+
+
+
 // Lấy định mức chi tiết của công đoạn in với pagination
 router.get('/list', async (req, res) => {
     try {
@@ -75,40 +285,46 @@ ORDER BY ma_sp
         
         console.log(`Query result: ${allRows.length} total, ${rows.length} in page`);
 
-        // Xử lý từng record để lấy định mức tùy chỉnh
-        const processedRows = [];
-        for (const row of rows) {
-            // Lấy định mức tùy chỉnh nếu có
-            const customDinhMuc = await db.getAsync(
-                `SELECT * FROM dinh_muc_chi_tiet_in WHERE ma_san_pham = ?`, 
-                [row.ma_sp]
-            );
-
-            processedRows.push({
-                ma_sp: row.ma_sp || '',
-                khach_hang: row.khach_hang || '',
-                so_con: row.so_con || '',
-                so_mau: row.so_mau || '',
-                kho: row.kho || '',
-                dai_giay: row.dai_giay || '',
-                phu_keo: row.phu_keo || '',
-                ngay_phu: row.ngay_phu || '2025-05-08',
-                loai_giay: row.ma_giay_1 || '',
-                // Dùng giá trị tùy chỉnh nếu có, không thì dùng default
-                may_6m1_gio_doi_ma: customDinhMuc?.may_6m1_gio_doi_ma || '60',
-                may_6m1_toc_do: customDinhMuc?.may_6m1_toc_do || '7000',
-                may_6m5_gio_doi_ma: customDinhMuc?.may_6m5_gio_doi_ma || '60',
-                may_6m5_toc_do: customDinhMuc?.may_6m5_toc_do || '7000',
-                may_6k1_gio_doi_ma: customDinhMuc?.may_6k1_gio_doi_ma || '60',
-                may_6k1_toc_do: customDinhMuc?.may_6k1_toc_do || '7000',
-                may_6k2_gio_doi_ma: customDinhMuc?.may_6k2_gio_doi_ma || '60',
-                may_6k2_toc_do: customDinhMuc?.may_6k2_toc_do || '7000',
-                may_2m_gio_doi_ma: customDinhMuc?.may_2m_gio_doi_ma || '60',
-                may_2m_toc_do: customDinhMuc?.may_2m_toc_do || '7000',
-                may_kts_gio_doi_ma: customDinhMuc?.may_kts_gio_doi_ma || '60',
-                may_kts_toc_do: customDinhMuc?.may_kts_toc_do || '7000'
-            });
-        }
+        // Xử lý từng record để tính toán định mức theo logic mới
+const processedRows = [];
+for (const row of rows) {
+    try {
+        const calculatedDinhMuc = await calculateDinhMucForProduct(row.ma_sp);
+        
+        processedRows.push({
+            ma_sp: row.ma_sp || '',
+            khach_hang: row.khach_hang || '',
+            so_con: row.so_con || '',
+            so_mau: row.so_mau || '',
+            kho: row.kho || '',
+            dai_giay: row.dai_giay || '',
+            phu_keo: row.phu_keo || '',
+            ngay_phu: row.ngay_phu || '2025-05-08',
+            loai_giay: row.ma_giay_1 || '',
+            ...calculatedDinhMuc
+        });
+    } catch (error) {
+        console.error(`Lỗi khi xử lý sản phẩm ${row.ma_sp}:`, error);
+        // Thêm với giá trị mặc định nếu có lỗi
+        processedRows.push({
+            ma_sp: row.ma_sp || '',
+            khach_hang: row.khach_hang || '',
+            so_con: row.so_con || '',
+            so_mau: row.so_mau || '',
+            kho: row.kho || '',
+            dai_giay: row.dai_giay || '',
+            phu_keo: row.phu_keo || '',
+            ngay_phu: row.ngay_phu || '2025-05-08',
+            loai_giay: row.ma_giay_1 || '',
+            may_6m1_gio_doi_ma: '', may_6m1_toc_do: '',
+            may_6m5_gio_doi_ma: '', may_6m5_toc_do: '',
+            may_6k1_gio_doi_ma: '', may_6k1_toc_do: '',
+            may_6k2_gio_doi_ma: '', may_6k2_toc_do: '',
+            may_2m_gio_doi_ma: '', may_2m_toc_do: '',
+            may_kts_gio_doi_ma: '', may_kts_toc_do: ''
+        });
+    }
+}
 
         res.json({
             data: processedRows,

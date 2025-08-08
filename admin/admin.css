@@ -1899,12 +1899,3 @@ tbody tr:hover {
     position: relative;
 }
 
-.product-code-cell::after {
-    content: '▼';
-    position: absolute;
-    right: 5px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 10px;
-    color: #666;
-}

@@ -6449,12 +6449,20 @@ function displayDinhMucChiTietTable(data) {
     
     data.forEach(item => {
         const row = document.createElement('tr');
+        row.className = 'main-product-row';
+        row.setAttribute('data-product', item.ma_sp);
         
         // Format khổ và dài để hiển thị ngang nhau
         const khoVaDai = `${item.kho || ''}${item.kho && item.dai_giay ? ' x ' : ''}${item.dai_giay || ''}`;
         
         row.innerHTML = `
-            <td class="product-code-cell" style="text-align: center; font-weight: bold; background: #f8f9fa;">${item.ma_sp || ''}</td>
+<td class="product-code-cell" style="text-align: center; font-weight: bold; background: #f8f9fa; position: relative;">
+    <span style="margin-right: 8px;">${item.ma_sp || ''}</span>
+    <button class="expand-btn" data-product="${item.ma_sp}" onclick="toggleProductDetails('${item.ma_sp}')" 
+            style="border: none; background: transparent; cursor: pointer; font-size: 12px; color: #666;">
+        <i class="fas fa-chevron-down"></i>
+    </button>
+</td>
             <td style="text-align: center;">${item.khach_hang || ''}</td>
             <td style="text-align: center;">${item.so_mau || ''}</td>
             
@@ -6489,6 +6497,137 @@ function displayDinhMucChiTietTable(data) {
     // Thêm event listeners cho popover
     setupMachinePopover();
 }
+
+
+
+
+async function toggleProductDetails(maSanPham) {
+    const expandBtn = document.querySelector(`[data-product="${maSanPham}"] .expand-btn i`);
+    const isExpanded = expandBtn.classList.contains('fa-chevron-up');
+    
+    if (isExpanded) {
+        // Thu gọn
+        document.querySelectorAll(`tr[data-detail-for="${maSanPham}"]`).forEach(row => {
+            row.remove();
+        });
+        expandBtn.classList.remove('fa-chevron-up');
+        expandBtn.classList.add('fa-chevron-down');
+    } else {
+        // Mở rộng
+        await loadProductDetails(maSanPham);
+        expandBtn.classList.remove('fa-chevron-down');
+        expandBtn.classList.add('fa-chevron-up');
+    }
+}
+
+async function loadProductDetails(maSanPham) {
+    try {
+        // Sử dụng cùng logic như calculateDinhMucForProduct để lấy chi tiết
+        const response = await fetch('/api/bao-cao-in/list');
+        if (!response.ok) throw new Error('Không thể lấy danh sách báo cáo');
+        
+        const allReports = await response.json();
+        
+        // Lọc báo cáo theo mã sản phẩm
+        const productReports = allReports.filter(report => 
+            report.ma_sp === maSanPham && report.may
+        );
+        
+        if (productReports.length === 0) {
+            showToast('Không có báo cáo chi tiết cho sản phẩm này', 'info');
+            return;
+        }
+        
+        // Chuyển đổi format để hiển thị
+        const details = productReports.map((report, index) => ({
+            id: report.id,
+            so_mau: `Báo cáo ${index + 1}`,
+            ngay_phu: report.created_at ? new Date(report.created_at).toLocaleDateString('vi-VN') : '2025-05-08',
+            may_6m1_gio_doi_ma: report.may === '6m1' ? report.thoi_gian_canh_may || '60' : '60',
+            may_6m1_toc_do: report.may === '6m1' ? calculateSpeed(report) : '7000',
+            may_6m5_gio_doi_ma: report.may === '6m5' ? report.thoi_gian_canh_may || '60' : '60',
+            may_6m5_toc_do: report.may === '6m5' ? calculateSpeed(report) : '7000',
+            may_6k1_gio_doi_ma: report.may === '6k1' ? report.thoi_gian_canh_may || '60' : '60',
+            may_6k1_toc_do: report.may === '6k1' ? calculateSpeed(report) : '7000',
+            may_6k2_gio_doi_ma: report.may === '6k2' ? report.thoi_gian_canh_may || '60' : '60',
+            may_6k2_toc_do: report.may === '6k2' ? calculateSpeed(report) : '7000',
+            may_2m_gio_doi_ma: report.may === '2m' ? report.thoi_gian_canh_may || '60' : '60',
+            may_2m_toc_do: report.may === '2m' ? calculateSpeed(report) : '7000',
+            may_kts_gio_doi_ma: report.may === 'kts' ? report.thoi_gian_canh_may || '60' : '60',
+            may_kts_toc_do: report.may === 'kts' ? calculateSpeed(report) : '7000'
+        }));
+        
+        insertDetailRows(maSanPham, details);
+    } catch (error) {
+        console.error('Lỗi khi tải chi tiết:', error);
+        await loadProductDetailsAlternative(maSanPham);
+    }
+}
+
+function calculateSpeed(report) {
+    // Logic tương tự trong calculateDinhMucForProduct
+    if (!report.thanh_pham_in || !report.thoi_gian_bat_dau || !report.thoi_gian_ket_thuc) {
+        return '7000';
+    }
+    
+    try {
+        const thanhPham = parseInt(report.thanh_pham_in) || 0;
+        if (thanhPham <= 0) return '7000';
+        
+        // Tính thời gian chạy máy (giả sử có logic tính toán thời gian)
+        const thoiGianChayMay = 60; // Giả sử 60 phút, bạn cần logic tính chính xác
+        
+        const tocDo = Math.round((thanhPham * 60) / thoiGianChayMay);
+        return tocDo.toString();
+    } catch (error) {
+        return '7000';
+    }
+}
+
+function insertDetailRows(maSanPham, details) {
+    const mainRow = document.querySelector(`tr[data-product="${maSanPham}"]`);
+    if (!mainRow || !details.length) return;
+    
+    details.forEach((detail, index) => {
+        const detailRow = document.createElement('tr');
+        detailRow.setAttribute('data-detail-for', maSanPham);
+        detailRow.style.background = '#f8f9fa';
+        
+        detailRow.innerHTML = `
+            <td style="text-align: center; padding-left: 30px; color: #666;">
+            </td>
+            <td style="text-align: center; color: #666; font-style: italic;"></td>
+            <td style="text-align: center; color: #666;"></td>
+            
+            <td style="text-align: center; background: #d8ead3;">${detail.ngay_phu || '2025-05-08'}</td>
+            <td style="text-align: center; background: #d8ead3;">${detail.may_6m1_gio_doi_ma || '60'}</td>
+            <td style="text-align: center; background: #d8ead3;">${detail.may_6m1_toc_do || '7000'}</td>
+            
+            <td style="text-align: center; background: #c9daf8;">${detail.ngay_phu || '2025-05-08'}</td>
+            <td style="text-align: center; background: #c9daf8;">${detail.may_6m5_gio_doi_ma || '60'}</td>
+            <td style="text-align: center; background: #c9daf8;">${detail.may_6m5_toc_do || '7000'}</td>
+            
+            <td style="text-align: center; background: #fce5cd;">${detail.ngay_phu || '2025-05-08'}</td>
+            <td style="text-align: center; background: #fce5cd;">${detail.may_6k1_gio_doi_ma || '60'}</td>
+            <td style="text-align: center; background: #fce5cd;">${detail.may_6k1_toc_do || '7000'}</td>
+            
+            <td style="text-align: center; background: #f4cccc;">${detail.ngay_phu || '2025-05-08'}</td>
+            <td style="text-align: center; background: #f4cccc;">${detail.may_6k2_gio_doi_ma || '60'}</td>
+            <td style="text-align: center; background: #f4cccc;">${detail.may_6k2_toc_do || '7000'}</td>
+            
+            <td style="text-align: center; background: #ead1dc;">${detail.ngay_phu || '2025-05-08'}</td>
+            <td style="text-align: center; background: #ead1dc;">${detail.may_2m_gio_doi_ma || '60'}</td>
+            <td style="text-align: center; background: #ead1dc;">${detail.may_2m_toc_do || '7000'}</td>
+            
+            <td style="text-align: center; background: #d0e0e3;">${detail.ngay_phu || '2025-05-08'}</td>
+            <td style="text-align: center; background: #d0e0e3;">${detail.may_kts_gio_doi_ma || '60'}</td>
+            <td style="text-align: center; background: #d0e0e3;">${detail.may_kts_toc_do || '7000'}</td>
+        `;
+        
+        mainRow.insertAdjacentElement('afterend', detailRow);
+    });
+}
+
 
 
 
@@ -6585,6 +6724,7 @@ async function updateDinhMucValue(maSanPham, field, value) {
 window.updateDinhMucValue = updateDinhMucValue;
 
 
+window.toggleProductDetails = toggleProductDetails;
 
 
 

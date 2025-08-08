@@ -936,12 +936,35 @@ setTimeout(() => {
         // Tạo datasets cho biểu đồ thành phẩm
         const paperDatasets = [];
         const wasteDatasets = [];
-        const colors = [
-            '#F1948A', '#85C1E9', '#82E0AA', '#F8C471', '#D2B4DE', '#7FCDCD',
-            '#AEB6BF', '#F0B27A', '#BB8FCE', '#85C1E9', '#7DCEA0', '#F7DC6F',
-            '#EC7063', '#5DADE2', '#58D68D', '#F5B041', '#AF7AC5', '#48C9B0',
-            '#85929E', '#E67E22', '#A569BD', '#52D681', '#3498DB', '#F39C12'
-        ];
+        // Tạo màu cố định cho từng máy
+const getColorForMachine = (machine) => {
+    const colors = {
+'2M': '#F1948A',     // Hồng nhạt
+        '5M2': '#3498DB',    // XANH DA TRỜI ĐẬM (thay đổi từ #85C1E9 để khác 6M5)
+        '6K1': '#2C3E50',    // Đen
+        '6K2': '#E74C3C',    // Đỏ
+        '6M1': '#D2B4DE',    // Tím nhạt
+        '6M5': '#16A085',    // XANH LỤC ĐẬM (thay đổi từ #7FCDCD để khác 5M2)
+        'KT5': '#95A5A6'     // Xám
+    };
+    
+    // Tìm key phù hợp với tên máy
+    for (const [key, color] of Object.entries(colors)) {
+        if (machine.includes(key)) {
+            return color;
+        }
+    }
+    
+    // Fallback: hash màu từ tên máy
+    let hash = 0;
+    for (let i = 0; i < machine.length; i++) {
+        hash = machine.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const fallbackColors = ['#F1948A', '#85C1E9', '#82E0AA', '#F8C471', '#D2B4DE', '#7FCDCD', '#AEB6BF'];
+    return fallbackColors[Math.abs(hash) % fallbackColors.length];
+};
+
+const colors = [];
 
         console.log('🔍 Bắt đầu tạo datasets...');
 
@@ -959,8 +982,8 @@ setTimeout(() => {
             paperDatasets.push({
                 label: `Máy ${machine}`,
                 data: paperData,
-                borderColor: colors[index % colors.length],
-                backgroundColor: colors[index % colors.length] + '20',
+                borderColor: getColorForMachine(machine),
+backgroundColor: getColorForMachine(machine) + '20',
                 fill: false,
                 tension: 0.1,
                 pointRadius: 0,
@@ -972,8 +995,8 @@ setTimeout(() => {
             wasteDatasets.push({
                 label: `Máy ${machine}`,
                 data: wasteData,
-                borderColor: colors[index % colors.length],
-                backgroundColor: colors[index % colors.length] + '20',
+                borderColor: getColorForMachine(machine),
+backgroundColor: getColorForMachine(machine) + '20',
                 fill: false,
                 tension: 0.1,
                 pointRadius: 0,
@@ -985,6 +1008,7 @@ setTimeout(() => {
 
         console.log('📊 Final paperDatasets:', paperDatasets);
         console.log('📊 Final wasteDatasets:', wasteDatasets);
+        
 
         // Tạo biểu đồ thành phẩm
         const paperCanvas = document.getElementById('yearlyPaperLineChart');
@@ -1473,6 +1497,31 @@ setTimeout(() => {
 async function createYearlyTimeChart(year) {
     try {
         console.log('📊 Tạo biểu đồ thời gian theo máy cho năm:', year);
+
+        const getColorForMachine = (machine) => {
+            const colors = {
+'2M': '#F1948A',     // Hồng nhạt
+        '5M2': '#3498DB',    // XANH DA TRỜI ĐẬM (thay đổi từ #85C1E9 để khác 6M5)
+        '6K1': '#2C3E50',    // Đen
+        '6K2': '#E74C3C',    // Đỏ
+        '6M1': '#D2B4DE',    // Tím nhạt
+        '6M5': '#16A085',    // XANH LỤC ĐẬM (thay đổi từ #7FCDCD để khác 5M2)
+        'KT5': '#95A5A6'     // Xám
+            };
+            
+            for (const [key, color] of Object.entries(colors)) {
+                if (machine.includes(key)) {
+                    return color;
+                }
+            }
+            
+            let hash = 0;
+            for (let i = 0; i < machine.length; i++) {
+                hash = machine.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const fallbackColors = ['#F1948A', '#85C1E9', '#82E0AA', '#F8C471', '#D2B4DE', '#7FCDCD', '#AEB6BF'];
+            return fallbackColors[Math.abs(hash) % fallbackColors.length];
+        };
         
         // Gọi API lấy dữ liệu thời gian theo máy theo ngày
         const response = await fetch(`/api/bieu-do/in/yearly-time-data?year=${year}`);
@@ -1510,33 +1559,6 @@ const labels = sortedDates.map(date => {
     return `${day}/${month}/${year}`;
 });
         
-        // Màu sắc cho từng máy
-        const colors = [
-            '#FF7F7F', // Đỏ nhạt
-            '#87CEEB', // Xanh dương nhạt
-            '#90EE90', // Xanh lá nhạt
-            '#FFA07A', // Cam hồng nhạt
-            '#DDA0DD', // Tím nhạt
-            '#D2B48C', // Nâu nhạt
-            '#66CDAA', // Xanh ngọc nhạt
-            '#FFB366', // Cam nhạt
-            '#BA55D3', // Tím orchid
-            '#20B2AA', // Xanh ngọc đậm nhẹ
-            '#708090', // Xám xanh nhẹ
-            '#A9A9A9', // Xám nhạt
-            '#F0E68C', // Vàng nhạt
-            '#FFB6C1', // Hồng nhạt
-            '#FF8C69', // Đỏ cam nhạt
-            '#B0C4DE', // Xanh steel nhạt
-            '#48D1CC', // Turquoise nhạt
-            '#FFCC99', // Peach nhạt
-            '#C8A2C8', // Tím lilac
-            '#98FB98', // Xanh mint nhạt
-            '#F5DEB3', // Wheat nhạt
-            '#FFE4B5', // Moccasin
-            '#FFDAB9', // Peach puff
-            '#E6E6FA'  // Lavender
-        ];
         
         // Tạo datasets cho từng máy
         const datasets = machines.map((machine, index) => {
@@ -1554,8 +1576,8 @@ const labels = sortedDates.map(date => {
             return {
                 label: `Máy ${machine}`,
                 data: data,
-                borderColor: colors[index % colors.length],
-                backgroundColor: colors[index % colors.length] + '20',
+                borderColor: getColorForMachine(machine),
+backgroundColor: getColorForMachine(machine) + '20',
                 fill: false,
                 tension: 0.1,
                 pointRadius: 0,
@@ -13113,11 +13135,31 @@ async function createAllMachineProductChart(year) {
         const machines = Object.keys(dailyData).sort();
         if (machines.length === 0) return;
         
-        // Màu sắc cho các máy
-        const colors = [
-            '#F1948A', '#85C1E9', '#82E0AA', '#F8C471', '#D2B4DE', '#7FCDCD',
-            '#AEB6BF', '#F0B27A', '#BB8FCE', '#85C1E9', '#7DCEA0', '#F7DC6F'
-        ];
+        // Sử dụng cùng logic màu
+const getColorForMachine = (machine) => {
+    const colors = {
+'2M': '#F1948A',     // Hồng nhạt
+        '5M2': '#3498DB',    // XANH DA TRỜI ĐẬM (thay đổi từ #85C1E9 để khác 6M5)
+        '6K1': '#2C3E50',    // Đen
+        '6K2': '#E74C3C',    // Đỏ
+        '6M1': '#D2B4DE',    // Tím nhạt
+        '6M5': '#16A085',    // XANH LỤC ĐẬM (thay đổi từ #7FCDCD để khác 5M2)
+        'KT5': '#95A5A6'     // Xám
+    };
+    
+    for (const [key, color] of Object.entries(colors)) {
+        if (machine.includes(key)) {
+            return color;
+        }
+    }
+    
+    let hash = 0;
+    for (let i = 0; i < machine.length; i++) {
+        hash = machine.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const fallbackColors = ['#F1948A', '#85C1E9', '#82E0AA', '#F8C471', '#D2B4DE', '#7FCDCD', '#AEB6BF'];
+    return fallbackColors[Math.abs(hash) % fallbackColors.length];
+};
         
         const datasets = machines.map((machine, index) => {
             const machineData = dailyData[machine];
@@ -13126,8 +13168,8 @@ async function createAllMachineProductChart(year) {
             return {
                 label: `Máy ${machine}`,
                 data: sortedData.map(item => item.totalPaper > 0 ? item.totalPaper : null),
-                borderColor: colors[index % colors.length],
-                backgroundColor: colors[index % colors.length] + '20',
+                borderColor: getColorForMachine(machine),
+backgroundColor: getColorForMachine(machine) + '20',
                 fill: false,
                 tension: 0.1,
                 pointRadius: 0,
