@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTD1 PO Events - SQL Server Data</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 BTD1 PO Events Viewer</h1>
+            <p>Lấy dữ liệu từ SQL Server - BTD1_PO_Event</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <button onclick="loadAllEvents()" class="btn btn-primary">📋 Lấy tất cả Events</button>
+                <button onclick="loadStats()" class="btn btn-info">📊 Thống kê Events</button>
+            </div>
+
+            <div class="control-group">
+                <input type="text" id="wsInput" placeholder="Nhập WS number (ví dụ: 24020889-0)">
+                <button onclick="searchByWS()" class="btn btn-warning">🔎 Tìm theo WS</button>
+            </div>
+
+            <div class="control-group">
+                <input type="datetime-local" id="startDate">
+                <input type="datetime-local" id="endDate">
+                <button onclick="searchByDateRange()" class="btn btn-success">📅 Tìm theo khoảng thời gian</button>
+            </div>
+        </div>
+
+        <div class="results">
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Đang tải dữ liệu từ SQL Server...</p>
+            </div>
+
+            <div id="error" class="error" style="display: none;"></div>
+
+            <div id="info" class="info"></div>
+
+            <div id="resultsContainer">
+                <table id="eventsTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>UID</th>
+                            <th>WS</th>
+                            <th>Datetime</th>
+                            <th>Event</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventsTableBody">
+                    </tbody>
+                </table>
+
+                <div id="statsContainer" style="display: none;">
+                    <h3>📊 Thống kê Events</h3>
+                    <div id="statsCards"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

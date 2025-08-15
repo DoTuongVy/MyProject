@@ -46,6 +46,8 @@ const quanLynguoiDungsanXuat = require('./routes/quan-ly-nguoi-dung-sanxuat');
 const bieuDoRoutes = require('./routes/bieu-do');
 const dinhMucChungRoutes = require('./routes/dinh-muc-chung');
 const dinhMucInRoutes = require('./routes/dinh-muc-in');
+const referenceDataRoutes = require('./routes/reference-data');
+const btd1EventsRoutes = require('./routes/btd1-events');
 
 // Sử dụng routes
 app.use('/api/sang-cuon', sangCuonRoutes);
@@ -66,9 +68,18 @@ app.use('/api/production-users',quanLynguoiDungsanXuat);
 app.use('/api/bieu-do', bieuDoRoutes);
 app.use('/api/dinh-muc-chung', dinhMucChungRoutes);
 app.use('/api/dinh-muc-in', dinhMucInRoutes);
+app.use('/api/reference-data', referenceDataRoutes);
+app.use('/api/btd1-events', btd1EventsRoutes);
 
 
 app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
+app.use('/BTD1Events', express.static(path.join(__dirname, '..', 'BTD1Events')));
+
+
+
+app.get('/btd1-events', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'BTD1Events', 'index.html'));
+});
 
 app.get('/favicon.ico', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'assets', 'favicon.ico'));

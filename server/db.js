@@ -1,6 +1,7 @@
 const mysql = require('mysql2/promise');
 const path = require('path');
 const fs = require('fs');
+const sql = require('mssql');
 
 // Cấu hình kết nối MySQL tối ưu cho ER_MALFORMED_PACKET
 const dbConfig = {
@@ -34,6 +35,28 @@ const dbConfig = {
 
 // Tạo connection pool
 let pool;
+
+
+
+// Cấu hình SQL Server
+const sqlServerConfig = {
+  user: process.env.SQLSERVER_USER || 'sa',
+  password: process.env.SQLSERVER_PASSWORD || 'YourPassword',
+  server: process.env.SQLSERVER_HOST || 'localhost',
+  database: process.env.SQLSERVER_DB || 'YourDatabase',
+  options: {
+    encrypt: false, // Tùy thuộc vào cấu hình SQL Server
+    trustServerCertificate: true,
+    enableArithAbort: true
+  },
+  connectionTimeout: 60000,
+  requestTimeout: 60000
+};
+
+// SQL Server connection pool
+let sqlServerPool;
+
+
 try {
   pool = mysql.createPool(dbConfig);
   console.log(`✅ MySQL pool created for database: ${dbConfig.database} at ${dbConfig.host}`);
@@ -41,6 +64,9 @@ try {
   console.error('❌ Failed to create MySQL pool:', error.message);
   process.exit(1);
 }
+
+
+
 
 // Pool event handlers
 pool.on('connection', function (connection) {
@@ -285,6 +311,10 @@ class DatabaseWrapper {
     });
   }
 
+
+
+
+
   // Enhanced runAsync method
   async runAsync(sql, params = []) {
     // Pre-validate inputs
@@ -353,6 +383,57 @@ class DatabaseWrapper {
       }
     });
   }
+
+
+
+    // Query SQL Server for reference data
+    async querySqlServer(query, params = []) {
+      if (!sqlServerPool) {
+        throw new Error('SQL Server connection not available');
+      }
+      
+      try {
+        const request = sqlServerPool.request();
+        
+        // Add parameters
+        params.forEach((param, index) => {
+          request.input(`param${index}`, param);
+        });
+        
+        const result = await request.query(query);
+        return result.recordset || [];
+      } catch (error) {
+        console.error('❌ SQL Server query error:', error.message);
+        throw error;
+      }
+    }
+  
+    // Get reference data from SQL Server with caching
+    async getReferenceData(tableName, cacheMinutes = 30) {
+      const cacheKey = `sqlserver_${tableName}`;
+      
+      // Simple in-memory cache
+      if (!this._cache) this._cache = {};
+      
+      const cached = this._cache[cacheKey];
+      if (cached && (Date.now() - cached.timestamp) < (cacheMinutes * 60 * 1000)) {
+        return cached.data;
+      }
+      
+      try {
+        const data = await this.querySqlServer(`SELECT * FROM ${tableName}`);
+        this._cache[cacheKey] = {
+          data: data,
+          timestamp: Date.now()
+        };
+        return data;
+      } catch (error) {
+        console.error(`❌ Error fetching reference data from ${tableName}:`, error.message);
+        return [];
+      }
+    }
+
+
 
   // SQLite-compatible callback methods
   all(sql, params, callback) {
@@ -492,6 +573,17 @@ async function connectAndInitDatabase() {
     }
 
     console.log(`✅ Successfully connected to MySQL: ${dbConfig.host}/${dbConfig.database}`);
+
+
+     // Kết nối SQL Server (THÊM ĐOẠN NÀY)
+     try {
+      sqlServerPool = await new sql.ConnectionPool(sqlServerConfig).connect();
+      console.log('✅ SQL Server connection established');
+    } catch (sqlError) {
+      console.warn('⚠️ SQL Server connection failed:', sqlError.message);
+      console.log('📝 SQL Server will not be available for reference queries');
+      sqlServerPool = null;
+    }
     
     // Initialize default data
     setTimeout(() => {
@@ -898,6 +990,29 @@ connectAndInitDatabase().catch(error => {
   console.error('❌ Fatal database initialization error:', error);
   process.exit(1);
 });
+
+
+
+
+// Add SQL Server methods to db instance
+db.querySqlServer = db.querySqlServer.bind(db);
+db.getReferenceData = db.getReferenceData.bind(db);
+
+// Graceful shutdown cho SQL Server
+const originalClose = db.close;
+db.close = async function() {
+  try {
+    await originalClose.call(this);
+    if (sqlServerPool) {
+      await sqlServerPool.close();
+      console.log('✅ SQL Server connection closed gracefully');
+    }
+  } catch (error) {
+    console.error('❌ Error closing SQL Server:', error.message);
+  }
+};
+
+
 
 // Export database and utility functions
 module.exports = {
