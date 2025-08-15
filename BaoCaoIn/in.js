@@ -1283,41 +1283,41 @@ function validateStartData() {
 }
 
 // Thu thập dữ liệu báo cáo bắt đầu
-async function collectStartReportData() {
-    try {
-        const currentUser = getCurrentUser();
-        const machineId = getCurrentMachineId();
+// async function collectStartReportData() {
+//     try {
+//         const currentUser = getCurrentUser();
+//         const machineId = getCurrentMachineId();
 
-        const startData = {
-            may: machineId,
-            quanDoc: getSelectText('quandoc'),
-            ca: getInputValue('ca'),
-            gioLamViec: getSelectText('gioLamViec'),
-            maCa: getInputValue('maCa'),
-            truongMay: getInputValue('truongmay'),
-            ws: getInputValue('ws'),
-            tuychon: getSelectText('tuychon'),
-            mau3tone: getCheckboxValue('mau3tone'),
-            sokem: getInputValue('sokem'),
-            matsau: getCheckboxValue('matsau'),
-            phukeo: getSelectValue('phukeo'),
-            phunbot: getInputValue('phunbot'),
-            phumay1: getSelectText('phumay1'),
-            phumay2: getSelectText('phumay2'),
-            soPassIn: getSelectText('pass'),
-            thoiGianBatDau: new Date().toISOString(),
-            nguoiThucHien: getCurrentUserFullName()
-        };
+//         const startData = {
+//             may: machineId,
+//             quanDoc: getSelectText('quandoc'),
+//             ca: getInputValue('ca'),
+//             gioLamViec: getSelectText('gioLamViec'),
+//             maCa: getInputValue('maCa'),
+//             truongMay: getInputValue('truongmay'),
+//             ws: getInputValue('ws'),
+//             tuychon: getSelectText('tuychon'),
+//             mau3tone: getCheckboxValue('mau3tone'),
+//             sokem: getInputValue('sokem'),
+//             matsau: getCheckboxValue('matsau'),
+//             phukeo: getSelectValue('phukeo'),
+//             phunbot: getInputValue('phunbot'),
+//             phumay1: getSelectText('phumay1'),
+//             phumay2: getSelectText('phumay2'),
+//             soPassIn: getSelectText('pass'),
+//             thoiGianBatDau: new Date().toISOString(),
+//             nguoiThucHien: getCurrentUserFullName()
+//         };
 
-        console.log('Dữ liệu bắt đầu:', startData);
-        return startData;
+//         console.log('Dữ liệu bắt đầu:', startData);
+//         return startData;
 
-    } catch (error) {
-        console.error('Lỗi khi thu thập dữ liệu bắt đầu:', error);
-        showNotification('Lỗi khi thu thập dữ liệu', 'error');
-        return null;
-    }
-}
+//     } catch (error) {
+//         console.error('Lỗi khi thu thập dữ liệu bắt đầu:', error);
+//         showNotification('Lỗi khi thu thập dữ liệu', 'error');
+//         return null;
+//     }
+// }
 
 // Cập nhật UI sau khi bắt đầu
 function updateUIAfterStart() {
@@ -7451,7 +7451,7 @@ async function executeReportSubmission() {
                 const updateOfflineReport = {
                     reportId: currentReportId,
                     reportData: endData,
-                    timestamp: new Date().toISOString(),
+                    timestamp: new Date().toISOString().slice(0, 19).replace('T', ' '),
                     type: 'update-end',
                     machineId: getCurrentMachineId()
                 };
@@ -7486,7 +7486,7 @@ async function executeReportSubmission() {
                         dungMay: endData.dungMay,
                         nguoiDung: getCurrentUser()
                     },
-                    timestamp: new Date().toISOString(),
+                    timestamp: new Date().toISOString().slice(0, 19).replace('T', ' '),
                     type: 'complete',
                     machineId: getCurrentMachineId()
                 };

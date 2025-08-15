@@ -22,7 +22,7 @@ const dbConfig = {
   dateStrings: ['DATE', 'DATETIME', 'TIMESTAMP'],
   ssl: false,
   multipleStatements: false,
-  connectTimeout: 60000,
+  connectTimeout: 15000,
   
   // Các options bổ sung để tránh malformed packet
   typeCast: function (field, next) {
@@ -40,17 +40,17 @@ let pool;
 
 // Cấu hình SQL Server
 const sqlServerConfig = {
-  user: process.env.SQLSERVER_USER || 'sa',
-  password: process.env.SQLSERVER_PASSWORD || 'YourPassword',
-  server: process.env.SQLSERVER_HOST || 'localhost',
-  database: process.env.SQLSERVER_DB || 'YourDatabase',
+  user: process.env.SQLSERVER_USER || 'Vy',
+  password: process.env.SQLSERVER_PASSWORD || 'Vsp@1234',
+  server: process.env.SQLSERVER_HOST || 'DESKTOP-U33ABQK\SQLEXPRESS2016',
+  database: process.env.SQLSERVER_DB || 'VisingPackMMS',
   options: {
     encrypt: false, // Tùy thuộc vào cấu hình SQL Server
     trustServerCertificate: true,
     enableArithAbort: true
   },
   connectionTimeout: 60000,
-  requestTimeout: 60000
+  requestTimeout: 120000
 };
 
 // SQL Server connection pool
@@ -104,7 +104,7 @@ class DatabaseWrapper {
   constructor(pool) {
     this.pool = pool;
     this.maxParamLength = 500; // Giới hạn độ dài parameter
-    this.maxTotalParams = 20;  // Giới hạn số parameter
+    this.maxTotalParams = 30;  // Giới hạn số parameter
   }
 
   // Clean và validate parameters mạnh mẽ
@@ -241,7 +241,7 @@ class DatabaseWrapper {
           let delay = 2000 * attempt; // Base delay 2 seconds
           
           if (error.code === 'ER_MALFORMED_PACKET') {
-            delay = Math.min(3000 * attempt, 15000); // Max 15 seconds for malformed packet
+            delay = Math.min(2000 * attempt, 8000); // Max 15 seconds for malformed packet
             console.log(`💥 ER_MALFORMED_PACKET retry ${attempt}/${maxRetries}, waiting ${delay}ms`);
             
             // Try to recreate connection on malformed packet
@@ -321,6 +321,15 @@ class DatabaseWrapper {
     if (!sql || typeof sql !== 'string') {
       throw new Error('Invalid SQL query: must be non-empty string');
     }
+
+
+    const placeholderCount = (sql.match(/\?/g) || []).length;
+    if (params.length !== placeholderCount) {
+      console.error(`⚠️ Parameter mismatch: SQL expects ${placeholderCount} params but got ${params.length}`);
+      console.error('SQL:', sql.substring(0, 200));
+      console.error('Params count:', params.length);
+    }
+
     
     if (sql.length > 10000) {
       console.warn(`⚠️ Very long SQL query (${sql.length} chars), may cause malformed packet`);
@@ -645,14 +654,14 @@ function initIdSequences() {
   ];
   
   sequences.forEach(seq => {
-    db.get(`SELECT * FROM id_sequences WHERE factory = ?`, [seq.factory], (err, row) => {
+    db.getAsync(`SELECT * FROM id_sequences WHERE factory = ?`, [seq.factory], async (err, row) => {
       if (err) {
         console.error(`❌ Error checking ${seq.factory} sequence:`, err.message);
         return;
       }
       
       if (!row) {
-        db.run(`INSERT INTO id_sequences (factory, last_id) VALUES (?, 0)`, [seq.factory], (err) => {
+        await db.runAsync(`INSERT INTO id_sequences (factory, last_id) VALUES (?, 0)`, [seq.factory], (err) => {
           if (err) {
             console.error(`❌ Error creating ${seq.factory} sequence:`, err.message);
           } else {
@@ -666,7 +675,7 @@ function initIdSequences() {
 
 // Create default admin account
 function createDefaultAdmin() {
-  db.get(`SELECT * FROM users_VSP WHERE username = ?`, ['admin'], (err, vspUser) => {
+  db.getAsync(`SELECT * FROM users_VSP WHERE username = ?`, ['admin'], async (err, vspUser) => {
     if (err) {
       console.error('❌ Error checking admin account:', err.message);
       return;
@@ -683,7 +692,7 @@ function createDefaultAdmin() {
         nhaMay: 'All'
       };
       
-      db.run(`INSERT INTO users_VSP (id, employee_id, username, password, fullname, role, nhaMay) 
+      await db.runAsync(`INSERT INTO users_VSP (id, employee_id, username, password, fullname, role, nhaMay) 
               VALUES (?, ?, ?, ?, ?, ?, ?)`, 
         Object.values(adminData), 
         (err) => {
@@ -700,7 +709,7 @@ function createDefaultAdmin() {
 
 // Initialize departments
 function initDepartments() {
-  db.get(`SELECT COUNT(*) as count FROM departments`, [], (err, result) => {
+  db.getAsync(`SELECT COUNT(*) as count FROM departments`, [], (err, result) => {
     if (err) {
       console.error('❌ Error checking departments:', err.message);
       return;
@@ -714,8 +723,8 @@ function initDepartments() {
         { id: 'inoffset', name: 'In Offset', description: 'Offset Printing' }
       ];
       
-      departments.forEach(dept => {
-        db.run(`INSERT INTO departments (id, name, description) VALUES (?, ?, ?)`,
+      departments.forEach(async dept => {
+        await db.runAsync(`INSERT INTO departments (id, name, description) VALUES (?, ?, ?)`,
           [dept.id, dept.name, dept.description],
           (err) => {
             if (err) {
@@ -732,7 +741,7 @@ function initDepartments() {
 
 // Initialize systems
 function initSystems() {
-  db.get(`SELECT COUNT(*) as count FROM systems`, [], (err, result) => {
+  db.getAsync(`SELECT COUNT(*) as count FROM systems`, [], (err, result) => {
     if (err) {
       console.error('❌ Error checking systems:', err.message);
       return;
@@ -748,8 +757,8 @@ function initSystems() {
         { id: 'sanxuat-nm3', name: 'Production Plant 3', description: 'Plant 3 Production', icon: 'fas fa-industry' }
       ];
       
-      systems.forEach(system => {
-        db.run(`INSERT INTO systems (id, name, description, icon) VALUES (?, ?, ?, ?)`,
+      systems.forEach(async system => {
+        await db.runAsync(`INSERT INTO systems (id, name, description, icon) VALUES (?, ?, ?, ?)`,
           [system.id, system.name, system.description, system.icon],
           (err) => {
             if (err) {
@@ -791,8 +800,8 @@ function initQLVTModules(systemId) {
     }
   ];
   
-  modules.forEach(module => {
-    db.run(`INSERT IGNORE INTO modules (id, system_id, name, description, path, icon)
+  modules.forEach(async module => {
+    await db.runAsync(`INSERT IGNORE INTO modules (id, system_id, name, description, path, icon)
             VALUES (?, ?, ?, ?, ?, ?)`,
       [module.id, systemId, module.name, module.description, module.path, module.icon],
       (err) => {
@@ -825,8 +834,8 @@ function initSanXuatNM1Modules() {
     }
   ];
   
-  modules.forEach(module => {
-    db.run(`INSERT IGNORE INTO modules (id, system_id, name, description, path, icon)
+  modules.forEach(async module => {
+    await db.runAsync(`INSERT IGNORE INTO modules (id, system_id, name, description, path, icon)
             VALUES (?, ?, ?, ?, ?, ?)`,
       [module.id, 'sanxuat-nm1', module.name, module.description, module.path, module.icon],
       (err) => {
@@ -853,9 +862,9 @@ function createDefaultPermissions() {
     { department: 'In Offset', page: 'phieu-cat', canAccess: 0 }
   ];
   
-  defaultPermissions.forEach(perm => {
+  defaultPermissions.forEach(async perm => {
     const permId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-    db.run(`INSERT IGNORE INTO page_permissions (id, department, page_name, can_access) 
+    await db.runAsync(`INSERT IGNORE INTO page_permissions (id, department, page_name, can_access) 
             VALUES (?, ?, ?, ?)`,
       [permId, perm.department, perm.page, perm.canAccess],
       (err) => {
@@ -871,7 +880,7 @@ function createDefaultPermissions() {
 function checkAndFixDuplicatePermissions() {
   console.log('🔍 Checking for duplicate permissions...');
   
-  db.all(`SELECT department, module_id, COUNT(*) as count
+  db.allAsync(`SELECT department, module_id, COUNT(*) as count
           FROM department_module_permissions
           GROUP BY department, module_id
           HAVING COUNT(*) > 1`, [], (err, duplicates) => {
@@ -884,16 +893,16 @@ function checkAndFixDuplicatePermissions() {
       console.log(`🔧 Found ${duplicates.length} duplicate permissions, cleaning up...`);
       
       duplicates.forEach(dup => {
-        db.all(`SELECT * FROM department_module_permissions
+        db.allAsync(`SELECT * FROM department_module_permissions
                WHERE department = ? AND module_id = ?
                ORDER BY created_at DESC`,
-               [dup.department, dup.module_id], (err, rows) => {
+               [dup.department, dup.module_id], async (err, rows) => {
           if (err || !rows || rows.length <= 1) return;
           
           const idsToDelete = rows.slice(1).map(r => r.id);
           const placeholders = idsToDelete.map(() => '?').join(',');
           
-          db.run(`DELETE FROM department_module_permissions WHERE id IN (${placeholders})`, 
+          await db.runAsync(`DELETE FROM department_module_permissions WHERE id IN (${placeholders})`, 
                 idsToDelete, function(err) {
             if (err) {
               console.error('❌ Error deleting duplicate permissions:', err.message);
@@ -913,7 +922,7 @@ function checkAndFixDuplicatePermissions() {
 function checkAndFixDuplicateSystems() {
   console.log('🔍 Checking for duplicate systems...');
   
-  db.all(`SELECT name, COUNT(*) as count FROM systems GROUP BY name HAVING COUNT(*) > 1`, [], (err, duplicates) => {
+  db.allAsync(`SELECT name, COUNT(*) as count FROM systems GROUP BY name HAVING COUNT(*) > 1`, [], (err, duplicates) => {
     if (err) {
       console.error('❌ Error checking duplicate systems:', err.message);
       return;
@@ -931,7 +940,7 @@ function checkAndFixDuplicateSystems() {
 function checkAndFixDuplicateDepartments() {
   console.log('🔍 Checking for duplicate departments...');
   
-  db.all(`SELECT name, COUNT(*) as count FROM departments GROUP BY name HAVING COUNT(*) > 1`, [], (err, duplicates) => {
+  db.allAsync(`SELECT name, COUNT(*) as count FROM departments GROUP BY name HAVING COUNT(*) > 1`, [], (err, duplicates) => {
     if (err) {
       console.error('❌ Error checking duplicate departments:', err.message);
       return;
@@ -950,7 +959,7 @@ function getNextEmployeeId(factory, callback) {
   const factoryCode = factory === 'Nhà máy 3' ? 'PVN' : 'VSP';
   const tableName = factoryCode === 'PVN' ? 'users_PVN' : 'users_VSP';
   
-  db.all(`SELECT employee_id FROM ${tableName} WHERE role != 'admin' AND employee_id LIKE '${factoryCode}-%'`, [], (err, rows) => {
+  db.allAsync(`SELECT employee_id FROM ${tableName} WHERE role != 'admin' AND employee_id LIKE '${factoryCode}-%'`, [], async (err, rows) => {
     if (err) {
       return callback(err, null);
     }
@@ -975,7 +984,7 @@ function getNextEmployeeId(factory, callback) {
     
     const formattedId = `${factoryCode}-${nextId.toString().padStart(4, '0')}`;
     
-    db.run(`UPDATE id_sequences SET last_id = ? WHERE factory = ?`, [nextId, factoryCode], (err) => {
+    await db.runAsync(`UPDATE id_sequences SET last_id = ? WHERE factory = ?`, [nextId, factoryCode], (err) => {
       if (err) {
         console.error(`❌ Error updating sequence for ${factoryCode}:`, err.message);
       }

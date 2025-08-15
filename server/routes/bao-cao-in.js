@@ -15,9 +15,28 @@ const emailTransporter = nodemailer.createTransport({
 // Danh sách email nhận cảnh báo
 const ALERT_EMAIL_LIST = [
     'tuogvy2604@gmail.com',
-    'thien.lam@visingpack.com',
+    // 'thien.lam@visingpack.com',
 
 ];
+
+
+
+function formatMySQLDateTime(date) {
+    if (!date) date = new Date();
+    
+    // Chuyển sang timezone Việt Nam (GMT+7)
+    const vietnamTime = new Date(date.getTime() + (7 * 60 * 60 * 1000));
+    
+    const year = vietnamTime.getUTCFullYear();
+    const month = String(vietnamTime.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(vietnamTime.getUTCDate()).padStart(2, '0');
+    const hours = String(vietnamTime.getUTCHours()).padStart(2, '0');
+    const minutes = String(vietnamTime.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(vietnamTime.getUTCSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
 
 
 function parseFormattedNumber(value) {
@@ -300,6 +319,95 @@ async function checkAndSendSpeedAlert(reportData, thanhPhamIn, tgChayMayPhut) {
         return { speed: 0, shouldAlert: false };
     }
 }
+
+
+
+
+// Hàm cập nhật bảng tốc độ
+async function updateSpeedReport(reportData, thanhPhamIn, tgChayMayPhut) {
+    try {
+        const speed = calculatePrintingSpeed(thanhPhamIn, tgChayMayPhut);
+        
+        // Kiểm tra xem đã có record tốc độ cho báo cáo này chưa
+        const existing = await new Promise((resolve, reject) => {
+            db.get(`SELECT id FROM bao_cao_in_toc_do WHERE bao_cao_in = ?`, 
+                [reportData.id], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        if (existing) {
+            // Update nếu đã tồn tại
+            await new Promise((resolve, reject) => {
+                db.run(`UPDATE bao_cao_in_toc_do SET 
+                    ws = ?, ma_ca = ?, may = ?, ma_sp = ?,
+                    thanh_pham_in = ?, tg_chay_may = ?, toc_do = ?,
+                    update_at = ?
+                    WHERE bao_cao_in = ?`,
+                    [
+                        reportData.ws || '',
+                        reportData.ma_ca || '',
+                        reportData.may || '',
+                        reportData.ma_sp || '',
+                        thanhPhamIn.toString(),
+                        tgChayMayPhut.toString(),
+                        speed.toString(),
+                        formatMySQLDateTime(),
+                        reportData.id
+                    ], (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
+            });
+        } else {
+            // Insert mới
+            const speedId = Date.now();
+            
+            // Lấy STT mới
+            const sttRow = await new Promise((resolve, reject) => {
+                db.get(`SELECT MAX(stt) as max_stt FROM bao_cao_in_toc_do`, [], (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                });
+            });
+            const stt = (sttRow?.max_stt || 0) + 1;
+            
+            await new Promise((resolve, reject) => {
+                db.run(`INSERT INTO bao_cao_in_toc_do (
+                    id, stt, ws, ma_ca, may, ma_sp,
+                    thanh_pham_in, tg_chay_may, toc_do,
+                    bao_cao_in, created_at, update_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        speedId, 
+                        stt,
+                        reportData.ws || '',
+                        reportData.ma_ca || '',
+                        reportData.may || '',
+                        reportData.ma_sp || '',
+                        thanhPhamIn.toString(),
+                        tgChayMayPhut.toString(),
+                        speed.toString(),
+                        reportData.id,  // Khóa ngoại liên kết với bao_cao_in
+                        formatMySQLDateTime(),
+                        formatMySQLDateTime()
+                    ], (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
+            });
+        }
+        
+        console.log(`✅ Đã cập nhật tốc độ: WS=${reportData.ws}, Speed=${speed} s/h`);
+        return speed;
+        
+    } catch (error) {
+        console.error('Lỗi khi cập nhật bảng tốc độ:', error);
+        return 0;
+    }
+}
+
 
 
 
@@ -864,7 +972,7 @@ router.post('/submit', async (req, res) => {
                 ketThuc.dungMay ? 1 : 0,
                 batDau.nguoiThucHien || '',
                 nguoiDung.id || '',
-                new Date().toISOString()
+                formatMySQLDateTime()
             ], function (err) {
                 if (err) reject(err);
                 else resolve(this.lastID);
@@ -961,6 +1069,44 @@ try {
         checkAndSendSpeedAlert(alertData, thanhPhamInValue, tgChayMayPhut).catch(error => {
             console.error('Lỗi gửi email cảnh báo tốc độ:', error);
         });
+
+
+
+
+        // Cập nhật bảng tốc độ
+const speedReportData = {
+    id: reportId,
+    ws: batDau.ws,
+    ma_ca: batDau.maCa,
+    may: batDau.may,
+    ma_sp: wsData.maSP
+};
+
+updateSpeedReport(speedReportData, thanhPhamInValue, tgChayMayPhut).catch(error => {
+    console.error('Lỗi cập nhật bảng tốc độ:', error);
+});
+
+
+
+        // Cập nhật bảng tốc độ
+if (thanhPhamInValue > 0) {
+    const speedReportData = {
+        id: reportId,
+        ws: batDau.ws,
+        ma_ca: batDau.maCa,
+        may: batDau.may,
+        ma_sp: wsData.maSP
+    };
+    
+    updateSpeedReport(speedReportData, thanhPhamInValue, tgChayMayPhut).catch(error => {
+        console.error('Lỗi cập nhật bảng tốc độ:', error);
+    });
+}
+
+
+
+
+
     }
 } catch (error) {
     console.error('Lỗi khi kiểm tra tốc độ:', error);
@@ -1011,6 +1157,17 @@ if (isOfflineSync) {
     if (!startData) {
         return res.status(400).json({ error: 'Dữ liệu báo cáo bắt đầu không hợp lệ' });
     }
+
+
+    // Giới hạn độ dài string để tránh ER_MALFORMED_PACKET
+if (startData.truongMay && startData.truongMay.length > 200) {
+    startData.truongMay = startData.truongMay.substring(0, 200);
+}
+if (startData.nguoiThucHien && startData.nguoiThucHien.length > 200) {
+    startData.nguoiThucHien = startData.nguoiThucHien.substring(0, 200);
+}
+
+
 
     try {
         const reportId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -1075,8 +1232,8 @@ const thanhPham = 0;
             id, stt, ngay, may, quan_doc, ca, truong_may, ws, so_lan_chay, khach_hang, ma_sp,
             sl_don_hang, so_con, so_mau, ma_giay_1, ma_giay_2, ma_giay_3, kho, dai_giay,
             tuy_chon, mau_3_tone, so_kem, mat_sau, phu_keo, phun_bot, gio_lam_viec,
-            ma_ca, phu_may_1, phu_may_2, so_pass_in, thanh_pham, thoi_gian_bat_dau, nguoi_thuc_hien, is_started_only, sl_giay_theo_ws
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            ma_ca, phu_may_1, phu_may_2, so_pass_in, thanh_pham, thoi_gian_bat_dau, nguoi_thuc_hien, is_started_only, sl_giay_theo_ws, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         
         await new Promise((resolve, reject) => {
             db.run(insertSQL, [
@@ -1109,10 +1266,11 @@ const thanhPham = 0;
                 startData.phumay2 || '',
                 startData.soPassIn || '',
                 thanhPham,
-                startData.thoiGianBatDau || '',
-                startData.nguoiThucHien || '',
+                formatMySQLDateTime(new Date(startData.thoiGianBatDau)) || formatMySQLDateTime(),
+(startData.nguoiThucHien || '').substring(0, 200),
                 1,  // Đánh dấu là chỉ mới bắt đầu
                 wsData.slGiayTheoWS || '',
+                formatMySQLDateTime()
                 // thanhPham
             ], function (err) {
                 if (err) reject(err);
@@ -1148,7 +1306,7 @@ await new Promise((resolve, reject) => {
         startData.phukeo || '',
         parseInt(startData.phunbot || '0'),
         startData.soPassIn || '',
-        startData.thoiGianBatDau || '',
+        startData.thoiGianBatDau ? formatMySQLDateTime(new Date(startData.thoiGianBatDau)) : formatMySQLDateTime(),
         startData.nguoiThucHien || '',
         'user_id_placeholder',
         reportId
@@ -1197,78 +1355,81 @@ router.put('/update-start/:id', async (req, res) => {
         // Lấy dữ liệu từ WS-Tổng nếu có thay đổi WS
         let wsData = {};
         if (startData.ws && startData.ws.trim() !== '') {
-            try {
-                const wsRow = await new Promise((resolve, reject) => {
-                    db.get(`SELECT * FROM ws_tong WHERE so_ws = ?`, [startData.ws], (err, row) => {
-                        if (err) reject(err);
-                        else resolve(row);
-                    });
-                });
-                
-                if (wsRow) {
-                    wsData = {
-                        khachHang: wsRow.khach_hang || '',
-                        maSP: wsRow.ma_sp || '',
-                        slDonHang: wsRow.sl_dh || '',
-                        soCon: wsRow.s_con || '',
-                        soMau: wsRow.so_mau_in || '',
-                        maGiay1: wsRow.loai_giay_1 || '',
-                        maGiay2: wsRow.loai_giay_2 || '',
-                        maGiay3: wsRow.loai_giay_3 || '',
-                        kho: wsRow.kho_1 || '',
-                        daiGiay: wsRow.chat_1 || ''
-                    };
-                }
-            } catch (error) {
-                console.error('Lỗi khi lấy dữ liệu WS-Tổng:', error);
+            const wsRow = await db.getAsync(
+                `SELECT * FROM ws_tong WHERE so_ws = ?`, 
+                [startData.ws]
+            );
+            
+            if (wsRow) {
+                wsData = {
+                    khachHang: wsRow.khach_hang || '',
+                    maSP: wsRow.ma_sp || '',
+                    slDonHang: wsRow.sl_dh || '',
+                    soCon: wsRow.s_con || '',
+                    soMau: wsRow.so_mau_in || '',
+                    maGiay1: wsRow.loai_giay_1 || '',
+                    maGiay2: wsRow.loai_giay_2 || '',
+                    maGiay3: wsRow.loai_giay_3 || '',
+                    kho: wsRow.kho_1 || '',
+                    daiGiay: wsRow.chat_1 || '',
+                    slGiayTheoWS: wsRow.sl_giay_can_cat || ''
+                };
             }
         }
 
-        // Cập nhật database
-        const updateSQL = `UPDATE bao_cao_in SET 
-    quan_doc = ?, ca = ?, truong_may = ?, ws = ?, khach_hang = ?, ma_sp = ?,
-    sl_don_hang = ?, so_con = ?, so_mau = ?, ma_giay_1 = ?, ma_giay_2 = ?, ma_giay_3 = ?, 
-    kho = ?, dai_giay = ?, tuy_chon = ?, mau_3_tone = ?, so_kem = ?, mat_sau = ?, 
-    phu_keo = ?, phun_bot = ?, gio_lam_viec = ?, ma_ca = ?, phu_may_1 = ?, phu_may_2 = ?, so_pass_in = ?, thanh_pham = ?,
-    thoi_gian_bat_dau = ?, nguoi_thuc_hien = ?, sl_giay_theo_ws = ?
-    WHERE id = ?`;
+        // CHIA THÀNH 2 UPDATE NHỎ HƠN để tránh quá nhiều params
         
-        await new Promise((resolve, reject) => {
-            db.run(updateSQL, [
-                startData.quanDoc || '',
-                startData.ca || '',
-                startData.truongMay || '',
-                startData.ws || '',
-                wsData.khachHang || '',
-                wsData.maSP || '',
-                wsData.slDonHang || '',
-                wsData.soCon || '',
-                wsData.soMau || '',
-                wsData.maGiay1 || '',
-                wsData.maGiay2 || '',
-                wsData.maGiay3 || '',
-                wsData.kho || '',
-                wsData.daiGiay || '',
-                startData.tuychon || '',
-                startData.mau3tone || '',
-                parseInt(startData.sokem || '0'),
-                startData.matsau || '',
-                startData.phukeo || '',
-                parseInt(startData.phunbot || '0'),
-                startData.gioLamViec || '',
-                startData.maCa || '',
-                startData.phumay1 || '',
-                startData.phumay2 || '',
-                startData.soPassIn || '',
-                startData.thoiGianBatDau || '',
-                startData.nguoiThucHien || '',
-                wsData.slGiayTheoWS || '', 
-                id
-            ], function (err) {
-                if (err) reject(err);
-                else resolve(this.changes);
-            });
-        });
+        // Update 1: Thông tin cơ bản
+        const updateSQL1 = `UPDATE bao_cao_in SET 
+            quan_doc = ?, ca = ?, truong_may = ?, ws = ?, 
+            tuy_chon = ?, mau_3_tone = ?, so_kem = ?, mat_sau = ?, 
+            phu_keo = ?, phun_bot = ?, gio_lam_viec = ?, ma_ca = ?
+            WHERE id = ?`;
+        
+        await db.runAsync(updateSQL1, [
+            startData.quanDoc || '',
+            startData.ca || '',
+            startData.truongMay || '',
+            startData.ws || '',
+            startData.tuychon || '',
+            startData.mau3tone || '',
+            parseInt(startData.sokem || '0'),
+            startData.matsau || '',
+            startData.phukeo || '',
+            parseInt(startData.phunbot || '0'),
+            startData.gioLamViec || '',
+            startData.maCa || '',
+            id
+        ]);
+
+        // Update 2: Thông tin WS và phụ
+        const updateSQL2 = `UPDATE bao_cao_in SET 
+            khach_hang = ?, ma_sp = ?, sl_don_hang = ?, so_con = ?, 
+            so_mau = ?, ma_giay_1 = ?, ma_giay_2 = ?, ma_giay_3 = ?, 
+            kho = ?, dai_giay = ?, phu_may_1 = ?, phu_may_2 = ?, 
+            so_pass_in = ?, thoi_gian_bat_dau = ?, nguoi_thuc_hien = ?, 
+            sl_giay_theo_ws = ?
+            WHERE id = ?`;
+        
+        await db.runAsync(updateSQL2, [
+            wsData.khachHang || '',
+            wsData.maSP || '',
+            wsData.slDonHang || '',
+            wsData.soCon || '',
+            wsData.soMau || '',
+            wsData.maGiay1 || '',
+            wsData.maGiay2 || '',
+            wsData.maGiay3 || '',
+            wsData.kho || '',
+            wsData.daiGiay || '',
+            startData.phumay1 || '',
+            startData.phumay2 || '',
+            startData.soPassIn || '',
+            startData.thoiGianBatDau || '',
+            startData.nguoiThucHien || '',
+            wsData.slGiayTheoWS || '',
+            id
+        ]);
 
         res.json({
             success: true,
@@ -1520,6 +1681,25 @@ try {
         checkAndSendSpeedAlert(alertData, thanhPhamInValue, tgChayMayPhut).catch(error => {
             console.error('Lỗi gửi email cảnh báo tốc độ:', error);
         });
+
+
+
+        // Cập nhật bảng tốc độ
+if (thanhPhamInValue > 0) {
+    const speedReportData = {
+        id: id,
+        ws: currentReport.ws,
+        ma_ca: currentReport.ma_ca,
+        may: currentReport.may,
+        ma_sp: currentReport.ma_sp
+    };
+    
+    updateSpeedReport(speedReportData, thanhPhamInValue, tgChayMayPhut).catch(error => {
+        console.error('Lỗi cập nhật bảng tốc độ:', error);
+    });
+}
+
+
     }
 } catch (error) {
     console.error('Lỗi khi kiểm tra tốc độ:', error);
@@ -1553,32 +1733,30 @@ try {
 });
 
 // API lấy chi tiết báo cáo In
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-
     const { id } = req.params;
 
-    db.get(`SELECT * FROM bao_cao_in WHERE id = ?`, [id], (err, report) => {
-        if (err) {
-            console.error('Lỗi khi lấy chi tiết báo cáo In:', err.message);
-            return res.status(500).json({ error: 'Lỗi khi lấy chi tiết báo cáo In' });
-        }
-
+    try {
+        const report = await db.getAsync(`SELECT * FROM bao_cao_in WHERE id = ?`, [id]);
+        
         if (!report) {
             return res.status(404).json({ error: 'Không tìm thấy báo cáo In' });
         }
 
         // Lấy thông tin dừng máy nếu có
-        db.all(`SELECT * FROM bao_cao_in_dung_may WHERE bao_cao_id = ?`, [id], (err, stopReports) => {
-            if (err) {
-                console.error('Lỗi khi lấy thông tin dừng máy:', err.message);
-                return res.status(500).json({ error: 'Lỗi khi lấy thông tin dừng máy' });
-            }
+        const stopReports = await db.allAsync(
+            `SELECT * FROM bao_cao_in_dung_may WHERE bao_cao_id = ?`, 
+            [id]
+        );
 
-            report.dungMay = stopReports || [];
-            res.json(report);
-        });
-    });
+        report.dungMay = stopReports || [];
+        res.json(report);
+        
+    } catch (error) {
+        console.error('Lỗi khi lấy chi tiết báo cáo In:', error.message);
+        res.status(500).json({ error: 'Lỗi khi lấy chi tiết báo cáo In' });
+    }
 });
 
 // API xóa báo cáo In
@@ -1777,7 +1955,7 @@ router.post('/dung-may/submit', (req, res) => {
             date,
             tuan,
             date,
-            new Date().toISOString()
+            formatMySQLDateTime()
         ], function (err) {
             if (err) {
                 console.error('Lỗi khi lưu báo cáo dừng máy:', err.message);
@@ -1852,6 +2030,169 @@ router.delete('/cho/:id', (req, res) => {
     });
 });
 
+
+
+
+
+
+// API đồng bộ tất cả báo cáo cũ vào bảng tốc độ
+router.post('/toc-do/sync-all', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    try {
+        // Lấy tất cả báo cáo in có thành phẩm in > 0
+        const reports = await new Promise((resolve, reject) => {
+            db.all(`SELECT * FROM bao_cao_in 
+                    WHERE thanh_pham_in IS NOT NULL 
+                    AND thanh_pham_in != '' 
+                    AND thanh_pham_in != '0'
+                    AND is_started_only = 0`, [], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+        
+        console.log(`📊 Tìm thấy ${reports.length} báo cáo cần đồng bộ`);
+        
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const report of reports) {
+            try {
+                const thanhPhamIn = parseFloat(report.thanh_pham_in || '0');
+                
+                // Tính thời gian chạy máy
+                let tgChayMayPhut = 0;
+                if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
+                    const startTime = new Date(report.thoi_gian_bat_dau);
+                    const endTime = new Date(report.thoi_gian_ket_thuc);
+                    const tgTongPhut = Math.floor((endTime - startTime) / (1000 * 60));
+                    
+                    const tgCanhMay = parseInt(report.thoi_gian_canh_may || '0');
+                    
+                    // Tính tổng thời gian dừng máy từ bảng dừng máy
+                    const dungMayRecords = await new Promise((resolve, reject) => {
+                        db.all(`SELECT thoi_gian_dung, thoi_gian_chay_lai 
+                                FROM bao_cao_in_dung_may 
+                                WHERE bao_cao_id = ?`, [report.id], (err, rows) => {
+                            if (err) reject(err);
+                            else resolve(rows || []);
+                        });
+                    });
+                    
+                    const tgDungMay = calculateTotalStopTimeMinutes(dungMayRecords);
+                    tgChayMayPhut = Math.max(0, tgTongPhut - tgCanhMay - tgDungMay);
+                }
+                
+                if (tgChayMayPhut > 0 && thanhPhamIn > 0) {
+                    const speedReportData = {
+                        id: report.id,
+                        ws: report.ws,
+                        ma_ca: report.ma_ca,
+                        may: report.may,
+                        ma_sp: report.ma_sp
+                    };
+                    
+                    await updateSpeedReport(speedReportData, thanhPhamIn, tgChayMayPhut);
+                    successCount++;
+                } else {
+                    console.log(`⚠️ Bỏ qua báo cáo ${report.id}: TG chạy máy=${tgChayMayPhut}, TP=${thanhPhamIn}`);
+                    errorCount++;
+                }
+                
+            } catch (error) {
+                console.error(`Lỗi xử lý báo cáo ${report.id}:`, error);
+                errorCount++;
+            }
+        }
+        
+        res.json({
+            success: true,
+            message: `Đã đồng bộ ${successCount} báo cáo, ${errorCount} lỗi`,
+            total: reports.length,
+            success_count: successCount,
+            error_count: errorCount
+        });
+        
+    } catch (error) {
+        console.error('Lỗi khi đồng bộ báo cáo tốc độ:', error);
+        res.status(500).json({ 
+            error: 'Lỗi khi đồng bộ báo cáo tốc độ: ' + error.message 
+        });
+    }
+});
+
+
+
+
+// API lấy danh sách báo cáo tốc độ (có JOIN với bảng gốc)
+router.get('/toc-do/list', (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    const dateFilter = req.query.date;
+    const machineFilter = req.query.machine;
+    
+    let query = `
+        SELECT 
+            td.*,
+            bc.khach_hang,
+            bc.so_mau,
+            bc.tuy_chon,
+            bc.thoi_gian_bat_dau,
+            bc.thoi_gian_ket_thuc
+        FROM bao_cao_in_toc_do td
+        LEFT JOIN bao_cao_in bc ON td.bao_cao_in = bc.id
+    `;
+    
+    let params = [];
+    let conditions = [];
+    
+    if (dateFilter) {
+        conditions.push(`DATE(td.created_at) = ?`);
+        params.push(dateFilter);
+    }
+    
+    if (machineFilter) {
+        conditions.push(`td.may = ?`);
+        params.push(machineFilter);
+    }
+    
+    if (conditions.length > 0) {
+        query += ` WHERE ` + conditions.join(' AND ');
+    }
+    
+    query += ` ORDER BY td.created_at DESC, td.stt DESC`;
+    
+    db.all(query, params, (err, rows) => {
+        if (err) {
+            console.error('Lỗi khi lấy danh sách tốc độ:', err.message);
+            return res.status(500).json({ error: 'Lỗi khi lấy danh sách tốc độ' });
+        }
+        res.json(rows || []);
+    });
+});
+
+
+
+// API xóa báo cáo tốc độ
+router.delete('/toc-do/:id', (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    const { id } = req.params;
+    
+    db.run(`DELETE FROM bao_cao_in_toc_do WHERE id = ?`, [id], function(err) {
+        if (err) {
+            console.error('Lỗi khi xóa báo cáo tốc độ:', err.message);
+            return res.status(500).json({ error: 'Lỗi khi xóa báo cáo tốc độ' });
+        }
+        
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy báo cáo tốc độ' });
+        }
+        
+        res.json({ success: true, message: 'Đã xóa báo cáo tốc độ thành công' });
+    });
+});
 
 
 
