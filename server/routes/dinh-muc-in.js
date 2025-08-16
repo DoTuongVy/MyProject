@@ -18,7 +18,7 @@ async function calculateDinhMucForProduct(maSanPham) {
         // Lấy tất cả báo cáo in của sản phẩm này
         const baoCaoIn = await db.allAsync(
             `SELECT id, may, thoi_gian_canh_may, thoi_gian_bat_dau, thoi_gian_ket_thuc, 
-                    thanh_pham_in, created_at
+                    thanh_pham_in, toc_do, created_at
              FROM bao_cao_in 
              WHERE ma_sp = ? AND may IS NOT NULL
              ORDER BY created_at`, 
@@ -102,13 +102,18 @@ async function calculateDinhMucForProduct(maSanPham) {
                 console.log('Thời gian chạy máy tính được (phút):', thoiGianChayMayPhut);
             }
             
-            // Tính tốc độ
+            // Lấy tốc độ từ bảng bao_cao_in_toc_do
             let tocDoTinh = null;
-            if (bc.thanh_pham_in && thoiGianChayMayPhut > 0) {
+            if (bc.toc_do && parseInt(bc.toc_do) > 0) {
+                // Ưu tiên lấy tốc độ đã có sẵn từ báo cáo
+                tocDoTinh = parseInt(bc.toc_do);
+                console.log(`Tốc độ lấy trực tiếp từ báo cáo ${bc.id}: ${tocDoTinh}`);
+            } else if (bc.thanh_pham_in && thoiGianChayMayPhut > 0) {
+                // Fallback: Tự tính toán nếu không có tốc độ sẵn
                 const thanhPham = parseInt(bc.thanh_pham_in) || 0;
                 if (thanhPham > 0) {
                     tocDoTinh = Math.round((thanhPham * 60) / thoiGianChayMayPhut);
-                    console.log(`Tốc độ tính: (${thanhPham} × 60) ÷ ${thoiGianChayMayPhut} = ${tocDoTinh}`);
+                    console.log(`Tốc độ tính fallback cho báo cáo ${bc.id}: ${tocDoTinh}`);
                 }
             }
             
@@ -129,16 +134,19 @@ async function calculateDinhMucForProduct(maSanPham) {
         
         // Hàm tính trung bình (bỏ qua giá trị null và 0)
         function calculateAverage(values) {
-            const validValues = values.filter(v => v !== null && v !== undefined && parseFloat(v) > 0);
-            
+            // Lọc bỏ các giá trị null/undefined, nhưng giữ lại số 0
+            const validValues = values.filter(v => v !== null && v !== undefined);
+        
             if (validValues.length === 0) {
-                return null;
+                return null; // Trả về null nếu không có giá trị nào hợp lệ
             }
-            
+        
+            // Nếu chỉ có một giá trị, trả về chính nó
             if (validValues.length === 1) {
-                return validValues[0];
+                return parseFloat(validValues[0]);
             }
-            
+        
+            // Tính tổng và trung bình
             const sum = validValues.reduce((acc, val) => acc + parseFloat(val), 0);
             return Math.round(sum / validValues.length);
         }
@@ -425,5 +433,52 @@ router.put('/:maSanPham', async (req, res) => {
         res.status(500).json({ error: 'Lỗi server khi cập nhật định mức: ' + error.message });
     }
 });
+
+
+
+
+// Lấy danh sách báo cáo chi tiết cho một sản phẩm cụ thể
+router.get('/details/:maSanPham', async (req, res) => {
+    try {
+        const { maSanPham } = req.params;
+
+        if (!maSanPham) {
+            return res.status(400).json({ error: 'Thiếu mã sản phẩm' });
+        }
+
+        // Lấy tất cả báo cáo của sản phẩm này, sắp xếp theo ngày tạo
+        const baoCaoChiTiet = await db.allAsync(
+            `SELECT 
+                id,
+                may,
+                thoi_gian_canh_may,
+                toc_do,
+                created_at,
+                thoi_gian_bat_dau,
+                thanh_pham_in
+             FROM bao_cao_in 
+             WHERE ma_sp = ? AND may IS NOT NULL
+             ORDER BY created_at DESC`,
+            [maSanPham]
+        );
+        
+        // Trả về dữ liệu dưới dạng JSON
+        res.json({
+            success: true,
+            data: baoCaoChiTiet
+        });
+
+    } catch (error) {
+        console.error('Lỗi khi lấy báo cáo chi tiết:', error);
+        res.status(500).json({ error: 'Lỗi server khi lấy báo cáo chi tiết: ' + error.message });
+    }
+});
+
+
+
+
+
+
+
 
 module.exports = router;

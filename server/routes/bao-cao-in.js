@@ -343,6 +343,8 @@ async function updateSpeedReport(reportData, thanhPhamIn, tgChayMayPhut) {
                 db.run(`UPDATE bao_cao_in_toc_do SET 
                     ws = ?, ma_ca = ?, may = ?, ma_sp = ?,
                     thanh_pham_in = ?, tg_chay_may = ?, toc_do = ?,
+                    thoi_gian_bat_dau = ?, thoi_gian_ket_thuc = ?,
+                    thoi_gian_canh_may = ?, tg_dung_may = ?,
                     update_at = ?
                     WHERE bao_cao_in = ?`,
                     [
@@ -353,6 +355,10 @@ async function updateSpeedReport(reportData, thanhPhamIn, tgChayMayPhut) {
                         thanhPhamIn.toString(),
                         tgChayMayPhut.toString(),
                         speed.toString(),
+                        reportData.thoi_gian_bat_dau || '',  // THÊM
+                        reportData.thoi_gian_ket_thuc || '',  // THÊM
+                        reportData.thoi_gian_canh_may || '',  // THÊM
+                        reportData.tg_dung_may || '',         // THÊM
                         formatMySQLDateTime(),
                         reportData.id
                     ], (err) => {
@@ -377,8 +383,11 @@ async function updateSpeedReport(reportData, thanhPhamIn, tgChayMayPhut) {
                 db.run(`INSERT INTO bao_cao_in_toc_do (
                     id, stt, ws, ma_ca, may, ma_sp,
                     thanh_pham_in, tg_chay_may, toc_do,
-                    bao_cao_in, created_at, update_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    bao_cao_in, 
+                    thoi_gian_bat_dau, thoi_gian_ket_thuc, 
+                    thoi_gian_canh_may, tg_dung_may,
+                    created_at, update_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         speedId, 
                         stt,
@@ -389,7 +398,11 @@ async function updateSpeedReport(reportData, thanhPhamIn, tgChayMayPhut) {
                         thanhPhamIn.toString(),
                         tgChayMayPhut.toString(),
                         speed.toString(),
-                        reportData.id,  // Khóa ngoại liên kết với bao_cao_in
+                        reportData.id,
+                        reportData.thoi_gian_bat_dau || '',  // THÊM
+                        reportData.thoi_gian_ket_thuc || '',  // THÊM
+                        reportData.thoi_gian_canh_may || '',  // THÊM
+                        reportData.tg_dung_may || '',         // THÊM
                         formatMySQLDateTime(),
                         formatMySQLDateTime()
                     ], (err) => {
@@ -595,59 +608,6 @@ const wasteReports = allWasteReports.filter(w => {
 }
 
 
-// // Tính thành phẩm cho một báo cáo cụ thể
-// async function calculateThanhPhamForReport(reportId, wsValue, tuychonText) {
-//     try {
-//         // Lấy thông tin báo cáo
-//         const report = await new Promise((resolve, reject) => {
-//             db.get(`SELECT * FROM bao_cao_in WHERE id = ?`, [reportId], (err, row) => {
-//                 if (err) reject(err);
-//                 else resolve(row);
-//             });
-//         });
-        
-//         if (!report) return 0;
-        
-//         const tongSoLuong = parseFloat(report.tong_so_luong) || 0;
-        
-//         // Lấy tổng phế liệu mới nhất từ waste process tương ứng
-//         const wasteMapping = {
-//             '1. In': '4. IN DẶM',
-//             '2. In + CÁN BÓNG': '5. IN DẶM + CÁN BÓNG',
-//             '3. CÁN BÓNG': '6. CÁN BÓNG LẠI'
-//         };
-        
-//         const correspondingWaste = wasteMapping[tuychonText];
-//         if (!correspondingWaste) return tongSoLuong;
-        
-//         // Tìm báo cáo waste mới nhất
-//         const latestWaste = await new Promise((resolve, reject) => {
-//             db.get(`SELECT tong_phe_lieu FROM bao_cao_in 
-//                     WHERE ws = ? AND tuy_chon = ? 
-//                     AND mat_sau = ? AND phu_keo = ? AND so_pass_in = ? AND may = ?
-//                     AND tong_phe_lieu IS NOT NULL 
-//                     ORDER BY created_at DESC LIMIT 1`,
-//                 [wsValue, correspondingWaste, report.mat_sau || 0, report.phu_keo || '', 
-//                  report.so_pass_in || '', report.may || ''], (err, row) => {
-//                 if (err) reject(err);
-//                 else resolve(row);
-//             });
-//         });
-        
-//         if (latestWaste && latestWaste.tong_phe_lieu) {
-//             const tongPheLieu = parseFloat(latestWaste.tong_phe_lieu) || 0;
-//             return Math.max(0, tongSoLuong - tongPheLieu);
-//         }
-        
-//         return tongSoLuong;
-        
-//     } catch (error) {
-//         console.error('Lỗi khi tính thành phẩm cho báo cáo:', error);
-//         return 0;
-//     }
-// }
-
-
 
 
 // API cập nhật các báo cáo liên quan
@@ -786,6 +746,9 @@ router.get('/list', (req, res) => {
         res.json(rows || []);
     });
 });
+
+
+
 
 // API gửi báo cáo In hoàn chỉnh
 router.post('/submit', async (req, res) => {
@@ -1074,13 +1037,17 @@ try {
 
 
         // Cập nhật bảng tốc độ
-const speedReportData = {
-    id: reportId,
-    ws: batDau.ws,
-    ma_ca: batDau.maCa,
-    may: batDau.may,
-    ma_sp: wsData.maSP
-};
+        const speedReportData = {
+            id: reportId,
+            ws: batDau.ws,
+            ma_ca: batDau.maCa,
+            may: batDau.may,
+            ma_sp: wsData.maSP,
+            thoi_gian_bat_dau: batDau.thoiGianBatDau,     // THÊM
+            thoi_gian_ket_thuc: ketThuc.thoiGianKetThuc,  // THÊM
+            thoi_gian_canh_may: tgCanhMay,                // THÊM
+            tg_dung_may: tgDungMay                        // THÊM
+        };
 
 updateSpeedReport(speedReportData, thanhPhamInValue, tgChayMayPhut).catch(error => {
     console.error('Lỗi cập nhật bảng tốc độ:', error);
@@ -1445,6 +1412,10 @@ router.put('/update-start/:id', async (req, res) => {
     }
 });
 
+
+
+
+
 // API cập nhật báo cáo In phần kết thúc
 router.put('/update-end/:id', async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -1691,7 +1662,11 @@ if (thanhPhamInValue > 0) {
         ws: currentReport.ws,
         ma_ca: currentReport.ma_ca,
         may: currentReport.may,
-        ma_sp: currentReport.ma_sp
+        ma_sp: currentReport.ma_sp,
+        thoi_gian_bat_dau: currentReport.thoi_gian_bat_dau,  // THÊM
+        thoi_gian_ket_thuc: ketThuc.thoiGianKetThuc,        // THÊM
+        thoi_gian_canh_may: tgCanhMay,                       // THÊM
+        tg_dung_may: tgDungMay                               // THÊM
     };
     
     updateSpeedReport(speedReportData, thanhPhamInValue, tgChayMayPhut).catch(error => {
@@ -2045,7 +2020,6 @@ router.post('/toc-do/sync-all', async (req, res) => {
             db.all(`SELECT * FROM bao_cao_in 
                     WHERE thanh_pham_in IS NOT NULL 
                     AND thanh_pham_in != '' 
-                    AND thanh_pham_in != '0'
                     AND is_started_only = 0`, [], (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows || []);
@@ -2063,6 +2037,8 @@ router.post('/toc-do/sync-all', async (req, res) => {
                 
                 // Tính thời gian chạy máy
                 let tgChayMayPhut = 0;
+                let tgDungMay = 0; // THÊM DÒNG NÀY
+                
                 if (report.thoi_gian_bat_dau && report.thoi_gian_ket_thuc) {
                     const startTime = new Date(report.thoi_gian_bat_dau);
                     const endTime = new Date(report.thoi_gian_ket_thuc);
@@ -2070,35 +2046,67 @@ router.post('/toc-do/sync-all', async (req, res) => {
                     
                     const tgCanhMay = parseInt(report.thoi_gian_canh_may || '0');
                     
-                    // Tính tổng thời gian dừng máy từ bảng dừng máy
-                    const dungMayRecords = await new Promise((resolve, reject) => {
-                        db.all(`SELECT thoi_gian_dung, thoi_gian_chay_lai 
-                                FROM bao_cao_in_dung_may 
-                                WHERE bao_cao_id = ?`, [report.id], (err, rows) => {
-                            if (err) reject(err);
-                            else resolve(rows || []);
-                        });
-                    });
+
                     
-                    const tgDungMay = calculateTotalStopTimeMinutes(dungMayRecords);
+                    // Tính tổng thời gian dừng máy từ thời gian thực tế
+const dungMayRecords = await new Promise((resolve, reject) => {
+    db.all(`
+        SELECT 
+            thoi_gian_dung, 
+            thoi_gian_chay_lai
+        FROM bao_cao_in_dung_may 
+        WHERE bao_cao_id = ?
+        AND thoi_gian_dung IS NOT NULL
+        AND thoi_gian_chay_lai IS NOT NULL
+    `, [report.id], (err, rows) => {
+        if (err) {
+            console.error('Lỗi query dừng máy:', err);
+            resolve([]);
+        } else {
+            resolve(rows || []);
+        }
+    });
+});
+
+// Tính tổng phút dừng từ thời gian dừng và chạy lại
+tgDungMay = 0;
+for (const record of dungMayRecords) {
+    try {
+        const start = new Date(record.thoi_gian_dung);
+        const end = new Date(record.thoi_gian_chay_lai);
+        const diffMinutes = Math.floor((end - start) / (1000 * 60));
+        if (diffMinutes > 0) {
+            tgDungMay += diffMinutes;
+        }
+    } catch (e) {
+        console.error('Lỗi tính thời gian dừng:', e);
+    }
+}
+
+// Debug nếu có dừng máy
+if (tgDungMay > 0) {
+    console.log(`Report ${report.id} - WS: ${report.ws} có ${dungMayRecords.length} lần dừng, tổng ${tgDungMay} phút`);
+}
+
+
                     tgChayMayPhut = Math.max(0, tgTongPhut - tgCanhMay - tgDungMay);
                 }
                 
-                if (tgChayMayPhut > 0 && thanhPhamIn > 0) {
-                    const speedReportData = {
-                        id: report.id,
-                        ws: report.ws,
-                        ma_ca: report.ma_ca,
-                        may: report.may,
-                        ma_sp: report.ma_sp
-                    };
-                    
-                    await updateSpeedReport(speedReportData, thanhPhamIn, tgChayMayPhut);
-                    successCount++;
-                } else {
-                    console.log(`⚠️ Bỏ qua báo cáo ${report.id}: TG chạy máy=${tgChayMayPhut}, TP=${thanhPhamIn}`);
-                    errorCount++;
-                }
+                // Luôn cập nhật, kể cả khi = 0
+                const speedReportData = {
+                    id: report.id,
+                    ws: report.ws,
+                    ma_ca: report.ma_ca,
+                    may: report.may,
+                    ma_sp: report.ma_sp,
+                    thoi_gian_bat_dau: report.thoi_gian_bat_dau,
+                    thoi_gian_ket_thuc: report.thoi_gian_ket_thuc,
+                    thoi_gian_canh_may: report.thoi_gian_canh_may || '0',
+                    tg_dung_may: tgDungMay.toString() // SỬ DỤNG tgDungMay ĐÃ TÍNH
+                };
+                
+                await updateSpeedReport(speedReportData, thanhPhamIn, tgChayMayPhut);
+                successCount++;
                 
             } catch (error) {
                 console.error(`Lỗi xử lý báo cáo ${report.id}:`, error);
